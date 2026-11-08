@@ -30,9 +30,9 @@
          x-transition:leave="transition ease-in duration-150"
          x-transition:leave-start="opacity-100 translate-y-0 scale-100"
          x-transition:leave-end="opacity-0 translate-y-4 scale-95"
-         class="relative flex max-h-[calc(100dvh-1.5rem)] w-full flex-col {{ $widths[$maxWidth] }} rounded-2xl border border-line-border bg-surface-raised shadow-2xl sm:max-h-[calc(100dvh-3rem)]">
+         class="relative flex max-h-[calc(100dvh-1.5rem)] w-full flex-col overflow-hidden {{ $widths[$maxWidth] }} rounded-2xl border border-line-border bg-surface-raised shadow-2xl sm:max-h-[calc(100dvh-3rem)]">
         @if ($title)
-            <div class="flex shrink-0 items-center justify-between gap-3 border-b border-line-border px-5 py-3.5 sm:px-6 sm:py-4">
+            <div class="flex shrink-0 items-center justify-between gap-3 border-b border-line-border bg-surface-raised px-5 py-3.5 sm:px-6 sm:py-4">
                 <div class="flex min-w-0 items-center gap-2.5">
                     @if ($icon)
                         <span class="flex size-8 shrink-0 items-center justify-center rounded-xl border border-line-border/70 bg-surface-card text-primary">
@@ -53,7 +53,7 @@
         </div>
 
         @isset($footer)
-            <div class="flex shrink-0 items-center justify-end gap-2 border-t border-line-border px-5 py-3.5 sm:px-6 sm:py-4">
+            <div class="flex shrink-0 items-center justify-end gap-2 border-t border-line-border bg-surface-raised px-5 py-3.5 sm:px-6 sm:py-4">
                 {{ $footer }}
             </div>
         @endisset

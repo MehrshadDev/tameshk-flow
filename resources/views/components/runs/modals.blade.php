@@ -26,12 +26,12 @@
 
         <div class="space-y-4">
             <div class="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-line-border/80 bg-surface-card p-3.5">
-                <div class="flex items-center gap-3 min-w-0">
+                <div class="flex min-w-0 items-center gap-3">
                     <div class="flex size-10 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
                         <x-ui.icon name="hierarchy-2" class="size-5"/>
                     </div>
-                    <div class="min-w-0">
-                        <p dir="auto" class="truncate text-start text-xs font-bold text-content-main">
+                    <div class="min-w-0 text-right">
+                        <p dir="auto" class="truncate text-right text-xs font-bold text-content-main">
                             {{ $inspectingRun->workflow?->name ?? 'ورکفلو حذف‌شده' }}
                         </p>
                         <p class="mt-0.5 font-mono text-[11px] text-content-muted" dir="ltr">
@@ -51,14 +51,14 @@
                     <div class="flex items-center justify-between border-b border-primary/15 pb-1.5">
                         <span class="font-bold">خطای کلی اجرا</span>
                         <button type="button"
-                                data-err="{{ $inspectingRun->error }}"
+                                data-err="{{ trim($inspectingRun->error) }}"
                                 @click="navigator.clipboard.writeText($el.dataset.err); $dispatch('notify', { message: 'متن خطا کپی شد.', type: 'success' })"
                                 class="inline-flex items-center gap-1 text-[11px] font-semibold hover:underline cursor-pointer">
                             <x-ui.icon name="copy" class="size-3.5"/>
                             <span>کپی</span>
                         </button>
                     </div>
-                    <p dir="auto" class="font-mono text-[11px] leading-5 wrap-break-word whitespace-pre-wrap text-start">{{ $inspectingRun->error }}</p>
+                    <p dir="auto" class="font-mono text-[11px] leading-6 wrap-break-word whitespace-pre-line text-start">{{ trim($inspectingRun->error) }}</p>
                 </div>
             @endif
 
@@ -81,8 +81,9 @@
                         <div x-data="{ expanded: {{ $nodeRun->status === 'failed' ? 'true' : 'false' }}, tab: 'output' }"
                              class="overflow-hidden rounded-2xl border border-line-border/80 bg-surface-card transition">
                             <button type="button"
+                                    dir="ltr"
                                     @click="expanded = !expanded"
-                                    class="flex w-full items-center justify-between gap-3 px-3.5 py-2.5 text-start transition hover:bg-surface-raised cursor-pointer">
+                                    class="flex w-full items-center justify-between gap-3 px-3.5 py-2.5 text-left transition hover:bg-surface-raised cursor-pointer">
                                 <div class="flex min-w-0 flex-1 items-center gap-2.5">
                                     <span class="flex size-6 shrink-0 items-center justify-center rounded-lg bg-line-border/50 font-mono text-[10px] font-bold text-content-muted">
                                         {{ $index + 1 }}
@@ -90,11 +91,11 @@
                                     <span class="flex size-8 shrink-0 items-center justify-center rounded-xl border border-line-border/60 bg-surface-base text-content-main">
                                         <x-ui.icon :name="$icon" class="size-4"/>
                                     </span>
-                                    <div class="min-w-0 flex-1">
-                                        <p dir="auto" class="truncate text-start text-xs font-bold text-content-main">
+                                    <div class="min-w-0 flex-1 text-left">
+                                        <p dir="auto" class="truncate text-left text-xs font-bold text-content-main">
                                             {{ $node?->name ?? 'نود حذف‌شده #' . $nodeRun->node_id }}
                                         </p>
-                                        <p class="truncate text-[10px] text-content-muted">
+                                        <p class="mt-0.5 truncate text-left text-[10px] text-content-muted">
                                             {{ $def?->name ?? ($node?->type ?? '—') }}
                                         </p>
                                     </div>
@@ -107,7 +108,7 @@
                                         </span>
                                     @endif
 
-                                    <span @class([
+                                    <span dir="rtl" @class([
                                         'rounded-md px-2 py-0.5 text-[10px] font-bold',
                                         'bg-emerald-500/10 text-emerald-500' => $nodeRun->status === 'success',
                                         'bg-primary/10 text-primary' => $nodeRun->status === 'failed',
@@ -124,9 +125,7 @@
 
                             <div x-show="expanded" x-cloak class="space-y-3 border-t border-line-border/60 bg-surface-base/60 p-3.5">
                                 @if ($nodeRun->error)
-                                    <div class="rounded-xl border border-primary/20 bg-primary/10 p-2.5 font-mono text-[11px] leading-5 text-primary wrap-break-word whitespace-pre-wrap text-start" dir="auto">
-                                        {{ $nodeRun->error }}
-                                    </div>
+                                    <div class="rounded-xl border border-primary/20 bg-primary/10 p-3 font-mono text-[11px] leading-6 text-primary wrap-break-word whitespace-pre-line text-start" dir="auto">{{ trim($nodeRun->error) }}</div>
                                 @endif
 
                                 <div class="flex items-center justify-between gap-2">
