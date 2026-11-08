@@ -361,7 +361,7 @@ export function ConfigFieldInput(props: ConfigFieldInputProps) {
                         )}
                     </span>
 
-                    <div className="flex items-center rounded-lg border border-line-border bg-surface-card p-0.5 text-[10px] font-semibold">
+                    <div className="flex items-center rounded-lg border border-line-border bg-surface-base p-0.5 text-[10px] font-semibold">
                         <button
                             type="button"
                             onClick={() => setIsExpressionMode(false)}

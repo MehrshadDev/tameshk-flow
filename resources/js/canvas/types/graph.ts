@@ -147,5 +147,6 @@ export type NodePreset = {
     key: string;
     name: string;
     description: string;
+    icon?: string;
     config: Record<string, unknown>;
 };

@@ -57,7 +57,7 @@ export function WorkflowNode({ id, data, selected }: NodeProps<FlowNode>) {
     const resolvedOutputs = resolveNodeOutputs(data.nodeType, data.config, definition);
     const outputs = resolvedOutputs.map((o) => o.id);
     const labeled = resolvedOutputs.length > 1;
-    const { iconName, iconStyle } = nodeAppearance(definition);
+    const { iconName, iconStyle } = nodeAppearance(definition, data.config);
 
     const isSupplyNode =
         outputs.length === 1 &&
@@ -258,12 +258,12 @@ export function WorkflowNode({ id, data, selected }: NodeProps<FlowNode>) {
 
                         const badgeStyle =
                             handleId === HandleId.True
-                                ? 'border-emerald-500/30 text-emerald-500'
+                                ? 'border-emerald-500/35 text-emerald-600 dark:text-emerald-400'
                                 : handleId === HandleId.False
-                                    ? 'border-rose-500/30 text-rose-400'
+                                    ? 'border-rose-500/35 text-rose-600 dark:text-rose-400'
                                     : handleId === HandleId.Default
-                                        ? 'border-amber-500/30 text-amber-500'
-                                        : 'border-line-border text-content-muted';
+                                        ? 'border-amber-500/40 text-amber-600 dark:text-amber-400'
+                                        : 'border-line-border text-content-main';
 
                         return (
                             <div

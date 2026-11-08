@@ -54,7 +54,8 @@ const toEntries = (definitions: NodeDefinition[]): Entry[] =>
 function NodeCard({ entry, onSelect }: { entry: Entry; onSelect: (entry: Entry) => void }) {
     const { definition, preset } = entry;
     const isTrigger = definition.category === 'trigger' || definition.type.startsWith('trigger.');
-    const { iconName, iconStyle } = nodeAppearance(definition);
+    const { iconName, iconStyle } = nodeAppearance(definition, preset?.config);
+    const displayIcon = preset?.icon ?? iconName;
 
     return (
         <button
@@ -65,7 +66,7 @@ function NodeCard({ entry, onSelect }: { entry: Entry; onSelect: (entry: Entry) 
             <div
                 className={`flex size-11 shrink-0 items-center justify-center rounded-xl shadow-inner transition-transform duration-150 group-hover:scale-105 ${iconStyle}`}
             >
-                <Icon name={iconName} className="size-6" />
+                <Icon name={displayIcon} className="size-6" />
             </div>
 
             <div className="min-w-0 flex-1">

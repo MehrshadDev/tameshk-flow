@@ -41,15 +41,15 @@
 @variant dark (&:where(.dark, .dark *));
 
 :root {
-    --color-surface-base: #F8FAFC;
+    --color-surface-base: #f1f5f9;
     --color-surface-raised: #ffffff;
     --color-surface-card: #ffffff;
     --color-content-main: #0f172a;
-    --color-content-muted: #64748b;
-    --color-line-border: #d5e0ea;
+    --color-content-muted: #475569;
+    --color-line-border: #cbd5e1;
     --color-menu: #ffffff;
     --color-primary: #E21C48;
-    --color-field: #ffffff;
+    --color-field: #f8fafc;
     color-scheme: light;
 
     --default-font-family: var(--font-sans);
@@ -107,7 +107,7 @@
 }
 
 ::-webkit-scrollbar-thumb {
-    background: #dfa7a7;
+    background: #cbd5e1;
     border-radius: 100vh;
     border: 2px solid #f1f5f9;
 }
@@ -138,7 +138,7 @@
 }
 
 .custom-scrollbar::-webkit-scrollbar-thumb {
-    background: #dfa7a7;
+    background: #cbd5e1;
     border-radius: 100vh;
 }
 
@@ -160,7 +160,7 @@
 
 .scrollbar-thin {
     scrollbar-width: thin;
-    scrollbar-color: #dfa7a7 transparent;
+    scrollbar-color: #cbd5e1 transparent;
 }
 
 .dark .scrollbar-thin {
@@ -177,7 +177,7 @@
 }
 
 .scrollbar-thin::-webkit-scrollbar-thumb {
-    background: #dfa7a7;
+    background: #cbd5e1;
     border-radius: 9999px;
 }
 

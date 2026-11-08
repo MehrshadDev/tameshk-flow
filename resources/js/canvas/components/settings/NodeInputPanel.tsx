@@ -56,12 +56,12 @@ export function NodeInputPanel({
         <section
             ref={panelRef}
             style={{ width: window.innerWidth >= 768 ? width : '100%' }}
-            className={`min-h-0 shrink-0 flex-col bg-surface-card/40 ${
+            className={`min-h-0 shrink-0 flex-col bg-surface-base/60 dark:bg-surface-card/40 ${
                 visibleOnMobile ? 'flex' : 'hidden md:flex'
             }`}
             dir="rtl"
         >
-            <div className="flex items-center justify-between border-b border-line-border px-5 py-3">
+            <div className="flex items-center justify-between border-b border-line-border bg-surface-raised/60 px-5 py-3">
                 <span className="flex items-center gap-2 text-xs font-bold text-content-main">
                     <Icon name="brackets" className="size-4 text-primary" />
                     داده‌های ورودی (Input)
@@ -79,7 +79,7 @@ export function NodeInputPanel({
             >
                 {upstreamDataList.length === 0 ? (
                     <div className="space-y-2 py-16 text-center text-xs text-content-muted">
-                        <Icon name="link-off" className="mx-auto size-7 opacity-30" />
+                        <Icon name="link-off" className="mx-auto size-7 opacity-45" />
                         <p>نود قبلی به این نود متصل نیست.</p>
                     </div>
                 ) : (
@@ -98,7 +98,7 @@ export function NodeInputPanel({
                                     type="button"
                                     dir="ltr"
                                     onClick={() => toggleNodeCard(item.sourceNode.id, idx)}
-                                    className="flex w-full items-center justify-between gap-3 px-3.5 py-2.5 text-left transition hover:bg-surface-card/70"
+                                    className="flex w-full items-center justify-between gap-3 px-3.5 py-2.5 text-left transition hover:bg-surface-base/60 dark:hover:bg-surface-card/70"
                                 >
                                     <div className="flex min-w-0 flex-1 items-center gap-3">
                                         <span
@@ -125,7 +125,7 @@ export function NodeInputPanel({
                                                 dir="rtl"
                                                 className={`rounded-md px-2 py-0.5 text-[10px] font-bold ${
                                                     item.status === 'success'
-                                                        ? 'bg-emerald-500/10 text-emerald-500'
+                                                        ? 'bg-emerald-500/15 text-emerald-600 dark:bg-emerald-500/10 dark:text-emerald-500'
                                                         : 'bg-primary/10 text-primary'
                                                 }`}
                                             >
@@ -142,7 +142,7 @@ export function NodeInputPanel({
                                 </button>
 
                                 {isOpen && (
-                                    <div className="border-t border-line-border/60 bg-surface-card/30 p-3.5">
+                                    <div className="border-t border-line-border/60 bg-surface-card/50 p-3.5">
                                         {item.outputData ? (
                                             <DataTreeViewer data={item.outputData} basePath={basePath} />
                                         ) : (

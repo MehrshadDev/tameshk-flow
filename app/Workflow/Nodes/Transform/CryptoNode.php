@@ -19,7 +19,7 @@ class CryptoNode implements NodeContract
             type: 'transform.crypto',
             name: 'Crypto & Random',
             category: NodeCategory::Transform,
-            description: 'تولید کد تایید تصادفی (OTP)، UUID، توکن امن، هش (SHA256/MD5)، امضای HMAC و تبدیل Base64.',
+            description: 'تولید عدد تصادفی در بازه دلخواه، کد تایید (OTP)، UUID، توکن امن، هش (SHA256/MD5)، امضای HMAC و تبدیل Base64.',
             icon: 'lock',
             inputs: [HandleType::Main->value],
             outputs: [HandleType::Main->value],
@@ -28,8 +28,9 @@ class CryptoNode implements NodeContract
                     'type'     => 'select',
                     'label'    => 'عملیات',
                     'options'  => [
+                        ['value' => 'random_int', 'label' => 'تولید عدد تصادفی در بازه (Random Number in Range)'],
                         ['value' => 'otp', 'label' => 'تولید کد عددی تصادفی (OTP Code)'],
-                        ['value' => 'uuid', 'label' => 'تولید شناسه یکتا (UUID / Token)'],
+                        ['value' => 'uuid', 'label' => 'تولید شناسه یکتا یا رشته تصادفی (UUID / Token)'],
                         ['value' => 'hash', 'label' => 'تولید هش (MD5 / SHA-256 / SHA-512)'],
                         ['value' => 'hmac', 'label' => 'امضای امنیتی با کلید (HMAC)'],
                         ['value' => 'base64_encode', 'label' => 'کدگذاری Base64 (Encode)'],
@@ -38,11 +39,31 @@ class CryptoNode implements NodeContract
                     'default'  => 'otp',
                     'required' => true,
                 ],
+                'min_value' => [
+                    'type'       => 'number',
+                    'label'      => 'حداقل مقدار (Min)',
+                    'default'    => 1,
+                    'min'        => -1000000000,
+                    'max'        => 1000000000,
+                    'integer'    => true,
+                    'required'   => true,
+                    'depends_on' => ['operation' => 'random_int'],
+                ],
+                'max_value' => [
+                    'type'       => 'number',
+                    'label'      => 'حداکثر مقدار (Max)',
+                    'default'    => 100,
+                    'min'        => -1000000000,
+                    'max'        => 1000000000,
+                    'integer'    => true,
+                    'required'   => true,
+                    'depends_on' => ['operation' => 'random_int'],
+                ],
                 'otp_digits' => [
                     'type'       => 'number',
-                    'label'      => 'تعداد ارقام کد (۴ تا ۱۰ رقم)',
+                    'label'      => 'تعداد ارقام کد (۱ تا ۱۰ رقم)',
                     'default'    => 6,
-                    'min'        => 4,
+                    'min'        => 1,
                     'max'        => 10,
                     'integer'    => true,
                     'required'   => true,
@@ -54,11 +75,23 @@ class CryptoNode implements NodeContract
                     'options'    => [
                         ['value' => 'uuid', 'label' => 'UUID v4 استاندارد'],
                         ['value' => 'ulid', 'label' => 'ULID قابل مرتب‌سازی زمانی'],
+                        ['value' => 'hex', 'label' => 'توکن هگزادسیمال (Hex)'],
+                        ['value' => 'alnum', 'label' => 'رشته تصادفی حروف و اعداد (Alphanumeric)'],
                         ['value' => 'hex32', 'label' => 'توکن هگزادسیمال ۳۲ کاراکتری'],
                         ['value' => 'alnum32', 'label' => 'رشته تصادفی ۳۲ کاراکتری'],
                     ],
                     'default'    => 'uuid',
                     'depends_on' => ['operation' => 'uuid'],
+                ],
+                'token_length' => [
+                    'type'       => 'number',
+                    'label'      => 'طول رشته (تعداد کاراکتر)',
+                    'default'    => 16,
+                    'min'        => 1,
+                    'max'        => 256,
+                    'integer'    => true,
+                    'required'   => true,
+                    'depends_on' => ['operation' => 'uuid', 'token_type' => ['hex', 'alnum']],
                 ],
                 'value' => [
                     'type'        => 'textarea',
@@ -86,6 +119,43 @@ class CryptoNode implements NodeContract
                     'depends_on'  => ['operation' => 'hmac'],
                 ],
             ],
+            presets: [
+                [
+                    'key'         => 'random_int',
+                    'name'        => 'Random Number',
+                    'description' => 'تولید عدد صحیح تصادفی در هر بازه دلخواه (مثلاً ۱ تا ۶ یا ۱ تا ۱۰۰).',
+                    'icon'        => 'dice-3',
+                    'config'      => ['operation' => 'random_int', 'min_value' => 1, 'max_value' => 100],
+                ],
+                [
+                    'key'         => 'otp',
+                    'name'        => 'Generate OTP Code',
+                    'description' => 'تولید کد عددی تصادفی با تعداد ارقام مشخص جهت ارسال پیامک یا ایمیل تایید.',
+                    'icon'        => 'dice-3',
+                    'config'      => ['operation' => 'otp', 'otp_digits' => 6],
+                ],
+                [
+                    'key'         => 'uuid',
+                    'name'        => 'UUID & Random Token',
+                    'description' => 'تولید شناسه یکتا (UUID / ULID) یا توکن و رشته تصادفی امن.',
+                    'icon'        => 'lock',
+                    'config'      => ['operation' => 'uuid', 'token_type' => 'uuid'],
+                ],
+                [
+                    'key'         => 'hash_hmac',
+                    'name'        => 'Hash & HMAC',
+                    'description' => 'تولید هش (SHA-256 / MD5) یا امضای دیجیتال با کلید مخفی.',
+                    'icon'        => 'lock',
+                    'config'      => ['operation' => 'hash', 'algorithm' => 'sha256'],
+                ],
+                [
+                    'key'         => 'base64',
+                    'name'        => 'Base64 Encode / Decode',
+                    'description' => 'تبدیل متن به Base64 و رمزگشایی رشته‌های Base64.',
+                    'icon'        => 'lock',
+                    'config'      => ['operation' => 'base64_encode'],
+                ],
+            ],
             color: 'amber',
         );
     }
@@ -95,25 +165,53 @@ class CryptoNode implements NodeContract
         $operation = (string) ($context->config['operation'] ?? 'otp');
 
         return match ($operation) {
+            'random_int'    => $this->handleRandomInt($context),
             'otp'           => $this->handleOtp($context),
             'uuid'          => $this->handleUuid($context),
             'hash'          => $this->handleHash($context),
             'hmac'          => $this->handleHmac($context),
             'base64_encode' => $this->handleBase64Encode($context),
             'base64_decode' => $this->handleBase64Decode($context),
-            default         => $this->handleOtp($context),
         };
+    }
+
+    private function handleRandomInt(NodeContext $context): NodeResult
+    {
+        $rawMin = $context->config['min_value'] ?? 1;
+        $rawMax = $context->config['max_value'] ?? 100;
+
+        if (! is_numeric($rawMin) || ! is_numeric($rawMax)) {
+            throw NodeExecutionException::because('مقادیر حداقل (Min) و حداکثر (Max) باید عدد معتبر باشند.');
+        }
+
+        $min = (int) $rawMin;
+        $max = (int) $rawMax;
+
+        if ($min > $max) {
+            [$min, $max] = [$max, $min];
+        }
+
+        $number = random_int($min, $max);
+
+        return NodeResult::of([
+            'number' => $number,
+            'value'  => $number,
+            'text'   => (string) $number,
+            'min'    => $min,
+            'max'    => $max,
+        ]);
     }
 
     private function handleOtp(NodeContext $context): NodeResult
     {
-        $digits = max(4, min(10, (int) ($context->config['otp_digits'] ?? 6)));
-        $min = (int) pow(10, $digits - 1);
+        $digits = max(1, min(10, (int) ($context->config['otp_digits'] ?? 6)));
+        $min = $digits === 1 ? 0 : (int) pow(10, $digits - 1);
         $max = (int) pow(10, $digits) - 1;
         $code = (string) random_int($min, $max);
 
         return NodeResult::of([
             'code'   => $code,
+            'number' => (int) $code,
             'value'  => $code,
             'text'   => $code,
             'digits' => $digits,
@@ -123,19 +221,23 @@ class CryptoNode implements NodeContract
     private function handleUuid(NodeContext $context): NodeResult
     {
         $type = (string) ($context->config['token_type'] ?? 'uuid');
+        $length = max(1, min(256, (int) ($context->config['token_length'] ?? 16)));
 
         $token = match ($type) {
             'ulid'    => (string) Str::ulid(),
+            'hex'     => substr(bin2hex(random_bytes(max(1, (int) ceil($length / 2)))), 0, $length),
+            'alnum'   => Str::random($length),
             'hex32'   => bin2hex(random_bytes(16)),
             'alnum32' => Str::random(32),
             default   => (string) Str::uuid(),
         };
 
         return NodeResult::of([
-            'value' => $token,
-            'token' => $token,
-            'text'  => $token,
-            'type'  => $type,
+            'value'  => $token,
+            'token'  => $token,
+            'text'   => $token,
+            'type'   => $type,
+            'length' => strlen($token),
         ]);
     }
 

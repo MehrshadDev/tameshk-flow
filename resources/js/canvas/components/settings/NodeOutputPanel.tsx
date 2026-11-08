@@ -36,12 +36,12 @@ export function NodeOutputPanel({
         <section
             ref={panelRef}
             style={{ width: window.innerWidth >= 768 ? width : '100%' }}
-            className={`min-h-0 shrink-0 flex-col bg-surface-card/40 ${
+            className={`min-h-0 shrink-0 flex-col bg-surface-base/60 dark:bg-surface-card/40 ${
                 visibleOnMobile ? 'flex' : 'hidden md:flex'
             }`}
             dir="rtl"
         >
-            <div className="flex items-center justify-between border-b border-line-border px-5 py-3">
+            <div className="flex items-center justify-between border-b border-line-border bg-surface-raised/60 px-5 py-3">
                 <span className="flex items-center gap-2 text-xs font-bold text-content-main">
                     <Icon name="sparkles" className="size-4 text-primary" />
                     نتیجه خروجی (Output)
@@ -72,7 +72,7 @@ export function NodeOutputPanel({
                         <span
                             className={`rounded-md px-2 py-0.5 text-[10px] font-bold ${
                                 currentNodeRun.status === 'success'
-                                    ? 'bg-emerald-500/10 text-emerald-500'
+                                    ? 'bg-emerald-500/15 text-emerald-600 dark:bg-emerald-500/10 dark:text-emerald-500'
                                     : 'bg-primary/10 text-primary'
                             }`}
                         >
@@ -85,7 +85,7 @@ export function NodeOutputPanel({
             <div className="custom-scrollbar flex-1 space-y-4 overflow-y-auto p-4 select-text sm:p-5">
                 {!currentNodeRun ? (
                     <div className="space-y-2 py-16 text-center text-xs text-content-muted">
-                        <Icon name="clock" className="mx-auto size-7 opacity-30" />
+                        <Icon name="clock" className="mx-auto size-7 opacity-45" />
                         <p>
                             {!isManualTrigger
                                 ? 'ورکفلو را از طریق ورودی مربوطه اجرا کنید تا خروجی نمایش داده شود.'
@@ -119,7 +119,7 @@ export function NodeOutputPanel({
                         <div className="space-y-1.5">
                             <pre
                                 dir="ltr"
-                                className="custom-scrollbar max-h-96 overflow-auto rounded-2xl border border-line-border bg-surface-card p-4 font-mono text-[11px] leading-5 text-content-main select-text"
+                                className="custom-scrollbar max-h-96 overflow-auto rounded-2xl border border-line-border bg-surface-card p-4 font-mono text-[11px] leading-5 text-content-main shadow-2xs select-text"
                             >
                                 {JSON.stringify(currentNodeRun.output_data, null, 2) ?? 'null'}
                             </pre>

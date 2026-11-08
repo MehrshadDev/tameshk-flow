@@ -20,6 +20,16 @@ import { useBackdropClose } from '@canvas/lib/useBackdropClose';
 import { useWorkflowStore } from '@canvas/store/useWorkflowStore';
 import type { ConfigField } from '@canvas/types/graph';
 
+const MIN_SIDE_WIDTH = 260;
+const MIN_CENTER_WIDTH = 440;
+
+const readClampedSideWidth = (key: string, fallback: number): number => {
+    const raw = Number(localStorage.getItem(key));
+    if (!Number.isFinite(raw) || raw < MIN_SIDE_WIDTH) return fallback;
+    const maxSafe = Math.max(MIN_SIDE_WIDTH, Math.floor((window.innerWidth - MIN_CENTER_WIDTH) / 2));
+    return Math.min(raw, maxSafe);
+};
+
 export function NodeSettingsPanel() {
     const panel = useWorkflowStore((state) => state.panel);
 
@@ -35,16 +45,22 @@ function NodeStudio({ nodeId }: { nodeId: string }) {
     const [optionsMenuOpen, setOptionsMenuOpen] = useState(false);
     const optionsContainerRef = useRef<HTMLDivElement>(null);
 
+    const bodyContainerRef = useRef<HTMLDivElement | null>(null);
     const leftPanelRef = useRef<HTMLElement | null>(null);
     const rightPanelRef = useRef<HTMLElement | null>(null);
-    const [leftWidth, setLeftWidth] = useState(() => Number(localStorage.getItem('tameshk_studio_left_w')) || 380);
-    const [rightWidth, setRightWidth] = useState(() => Number(localStorage.getItem('tameshk_studio_right_w')) || 380);
+
+    const [leftWidth, setLeftWidth] = useState(() =>
+        readClampedSideWidth('tameshk_studio_left_w', 350),
+    );
+    const [rightWidth, setRightWidth] = useState(() =>
+        readClampedSideWidth('tameshk_studio_right_w', 350),
+    );
     const [activeHandle, setActiveHandle] = useState<'left' | 'right' | null>(null);
 
     const activeSideRef = useRef<'left' | 'right' | null>(null);
     const dragStartX = useRef(0);
     const dragStartWidth = useRef(0);
-    const latestWidthRef = useRef(380);
+    const latestWidthRef = useRef(350);
     const rafRef = useRef<number | null>(null);
 
     const isFullWorkflowRunning = useWorkflowStore((state) => state.isRunning);
@@ -93,9 +109,22 @@ function NodeStudio({ nodeId }: { nodeId: string }) {
 
             const isLeft = activeSideRef.current === 'left';
             const deltaX = isLeft ? e.clientX - dragStartX.current : dragStartX.current - e.clientX;
-            const minW = isLeft ? 260 : 260;
-            const maxW = 680;
-            const clamped = Math.max(minW, Math.min(maxW, dragStartWidth.current + deltaX));
+
+            const totalWidth =
+                bodyContainerRef.current?.getBoundingClientRect().width ?? window.innerWidth;
+            const oppositeWidth = isLeft
+                ? (rightPanelRef.current?.getBoundingClientRect().width ?? rightWidth)
+                : (leftPanelRef.current?.getBoundingClientRect().width ?? 0);
+
+            const dynamicMax = Math.max(
+                MIN_SIDE_WIDTH,
+                Math.min(640, totalWidth - oppositeWidth - MIN_CENTER_WIDTH),
+            );
+
+            const clamped = Math.max(
+                MIN_SIDE_WIDTH,
+                Math.min(dynamicMax, dragStartWidth.current + deltaX),
+            );
             latestWidthRef.current = clamped;
 
             if (rafRef.current !== null) {
@@ -143,7 +172,7 @@ function NodeStudio({ nodeId }: { nodeId: string }) {
             window.removeEventListener('pointerup', handlePointerUp);
             window.removeEventListener('pointercancel', handlePointerUp);
         };
-    }, [activeHandle]);
+    }, [activeHandle, rightWidth]);
 
     const startLeftResize = (e: React.PointerEvent<HTMLDivElement>) => {
         if (e.button !== 0) return;
@@ -250,7 +279,7 @@ function NodeStudio({ nodeId }: { nodeId: string }) {
         return null;
     }
 
-    const { iconName, iconStyle } = nodeAppearance(definition);
+    const { iconName, iconStyle } = nodeAppearance(definition, node.data.config);
 
     const isTrigger = definition?.category === 'trigger';
     const canTestNode =
@@ -451,7 +480,11 @@ function NodeStudio({ nodeId }: { nodeId: string }) {
                     </button>
                 </div>
 
-                <div className="flex min-h-0 w-full flex-1 flex-col md:flex-row" dir="ltr">
+                <div
+                    ref={bodyContainerRef}
+                    className="flex min-h-0 w-full flex-1 flex-col md:flex-row"
+                    dir="ltr"
+                >
                     {!isTrigger && (
                         <>
                             <NodeInputPanel
@@ -465,9 +498,9 @@ function NodeStudio({ nodeId }: { nodeId: string }) {
                             <div
                                 onPointerDown={startLeftResize}
                                 onDoubleClick={() => {
-                                    setLeftWidth(380);
-                                    if (leftPanelRef.current) leftPanelRef.current.style.width = '380px';
-                                    localStorage.setItem('tameshk_studio_left_w', '380');
+                                    setLeftWidth(350);
+                                    if (leftPanelRef.current) leftPanelRef.current.style.width = '350px';
+                                    localStorage.setItem('tameshk_studio_left_w', '350');
                                 }}
                                 className="group/handle relative z-20 hidden w-px shrink-0 cursor-col-resize touch-none select-none bg-line-border md:block"
                             >
@@ -484,7 +517,7 @@ function NodeStudio({ nodeId }: { nodeId: string }) {
                     )}
 
                     <section
-                        className={`min-h-0 min-w-0 flex-1 flex-col bg-surface-raised ${
+                        className={`min-h-0 min-w-0 flex-1 flex-col bg-surface-raised md:min-w-[420px] ${
                             activeTab === 'parameters' ? 'flex' : 'hidden md:flex'
                         }`}
                         dir="rtl"
@@ -632,9 +665,9 @@ function NodeStudio({ nodeId }: { nodeId: string }) {
                     <div
                         onPointerDown={startRightResize}
                         onDoubleClick={() => {
-                            setRightWidth(380);
-                            if (rightPanelRef.current) rightPanelRef.current.style.width = '380px';
-                            localStorage.setItem('tameshk_studio_right_w', '380');
+                            setRightWidth(350);
+                            if (rightPanelRef.current) rightPanelRef.current.style.width = '350px';
+                            localStorage.setItem('tameshk_studio_right_w', '350');
                         }}
                         className="group/handle relative z-20 hidden w-px shrink-0 cursor-col-resize touch-none select-none bg-line-border md:block"
                     >

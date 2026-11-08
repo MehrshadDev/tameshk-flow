@@ -504,8 +504,8 @@ function CanvasInner() {
                 <Background
                     variant={BackgroundVariant.Dots}
                     gap={22}
-                    size={1.2}
-                    color={colorMode === 'dark' ? '#2e2e2e' : '#cbd5e1'}
+                    size={1.35}
+                    color={colorMode === 'dark' ? '#2e2e2e' : '#94a3b8'}
                 />
 
                 <CanvasControls/>
