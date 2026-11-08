@@ -58,7 +58,7 @@ class RunScheduledWorkflowsCommand extends Command
                 continue;
             }
 
-            RunWorkflowJob::dispatch(
+            RunWorkflowJob::dispatchSync(
                 $workflow->id,
                 ScheduleTriggerNode::buildPayload($config),
             );

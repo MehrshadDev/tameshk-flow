@@ -24,17 +24,14 @@ class RunWorkflowJob implements ShouldQueue
 
     public static function dispatchSmart(int $workflowId, array $triggerData): void
     {
-        if (config('queue.default') === 'sync') {
-            self::dispatchAfterResponse($workflowId, $triggerData);
-
-            return;
-        }
-
-        self::dispatch($workflowId, $triggerData);
+        self::dispatchAfterResponse($workflowId, $triggerData);
     }
 
     public function handle(WorkflowRunner $runner): void
     {
+        ignore_user_abort(true);
+        @set_time_limit(300);
+
         $workflow = Workflow::query()->find($this->workflowId);
 
         if (! $workflow || ! $workflow->isPublished() || ! $workflow->is_active) {
@@ -43,7 +40,8 @@ class RunWorkflowJob implements ShouldQueue
 
         try {
             $runner->run($workflow, $this->triggerData);
-        } catch (Throwable) {
+        } catch (Throwable $e) {
+            report($e);
         }
     }
 }
