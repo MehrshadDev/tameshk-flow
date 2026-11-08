@@ -49,13 +49,13 @@ new class extends Component {
         $this->authorize('reply', $ticket);
 
         $userId = auth()->id();
-        $lockKey = "ticket-reply-lock:{$userId}:{$ticket->id}";
+        $lockKey = "ticket-reply-lock:$userId:$ticket->id";
 
         if (!Cache::add($lockKey, true, 3)) {
             return;
         }
 
-        $rateKey = "ticket-reply:{$userId}";
+        $rateKey = "ticket-reply:$userId";
 
         if (!$this->isAdmin && RateLimiter::tooManyAttempts($rateKey, 8)) {
             Cache::forget($lockKey);
@@ -173,17 +173,17 @@ new class extends Component {
         }
 
         $userId = auth()->id();
-        $lockKey = "ticket-status-lock:{$userId}:{$ticketId}";
+        $lockKey = "ticket-status-lock:$userId:$ticketId";
 
         if (! Cache::add($lockKey, true, 1)) {
             return false;
         }
 
-        $rateKey = "ticket-status-toggle:{$userId}:{$ticketId}";
+        $rateKey = "ticket-status-toggle:$userId:$ticketId";
 
         if (RateLimiter::tooManyAttempts($rateKey, 6)) {
             $seconds = max(1, RateLimiter::availableIn($rateKey));
-            $this->notify("تغییر وضعیت تیکت بیش از حد تکرار شد. لطفاً {$seconds} ثانیه دیگر تلاش کنید.", 'error');
+            $this->notify("تغییر وضعیت تیکت بیش از حد تکرار شد. لطفاً $seconds ثانیه دیگر تلاش کنید.", 'error');
 
             return false;
         }

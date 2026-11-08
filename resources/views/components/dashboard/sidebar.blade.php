@@ -1,5 +1,5 @@
 @php
-    use App\Models\WorkflowRun;
+    use App\Models\Ticket;use App\Models\WorkflowRun;
     use App\Subscriptions\SubscriptionManager;
 
     $user = auth()->user();
@@ -24,7 +24,7 @@
         : 0;
     $ticketsCount = $user
         ? ($user->isAdmin()
-            ? \App\Models\Ticket::query()->whereIn('status', ['open', 'customer_reply'])->count()
+            ? Ticket::query()->whereIn('status', ['open', 'customer_reply'])->count()
             : $user->tickets()->count())
         : 0;
 @endphp
@@ -48,8 +48,9 @@
          class="group/resize absolute inset-y-0 -left-1.5 z-50 hidden w-3 cursor-col-resize touch-none lg:block">
         <span :class="resizing ? 'bg-primary' : 'bg-transparent group-hover/resize:bg-primary/50'"
               class="absolute inset-y-0 left-1/2 w-0.5 -translate-x-1/2 transition-colors duration-150"></span>
-        <span :class="resizing ? 'bg-primary opacity-100' : 'bg-content-muted/40 opacity-0 group-hover/resize:opacity-100'"
-              class="absolute left-1/2 top-1/2 h-9 w-1 -translate-x-1/2 -translate-y-1/2 rounded-full transition-all duration-150"></span>
+        <span
+            :class="resizing ? 'bg-primary opacity-100' : 'bg-content-muted/40 opacity-0 group-hover/resize:opacity-100'"
+            class="absolute left-1/2 top-1/2 h-9 w-1 -translate-x-1/2 -translate-y-1/2 rounded-full transition-all duration-150"></span>
     </div>
 
     <div class="flex h-16 shrink-0 items-center justify-between border-b border-line-border/70 px-4"
@@ -57,11 +58,13 @@
         <div class="flex items-center gap-2" :class="collapsed && 'lg:hidden'">
             <x-layouts.logo :href="route('app.workflows.index')" logoClasses="h-10 w-auto"/>
             @if ($isBusiness)
-                <span class="rounded-lg border border-amber-500/30 bg-amber-500/15 px-2 py-0.5 font-mono text-[10px] font-extrabold text-amber-500">
+                <span
+                    class="rounded-lg border border-amber-500/30 bg-amber-500/15 px-2 py-0.5 font-mono text-[10px] font-extrabold text-amber-500">
                     BUSINESS
                 </span>
             @elseif ($isPro)
-                <span class="rounded-lg border border-primary/30 bg-primary/15 px-2 py-0.5 font-mono text-[10px] font-extrabold text-primary">
+                <span
+                    class="rounded-lg border border-primary/30 bg-primary/15 px-2 py-0.5 font-mono text-[10px] font-extrabold text-primary">
                     PRO
                 </span>
             @endif
@@ -84,11 +87,7 @@
         </button>
     </div>
 
-    <nav class="custom-scrollbar flex-1 space-y-1.5 overflow-y-auto overflow-x-hidden p-3">
-        <div class="px-2 pb-1 pt-1.5" :class="collapsed && 'lg:hidden'">
-            <span class="text-[11px] font-bold tracking-wide text-content-muted/70">اتوماسیون</span>
-        </div>
-
+    <nav class="custom-scrollbar flex-1 space-y-2 overflow-y-auto overflow-x-hidden p-3">
         <x-dashboard.sidebar-link
             icon="hierarchy-2"
             :href="route('app.workflows.index')"
@@ -104,12 +103,6 @@
             :count="$totalRuns">
             تاریخچه اجراها
         </x-dashboard.sidebar-link>
-
-        <div class="my-3 border-t border-line-border/60"></div>
-
-        <div class="px-2 pb-1" :class="collapsed && 'lg:hidden'">
-            <span class="text-[11px] font-bold tracking-wide text-content-muted/70">زیرساخت و اتصالات</span>
-        </div>
 
         <x-dashboard.sidebar-link
             icon="key"
@@ -143,6 +136,16 @@
             :active="request()->routeIs('docs.*')">
             مستندات و آموزش
         </x-dashboard.sidebar-link>
+
+        @if ($user?->canAccessTerminal())
+            <x-dashboard.sidebar-link
+                icon="terminal-2"
+                :href="route('terminal.index')"
+                :active="request()->routeIs('terminal.*')"
+                badge="CLI">
+                ترمینال سرور
+            </x-dashboard.sidebar-link>
+        @endif
     </nav>
 
     <div class="shrink-0 space-y-3 border-t border-line-border/70 p-3">
@@ -159,6 +162,6 @@
             :usage-percent="$usagePercent"
         />
 
-        <x-dashboard.sidebar-user :user="$user" :is-business="$isBusiness" />
+        <x-dashboard.sidebar-user :user="$user" :is-business="$isBusiness"/>
     </div>
 </aside>

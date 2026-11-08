@@ -39,6 +39,17 @@ class User extends Authenticatable
         return in_array(strtolower(trim((string) $this->email)), $admins, true);
     }
 
+    public function canAccessTerminal(): bool
+    {
+        $allowed = config('terminal.allowed_emails', []);
+
+        if ($allowed === []) {
+            return false;
+        }
+
+        return in_array(strtolower(trim((string) $this->email)), $allowed, true);
+    }
+
     public function workflows(): HasMany
     {
         return $this->hasMany(Workflow::class);

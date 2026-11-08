@@ -3,19 +3,21 @@
 use App\Http\Controllers\Auth\GoogleAuthController;
 use App\Http\Controllers\BillingController;
 use App\Http\Controllers\CredentialController;
+use App\Http\Controllers\DocsController;
 use App\Http\Controllers\GoogleSheetsOptionsController;
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\OAuth\GoogleOAuthController;
+use App\Http\Controllers\TerminalController;
+use App\Http\Controllers\TicketController;
 use App\Http\Controllers\WorkflowController;
 use App\Http\Controllers\WorkflowExecutionController;
 use App\Http\Controllers\WorkflowGraphController;
 use App\Http\Controllers\WorkflowMemoryController;
 use App\Http\Controllers\WorkflowPublishController;
+use App\Http\Middleware\EnsureTerminalAccess;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Validation\ValidationException;
-use App\Http\Controllers\DocsController;
-use App\Http\Controllers\TicketController;
 
 Route::get('/', [HomeController::class, 'index'])
     ->name('home');
@@ -29,6 +31,13 @@ Route::get('/billing/callback', [BillingController::class, 'callback'])
 
 Route::get('/docs', [DocsController::class, 'show'])->name('docs.index');
 Route::get('/docs/{slug}', [DocsController::class, 'show'])->name('docs.show');
+
+Route::middleware([EnsureTerminalAccess::class])->group(function () {
+    Route::get('/terminal', [TerminalController::class, 'index'])
+        ->name('terminal.index');
+    Route::post('/terminal/execute', [TerminalController::class, 'execute'])
+        ->name('terminal.execute');
+});
 
 Route::middleware('guest')->group(function () {
     Route::view('/login', 'pages.auth.login')->name('login');
