@@ -1,0 +1,329 @@
+name: Deploy Tameshk Flow to cPanel
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+jobs:
+  deploy_to_cpanel:
+    runs-on: ubuntu-latest
+
+    env:
+      PRIMARY_DOMAIN: ${{ secrets.PRIMARY_DOMAIN }}
+      TEST_DOMAIN: ${{ secrets.TEST_DOMAIN }}
+      PRIMARY_FTP_PATH: ${{ secrets.PRIMARY_FTP_PATH }}
+      TEST_FTP_PATH: ${{ secrets.TEST_FTP_PATH }}
+      PRIMARY_PUBLIC_DIR: ${{ secrets.PRIMARY_PUBLIC_DIR }}
+      TEST_PUBLIC_DIR: ${{ secrets.TEST_PUBLIC_DIR }}
+      FTP_USERNAME: ${{ secrets.FTP_USERNAME }}
+      FTP_PASSWORD: ${{ secrets.FTP_PASSWORD }}
+      FTP_SERVER: ${{ secrets.FTP_SERVER }}
+      FTP_PORT: ${{ secrets.FTP_PORT || '21' }}
+      SERVER_IP: ${{ secrets.SERVER_IP }}
+      CI_COMMIT_BRANCH: ${{ github.ref_name }}
+      CI_COMMIT_SHA: ${{ github.sha }}
+      CI_JOB_ID: ${{ github.run_id }}
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup PHP 8.3
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.3'
+          extensions: zip, pdo, mbstring, openssl, bcmath, ctype, fileinfo, json, tokenizer, xml
+          tools: composer
+        env:
+          COMPOSER_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Setup Node.js 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Install System Dependencies & PNPM
+        run: |
+          sudo apt-get update -yq
+          sudo apt-get install -yq lftp zip
+          corepack enable
+          corepack prepare pnpm@latest --activate
+
+      - name: Install Node Dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build Frontend Assets (Vite + React + Tailwind)
+        run: pnpm run build
+
+      - name: Install Composer Dependencies
+        env:
+          COMPOSER_AUTH: '{"github-oauth": {"github.com": "${{ secrets.GITHUB_TOKEN }}"}}'
+        run: |
+          composer install \
+            --no-dev \
+            --prefer-dist \
+            --optimize-autoloader \
+            --no-ansi \
+            --no-interaction \
+            --no-progress \
+            --no-scripts \
+            --ignore-platform-reqs \
+            --no-cache
+
+      - name: Configure Deployment Environment
+        run: |
+          PRIMARY_HOST=$(echo "$PRIMARY_DOMAIN" | sed -e 's~https://~~' -e 's~http://~~')
+          TEST_HOST=$(echo "$TEST_DOMAIN" | sed -e 's~https://~~' -e 's~http://~~')
+
+          if [ "$CI_COMMIT_BRANCH" != "main" ]; then
+            if [[ "$TEST_HOST" != *"$PRIMARY_HOST" ]]; then
+              echo "❌ Validation Error: Test domain is invalid."
+              exit 1
+            fi
+          fi
+
+          if [ "$CI_COMMIT_BRANCH" = "main" ]; then
+            TARGET_URL="$PRIMARY_DOMAIN"
+            FTP_PATH="$PRIMARY_FTP_PATH"
+            PUBLIC_DIR="$PRIMARY_PUBLIC_DIR"
+          else
+            TARGET_URL="$TEST_DOMAIN"
+            FTP_PATH="$TEST_FTP_PATH"
+            PUBLIC_DIR="$TEST_PUBLIC_DIR"
+          fi
+
+          HASH=$(echo -n "${CI_COMMIT_SHA}${CI_JOB_ID}$(date +%s%N)" | sha256sum | cut -c1-16)
+          EXTRACT_FILE="extract_${HASH}.php"
+
+          {
+            echo "TARGET_URL=${TARGET_URL}"
+            echo "FTP_PATH=${FTP_PATH}"
+            echo "PUBLIC_DIR=${PUBLIC_DIR}"
+            echo "EXTRACT_FILE=${EXTRACT_FILE}"
+          } >> "$GITHUB_ENV"
+
+      - name: Build Deployment Archive
+        run: |
+          sed -i "s|usePublicPath(base_path('public'))|usePublicPath(base_path('${PUBLIC_DIR}'))|g" bootstrap/app.php
+          rm -f public/storage
+
+          cat << 'EOF' > "public/${EXTRACT_FILE}"
+          <?php
+          @set_time_limit(0);
+          @ini_set('memory_limit', '512M');
+
+          $publicDir = __DIR__;
+          $baseDir = __DIR__ . '/../';
+          $logFile = $baseDir . 'deploy_log.txt';
+          $archive = $baseDir . 'project.zip';
+
+          $preservedItems = [
+              'sitemap.xml',
+              'storage',
+              '.well-known',
+              'cgi-bin',
+          ];
+
+          function logStep($message) {
+              global $logFile;
+              @file_put_contents($logFile, date('Y-m-d H:i:s') . ' - ' . $message . PHP_EOL, FILE_APPEND);
+          }
+
+          function removePath($path) {
+              if (is_link($path)) {
+                  @unlink($path);
+                  return;
+              }
+              if (is_dir($path)) {
+                  cleanFolder($path);
+                  return;
+              }
+              @unlink($path);
+          }
+
+          function cleanFolder($dir, $keepDir = false) {
+              if (is_link($dir)) {
+                  @unlink($dir);
+                  return;
+              }
+              if (!is_dir($dir)) return;
+              $files = array_diff(scandir($dir), ['.', '..']);
+              foreach ($files as $file) {
+                  removePath("$dir/$file");
+              }
+              if (!$keepDir) @rmdir($dir);
+          }
+
+          function ensureDir($dir) {
+              if (!is_dir($dir)) {
+                  @mkdir($dir, 0775, true);
+              }
+              @chmod($dir, 0775);
+          }
+
+          function moveContents($from, $to, $preservedItems = []) {
+              if (!is_dir($from)) return;
+              if (!is_dir($to)) @mkdir($to, 0755, true);
+              $files = array_diff(scandir($from), ['.', '..']);
+              foreach ($files as $file) {
+                  if (in_array($file, $preservedItems) && file_exists("$to/$file")) {
+                      continue;
+                  }
+                  if (is_dir("$to/$file") && !is_link("$to/$file")) {
+                      cleanFolder("$to/$file");
+                  }
+                  @rename("$from/$file", "$to/$file");
+              }
+          }
+
+          function extractArchive($archive, $baseDir) {
+              if (!class_exists('ZipArchive')) {
+                  logStep('ZipArchive extension not available');
+                  return false;
+              }
+              $zip = new ZipArchive;
+              if ($zip->open($archive) !== true) {
+                  logStep('ZipArchive open() failed');
+                  return false;
+              }
+              $zip->extractTo($baseDir);
+              $zip->close();
+              return true;
+          }
+
+          function ensureSymlink($target, $link) {
+              if (is_link($link) || file_exists($link)) {
+                  @unlink($link);
+              }
+              @symlink($target, $link);
+          }
+
+          register_shutdown_function(function () {
+              $error = error_get_last();
+              if ($error && in_array($error['type'], [E_ERROR, E_PARSE, E_CORE_ERROR, E_COMPILE_ERROR])) {
+                  logStep('FATAL: ' . $error['message'] . ' in ' . $error['file'] . ':' . $error['line']);
+                  echo 'ERROR';
+              }
+          });
+
+          try {
+              if (function_exists('opcache_reset')) {
+                  @opcache_reset();
+              }
+
+              $foldersToClean = ['app', 'config', 'routes', 'resources', 'database/migrations', 'bootstrap/cache'];
+              foreach ($foldersToClean as $folder) {
+                  cleanFolder($baseDir . $folder);
+              }
+
+              cleanFolder($baseDir . 'storage/framework/cache/data', true);
+              cleanFolder($baseDir . 'storage/framework/views', true);
+
+              $requiredDirs = [
+                  'bootstrap/cache',
+                  'storage/framework/cache/data',
+                  'storage/framework/sessions',
+                  'storage/framework/views',
+                  'storage/framework/testing',
+                  'storage/logs',
+                  'storage/app/public',
+              ];
+              foreach ($requiredDirs as $dir) {
+                  ensureDir($baseDir . $dir);
+              }
+
+              $existing = array_diff(scandir($publicDir), ['.', '..', basename(__FILE__)]);
+              foreach ($existing as $item) {
+                  if (in_array($item, $preservedItems)) {
+                      continue;
+                  }
+                  removePath("$publicDir/$item");
+              }
+
+              if (!file_exists($archive)) {
+                  logStep('project.zip not found');
+                  echo 'ERROR';
+                  exit;
+              }
+
+              if (!extractArchive($archive, $baseDir)) {
+                  logStep('Archive extraction failed');
+                  echo 'ERROR';
+                  exit;
+              }
+
+              moveContents($baseDir . 'public', $publicDir, $preservedItems);
+              cleanFolder($baseDir . 'public');
+
+              foreach ($requiredDirs as $dir) {
+                  ensureDir($baseDir . $dir);
+              }
+
+              ensureSymlink($baseDir . 'storage/app/public', $publicDir . '/storage');
+
+              echo 'SUCCESS';
+
+              @unlink($archive);
+              @unlink(__FILE__);
+          } catch (\Throwable $e) {
+              logStep('EXCEPTION: ' . $e->getMessage());
+              echo 'ERROR';
+          }
+          EOF
+
+          zip -q -r project.zip . -x \
+            ".git/*" \
+            ".github/*" \
+            "node_modules/*" \
+            ".env*" \
+            "tests/*" \
+            "docs/*" \
+            "compose.yaml" \
+            "git-diff.txt" \
+            "nohup.out" \
+            "database/database.sqlite" \
+            "storage/framework/cache/data/*" \
+            "storage/framework/sessions/*" \
+            "storage/framework/views/*" \
+            "storage/logs/*" \
+            "project.zip" \
+            "public/extract_*.php" \
+            "public/storage"
+
+      - name: Upload Package via FTP
+        run: |
+          lftp -u "${FTP_USERNAME},${FTP_PASSWORD}" -p "${FTP_PORT}" "ftp://${FTP_SERVER}" <<EOF
+            set cmd:fail-exit yes
+            set net:timeout 15
+            set net:max-retries 3
+            set net:reconnect-interval-base 5
+            set ftp:passive-mode yes
+            set ftp:ssl-allow yes
+            set ssl:verify-certificate no
+            cd "${FTP_PATH}"
+            put project.zip
+            cd "${PUBLIC_DIR}"
+            put "public/${EXTRACT_FILE}"
+            bye
+          EOF
+
+      - name: Trigger Remote Extraction
+        run: |
+          TARGET_HOST=$(echo "$TARGET_URL" | sed -e 's~https://~~' -e 's~http://~~' | cut -d'/' -f1)
+
+          RESPONSE=$(curl -k -s -A "GitHubActions-Deployer" \
+            --max-time 180 \
+            --resolve "${TARGET_HOST}:443:${SERVER_IP}" \
+            --resolve "${TARGET_HOST}:80:${SERVER_IP}" \
+            "${TARGET_URL}/${EXTRACT_FILE}")
+
+          echo "Server Response: $RESPONSE"
+
+          if [ "$RESPONSE" != "SUCCESS" ]; then
+            echo "❌ Deployment extraction failed!"
+            exit 1
+          fi
+          echo "✅ Deployment completed successfully!"
+
