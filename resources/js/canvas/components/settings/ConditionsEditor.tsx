@@ -1,9 +1,15 @@
-import { Icon } from '@canvas/components/ui/Icon';
-import { Select } from '@canvas/components/ui/Select';
 import { ConfigFieldInput } from '@canvas/components/settings/ConfigFieldInput';
+import {
+    ConditionOperatorSelect,
+    inferDataTypeFromOperator,
+    isUnaryOperator,
+    type ConditionDataType,
+} from '@canvas/components/settings/ConditionOperatorSelect';
+import { Icon } from '@canvas/components/ui/Icon';
 
 export type ConditionRule = {
     id: string;
+    data_type: ConditionDataType;
     field: string;
     operator: string;
     value: string;
@@ -15,33 +21,29 @@ type ConditionsEditorProps = {
     incomingData?: unknown;
 };
 
-const operators = [
-    { value: 'eq', label: 'برابر است با (==)' },
-    { value: 'neq', label: 'برابر نیست با (!=)' },
-    { value: 'contains', label: 'شامل متن است (Contains)' },
-    { value: 'not_contains', label: 'شامل متن نیست (Not Contains)' },
-    { value: 'starts_with', label: 'شروع می‌شود با (Starts With)' },
-    { value: 'ends_with', label: 'پایان می‌یابد با (Ends With)' },
-    { value: 'gt', label: 'بزرگ‌تر از (>)' },
-    { value: 'gte', label: 'بزرگ‌تر یا مساوی (>=)' },
-    { value: 'lt', label: 'کوچک‌تر از (<)' },
-    { value: 'lte', label: 'کوچک‌تر یا مساوی (<=)' },
-    { value: 'empty', label: 'خالی است (Is Empty)' },
-    { value: 'not_empty', label: 'خالی نیست (Is Not Empty)' },
-    { value: 'regex', label: 'تطابق با الگوی Regex' },
-];
-
 const toRules = (val: unknown): ConditionRule[] => {
     if (!Array.isArray(val) || val.length === 0) {
-        return [{ id: crypto.randomUUID(), field: '', operator: 'eq', value: '' }];
+        return [{ id: crypto.randomUUID(), data_type: 'string', field: '', operator: 'eq', value: '' }];
     }
 
-    return val.map((item) => ({
-        id: item.id ?? crypto.randomUUID(),
-        field: String(item.field ?? ''),
-        operator: String(item.operator ?? 'eq'),
-        value: String(item.value ?? ''),
-    }));
+    return val.map((item) => {
+        const op = String(item?.operator ?? 'eq');
+        return {
+            id: item?.id ?? crypto.randomUUID(),
+            data_type: inferDataTypeFromOperator(op, item?.data_type),
+            field: String(item?.field ?? ''),
+            operator: op,
+            value: String(item?.value ?? ''),
+        };
+    });
+};
+
+const getSecondFieldPlaceholder = (dataType: ConditionDataType, operator: string): string => {
+    if (operator.startsWith('array_length_')) return 'مثلاً: 3';
+    if (dataType === 'number') return 'مثلاً: 100';
+    if (dataType === 'datetime') return 'مثلاً: 2026-11-08 14:30:00';
+    if (dataType === 'boolean') return 'true یا false';
+    return 'مقدار مورد نظر';
 };
 
 export function ConditionsEditor({ value, onChange, incomingData }: ConditionsEditorProps) {
@@ -53,12 +55,15 @@ export function ConditionsEditor({ value, onChange, incomingData }: ConditionsEd
     };
 
     const addRule = () => {
-        onChange([...rules, { id: crypto.randomUUID(), field: '', operator: 'eq', value: '' }]);
+        onChange([
+            ...rules,
+            { id: crypto.randomUUID(), data_type: 'string', field: '', operator: 'eq', value: '' },
+        ]);
     };
 
     const removeRule = (id: string) => {
         if (rules.length <= 1) {
-            onChange([{ id: crypto.randomUUID(), field: '', operator: 'eq', value: '' }]);
+            onChange([{ id: crypto.randomUUID(), data_type: 'string', field: '', operator: 'eq', value: '' }]);
             return;
         }
         onChange(rules.filter((r) => r.id !== id));
@@ -66,68 +71,89 @@ export function ConditionsEditor({ value, onChange, incomingData }: ConditionsEd
 
     return (
         <div className="space-y-3">
-            {rules.map((rule, idx) => (
-                <div
-                    key={rule.id}
-                    className="group relative flex flex-col gap-3 rounded-2xl border border-line-border/90 bg-surface-card p-4 shadow-sm transition-all duration-200 hover:border-line-border hover:shadow-md"
-                >
-                    <div className="flex items-center justify-between border-b border-line-border/50 pb-2.5">
-                        <div className="flex items-center gap-2">
-                            <span className="flex size-5 items-center justify-center rounded-full bg-primary/10 text-[11px] font-bold text-primary">
-                                {idx + 1}
-                            </span>
-                            <span className="text-xs font-bold text-content-main">
-                                شرط شماره {idx + 1}
-                            </span>
+            {rules.map((rule, idx) => {
+                const hideSecondValue = isUnaryOperator(rule.operator);
+
+                return (
+                    <div
+                        key={rule.id}
+                        className="group relative flex flex-col gap-3 rounded-2xl border border-line-border/90 bg-surface-card p-4 shadow-sm transition-all duration-200 hover:border-line-border hover:shadow-md"
+                    >
+                        <div className="flex items-center justify-between border-b border-line-border/50 pb-2.5">
+                            <div className="flex items-center gap-2">
+                                <span className="flex size-5 items-center justify-center rounded-full bg-primary/10 text-[11px] font-bold text-primary">
+                                    {idx + 1}
+                                </span>
+                                <span className="text-xs font-bold text-content-main">
+                                    شرط شماره {idx + 1}
+                                </span>
+                            </div>
+
+                            <button
+                                type="button"
+                                onClick={() => removeRule(rule.id)}
+                                aria-label="حذف شرط"
+                                className="flex size-7 items-center justify-center rounded-lg text-content-muted transition hover:bg-primary/10 hover:text-primary"
+                            >
+                                <Icon name="trash" className="size-3.5" />
+                            </button>
                         </div>
 
-                        <button
-                            type="button"
-                            onClick={() => removeRule(rule.id)}
-                            aria-label="حذف شرط"
-                            className="flex size-7 items-center justify-center rounded-lg text-content-muted transition hover:bg-primary/10 hover:text-primary"
-                        >
-                            <Icon name="trash" className="size-3.5" />
-                        </button>
-                    </div>
-
-                    <div className="space-y-3">
-                        <div className="space-y-1">
-                            <label className="text-[11px] font-semibold text-content-muted">فیلد ورودی</label>
-                            <ConfigFieldInput
-                                id={`rule-field-${rule.id}`}
-                                field={{ type: 'text', placeholder: 'مثلاً: {{ input.status }}' }}
-                                value={rule.field}
-                                incomingData={incomingData}
-                                onChange={(val) => update(rule.id, { field: String(val ?? '') })}
-                            />
-                        </div>
-
-                        <div className="space-y-1">
-                            <label className="text-[11px] font-semibold text-content-muted">عملگر مقایسه</label>
-                            <Select
-                                id={`rule-op-${rule.id}`}
-                                options={operators}
-                                value={rule.operator}
-                                onChange={(e) => update(rule.id, { operator: e.target.value })}
-                            />
-                        </div>
-
-                        {rule.operator !== 'empty' && rule.operator !== 'not_empty' && (
+                        <div className="space-y-3">
                             <div className="space-y-1">
-                                <label className="text-[11px] font-semibold text-content-muted">مقدار مقایسه</label>
+                                <label className="text-[11px] font-semibold text-content-muted">
+                                    مقدار اول (Value 1)
+                                </label>
                                 <ConfigFieldInput
-                                    id={`rule-val-${rule.id}`}
-                                    field={{ type: 'text', placeholder: 'مقدار مورد نظر' }}
-                                    value={rule.value}
+                                    id={`rule-field-${rule.id}`}
+                                    field={{ type: 'text', placeholder: 'مثلاً: {{ input.status }}' }}
+                                    value={rule.field}
                                     incomingData={incomingData}
-                                    onChange={(val) => update(rule.id, { value: String(val ?? '') })}
+                                    onChange={(val) => update(rule.id, { field: String(val ?? '') })}
                                 />
                             </div>
-                        )}
+
+                            <div className="space-y-1">
+                                <label className="text-[11px] font-semibold text-content-muted">
+                                    نوع داده و عملگر مقایسه
+                                </label>
+                                <ConditionOperatorSelect
+                                    dataType={rule.data_type}
+                                    operator={rule.operator}
+                                    onChange={({ dataType, operator }) =>
+                                        update(rule.id, {
+                                            data_type: dataType,
+                                            operator,
+                                            value: isUnaryOperator(operator) ? '' : rule.value,
+                                        })
+                                    }
+                                />
+                            </div>
+
+                            {!hideSecondValue && (
+                                <div className="space-y-1">
+                                    <label className="text-[11px] font-semibold text-content-muted">
+                                        مقدار دوم (Value 2)
+                                    </label>
+                                    <ConfigFieldInput
+                                        id={`rule-val-${rule.id}`}
+                                        field={{
+                                            type: 'text',
+                                            placeholder: getSecondFieldPlaceholder(
+                                                rule.data_type,
+                                                rule.operator,
+                                            ),
+                                        }}
+                                        value={rule.value}
+                                        incomingData={incomingData}
+                                        onChange={(val) => update(rule.id, { value: String(val ?? '') })}
+                                    />
+                                </div>
+                            )}
+                        </div>
                     </div>
-                </div>
-            ))}
+                );
+            })}
 
             <button
                 type="button"

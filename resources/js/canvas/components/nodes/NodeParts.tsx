@@ -28,20 +28,41 @@ export const handleTop = (index: number, total: number) => {
     return `${((index + 1) / (total + 1)) * 100}%`;
 };
 
-export function SidePlus({ onClick, labeled = false }: { onClick: () => void; labeled?: boolean }) {
+export function SidePlus({
+                             onClick,
+                             labeled = false,
+                             labelText,
+                             badgeStyle = 'border-line-border text-content-muted',
+                         }: {
+    onClick: () => void;
+    labeled?: boolean;
+    labelText?: string;
+    badgeStyle?: string;
+}) {
     return (
         <div
             onClick={(e) => {
                 e.stopPropagation();
                 onClick();
             }}
-            className="tameshk-plus-wrapper group/plus absolute inset-s-full top-1/2 flex -translate-y-1/2 cursor-pointer items-center pointer-events-auto"
+            className="tameshk-plus-wrapper group/plus pointer-events-auto absolute inset-s-full top-1/2 flex -translate-y-1/2 cursor-pointer items-center"
         >
-            <span
-                className={`pointer-events-none h-px bg-linear-to-r from-content-muted/60 to-content-muted/20 transition-all duration-150 group-hover/plus:from-primary group-hover/plus:to-primary/40 ${
-                    labeled ? 'w-12 group-hover/plus:w-13' : 'w-5 group-hover/plus:w-7'
-                }`}
-            />
+            <div
+                className={`relative flex items-center justify-center ${
+                    labeled ? 'min-w-18 px-3' : 'w-5 group-hover/plus:w-7'
+                } transition-all duration-150`}
+            >
+                <span className="pointer-events-none absolute inset-x-0 top-1/2 h-px -translate-y-1/2 bg-linear-to-r from-content-muted/65 to-content-muted/25 transition-all duration-150 group-hover/plus:from-primary group-hover/plus:to-primary/40" />
+                {labeled && labelText && (
+                    <span
+                        dir="rtl"
+                        className={`pointer-events-none relative z-10 max-w-28 truncate rounded-md border bg-surface-raised px-1.5 py-0.5 text-[9px] font-bold leading-none whitespace-nowrap shadow-xs transition-colors group-hover/plus:border-primary/50 ${badgeStyle}`}
+                    >
+                        {labelText}
+                    </span>
+                )}
+            </div>
+
             <span className="flex size-6 shrink-0 items-center justify-center rounded-full border border-line-border bg-surface-raised text-content-muted shadow-md transition-all duration-150 group-hover/plus:scale-110 group-hover/plus:border-primary group-hover/plus:bg-primary group-hover/plus:text-white group-hover/plus:shadow-lg group-hover/plus:shadow-primary/30">
                 <Icon name="plus" className="pointer-events-none size-3.5" />
             </span>

@@ -4,6 +4,7 @@ import { CredentialSelect } from '@canvas/components/settings/CredentialSelect';
 import { inputClass } from '@canvas/components/settings/fieldStyles';
 import { KeyValueEditor } from '@canvas/components/settings/KeyValueEditor';
 import { SetFieldsEditor } from '@canvas/components/settings/SetFieldsEditor';
+import { SwitchRulesEditor } from '@canvas/components/settings/SwitchRulesEditor';
 import { ModelSelect } from '@canvas/components/settings/ModelSelect';
 import { PasswordField } from '@canvas/components/ui/PasswordField';
 import { Select } from '@canvas/components/ui/Select';
@@ -26,7 +27,7 @@ const getByPath = (source: unknown, path: string): { found: boolean; value: unkn
         return { found: source !== undefined, value: source };
     }
 
-    const parts = path.replace(/\[(\d+)\]/g, '.$1').split('.').filter(Boolean);
+    const parts = path.replace(/\[(\d+)]/g, '.$1').split('.').filter(Boolean);
     let current: unknown = source;
 
     for (const part of parts) {
@@ -41,7 +42,7 @@ const getByPath = (source: unknown, path: string): { found: boolean; value: unkn
 };
 
 const resolveExpression = (contextData: unknown, text: string): { found: boolean; value: unknown } => {
-    const matches = Array.from(text.matchAll(/\{\{\s*(.+?)\s*\}\}/g));
+    const matches = Array.from(text.matchAll(/\{\{\s*(.+?)\s*}}/g));
 
     if (matches.length === 0) {
         return { found: true, value: undefined };
@@ -230,6 +231,17 @@ export function ConfigFieldInput(props: ConfigFieldInputProps) {
         event.preventDefault();
         event.dataTransfer.dropEffect = 'copy';
     };
+
+    if (field.type === 'switch_rules') {
+        return (
+            <SwitchRulesEditor
+                value={value}
+                onChange={onChange}
+                incomingData={incomingData}
+                fullConfig={fullConfig}
+            />
+        );
+    }
 
     if (field.type === 'conditions') {
         return <ConditionsEditor value={value} onChange={onChange} incomingData={incomingData} />;

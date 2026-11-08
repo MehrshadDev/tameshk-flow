@@ -14,6 +14,7 @@ final class NodeConfigValidator
     private const MAX_TEXT = 10000;
     private const MAX_PAIRS = 50;
     private const MAX_CONDITIONS = 50;
+    private const MAX_SWITCH_RULES = 20;
 
     public function nodeMessages(Node $node, NodeDefinition $definition, Collection $credentials): array
     {
@@ -129,6 +130,7 @@ final class NodeConfigValidator
             'credential'   => $complete ? $this->checkCredential($field, $value, $credentials) : null,
             'model_select' => $this->checkModelSelect($value),
             'conditions'   => $this->checkConditions($value),
+            'switch_rules' => $this->checkSwitchRules($value),
             default        => 'نوع تنظیم پشتیبانی نمی‌شود.',
         };
     }
@@ -307,6 +309,42 @@ final class NodeConfigValidator
 
             if (! in_array($operator, ['empty', 'not_empty'], true) && isset($rule['value']) && ! is_scalar($rule['value'])) {
                 return 'مقدار یکی از شروط نامعتبر است.';
+            }
+        }
+
+        return null;
+    }
+
+    private function checkSwitchRules(mixed $value): ?string
+    {
+        if (! is_array($value) || ! array_is_list($value) || count($value) > self::MAX_SWITCH_RULES) {
+            return 'فهرست قوانین مسیریابی نامعتبر است.';
+        }
+
+        foreach ($value as $rule) {
+            if (! is_array($rule)) {
+                return 'یکی از قوانین مسیریابی نامعتبر است.';
+            }
+
+            $id = (string) ($rule['id'] ?? '');
+            $field = (string) ($rule['field'] ?? '');
+            $operator = (string) ($rule['operator'] ?? 'eq');
+            $outputName = (string) ($rule['output_name'] ?? '');
+
+            if ($id !== '' && ! preg_match('/^case_\d+$/', $id)) {
+                return 'شناسه خروجی یکی از قوانین نامعتبر است.';
+            }
+
+            if (mb_strlen($field) > 500 || mb_strlen($outputName) > 50) {
+                return 'مقدار یکی از قوانین بیش از حد طولانی است.';
+            }
+
+            if (! in_array($operator, ConditionEvaluator::OPERATORS, true)) {
+                return 'عملگر یکی از قوانین نامعتبر است.';
+            }
+
+            if (isset($rule['value']) && ! is_scalar($rule['value'])) {
+                return 'مقدار مقایسه در یکی از قوانین نامعتبر است.';
             }
         }
 

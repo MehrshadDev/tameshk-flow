@@ -18,88 +18,164 @@ class SwitchNode implements NodeContract
             type: 'logic.switch',
             name: 'Switch',
             category: NodeCategory::Logic,
-            description: 'مسیریابی چندشاخه‌ای ورکفلو به ۴ مسیر مجزا بر اساس مقدار ورودی.',
+            description: 'مسیریابی چندشاخه‌ای پویا بر اساس قوانین شرطی (مشابه n8n) با قابلیت افزودن و نام‌گذاری خروجی‌ها.',
             icon: 'git-branch',
             inputs: [HandleType::Main->value],
             outputs: [
                 HandleType::Case1->value,
-                HandleType::Case2->value,
-                HandleType::Case3->value,
                 HandleType::Default->value,
             ],
             configSchema: [
-                'value_to_match' => [
-                    'type'        => 'text',
-                    'label'       => 'مقدار مورد بررسی (Value to Match)',
-                    'required'    => true,
-                    'placeholder' => 'مثلاً {{ input.text }} یا {{ input.status }}',
-                ],
-                'operator' => [
-                    'type'    => 'select',
-                    'label'   => 'نحوه مقایسه با حالت‌ها',
-                    'options' => [
-                        ['value' => 'eq', 'label' => 'برابر است با (Equals)'],
-                        ['value' => 'contains', 'label' => 'شامل متن است (Contains)'],
-                        ['value' => 'starts_with', 'label' => 'شروع می‌شود با (Starts With)'],
-                        ['value' => 'ends_with', 'label' => 'پایان می‌یابد با (Ends With)'],
-                        ['value' => 'regex', 'label' => 'تطابق با الگوی Regex'],
+                'rules' => [
+                    'type'    => 'switch_rules',
+                    'label'   => 'قوانین مسیریابی (Routing Rules)',
+                    'default' => [
+                        [
+                            'id'            => 'case_1',
+                            'data_type'     => 'string',
+                            'field'         => '',
+                            'operator'      => 'eq',
+                            'value'         => '',
+                            'rename_output' => false,
+                            'output_name'   => '',
+                        ],
                     ],
-                    'default'  => 'eq',
-                    'required' => true,
                 ],
-                'case_1' => [
-                    'type'        => 'text',
-                    'label'       => 'مقدار حالت ۱ (خروجی ۱)',
-                    'placeholder' => 'مثلاً /start یا paid',
-                ],
-                'case_2' => [
-                    'type'        => 'text',
-                    'label'       => 'مقدار حالت ۲ (خروجی ۲)',
-                    'placeholder' => 'مثلاً /help یا pending',
-                ],
-                'case_3' => [
-                    'type'        => 'text',
-                    'label'       => 'مقدار حالت ۳ (خروجی ۳)',
-                    'placeholder' => 'مثلاً /support یا canceled',
+                'fallback_output' => [
+                    'type'    => 'select',
+                    'label'   => 'مسیر پیش‌فرض (Fallback Output)',
+                    'options' => [
+                        ['value' => 'extra', 'label' => 'ارسال به خروجی «پیش‌فرض» در صورت عدم تطابق'],
+                        ['value' => 'none', 'label' => 'توقف مسیر (بدون خروجی پیش‌فرض)'],
+                    ],
+                    'default'  => 'extra',
+                    'advanced' => true,
                 ],
             ],
             color: 'orange',
         );
     }
 
+    public static function allowedOutputsForConfig(array $config): array
+    {
+        $handles = [];
+        $rules = $config['rules'] ?? null;
+
+        if (is_array($rules) && $rules !== []) {
+            foreach (array_values($rules) as $index => $rule) {
+                $id = is_array($rule) && ! empty($rule['id']) && is_string($rule['id'])
+                    ? trim($rule['id'])
+                    : 'case_' . ($index + 1);
+
+                if (preg_match('/^case_\d+$/', $id)) {
+                    $handles[] = $id;
+                }
+            }
+        } else {
+            $handles = [
+                HandleType::Case1->value,
+                HandleType::Case2->value,
+                HandleType::Case3->value,
+            ];
+        }
+
+        if (($config['fallback_output'] ?? 'extra') !== 'none') {
+            $handles[] = HandleType::Default->value;
+        }
+
+        return array_values(array_unique($handles));
+    }
+
     public function execute(NodeContext $context): NodeResult
     {
-        $rawInput = trim((string) ($context->config['value_to_match'] ?? ''));
-        $actual = ConditionEvaluator::resolveValue($rawInput, $context->input);
-        $operator = (string) ($context->config['operator'] ?? 'eq');
+        $rules = $this->resolveRules($context->config);
+        $fallbackMode = (string) ($context->config['fallback_output'] ?? 'extra');
 
-        $cases = [
-            HandleType::Case1->value => trim((string) ($context->config['case_1'] ?? '')),
-            HandleType::Case2->value => trim((string) ($context->config['case_2'] ?? '')),
-            HandleType::Case3->value => trim((string) ($context->config['case_3'] ?? '')),
-        ];
+        $matchedHandle = null;
+        $matchedLabel = null;
 
-        $matchedHandle = HandleType::Default->value;
-
-        foreach ($cases as $handle => $expected) {
-            if ($expected === '') {
+        foreach ($rules as $index => $rule) {
+            if (! is_array($rule)) {
                 continue;
             }
 
-            if (ConditionEvaluator::compare($actual, $operator, $expected)) {
+            $handle = ! empty($rule['id']) && is_string($rule['id'])
+                ? trim($rule['id'])
+                : 'case_' . ($index + 1);
+
+            $rawField = trim((string) ($rule['field'] ?? ''));
+            $operator = (string) ($rule['operator'] ?? 'eq');
+            $expected = $rule['value'] ?? '';
+            $dataType = isset($rule['data_type']) && is_string($rule['data_type']) ? $rule['data_type'] : null;
+
+            if ($rawField === '' && ! in_array($operator, ConditionEvaluator::UNARY_OPERATORS, true) && trim((string) $expected) === '') {
+                continue;
+            }
+
+            $actual = ConditionEvaluator::resolveValue($rawField, $context->input);
+
+            if (ConditionEvaluator::compare($actual, $operator, $expected, $dataType)) {
                 $matchedHandle = $handle;
+                $customName = ! empty($rule['rename_output']) ? trim((string) ($rule['output_name'] ?? '')) : '';
+                $matchedLabel = $customName !== '' ? $customName : 'حالت ' . ($index + 1);
                 break;
             }
         }
 
-        $context->log("مسیریابی Switch → $matchedHandle");
+        if ($matchedHandle === null) {
+            if ($fallbackMode === 'none') {
+                $context->log('مسیریابی Switch ← هیچ قانونی صدق نکرد (توقف مسیر)');
+
+                return NodeResult::of(
+                    output: is_array($context->input)
+                        ? [...$context->input, '_matched_case' => null]
+                        : ['value' => $context->input, '_matched_case' => null],
+                    handle: HandleType::Stopped->value,
+                    meta: ['taken_handle' => HandleType::Stopped->value],
+                );
+            }
+
+            $matchedHandle = HandleType::Default->value;
+            $matchedLabel = 'پیش‌فرض';
+        }
+
+        $context->log("مسیریابی Switch → $matchedLabel ($matchedHandle)");
 
         return NodeResult::of(
             output: is_array($context->input)
-                ? [...$context->input, '_matched_case' => $matchedHandle]
-                : ['value' => $context->input, '_matched_case' => $matchedHandle],
+                ? [...$context->input, '_matched_case' => $matchedHandle, '_matched_label' => $matchedLabel]
+                : ['value' => $context->input, '_matched_case' => $matchedHandle, '_matched_label' => $matchedLabel],
             handle: $matchedHandle,
-            meta: ['taken_handle' => $matchedHandle],
+            meta: [
+                'taken_handle' => $matchedHandle,
+                'taken_label'  => $matchedLabel,
+            ],
         );
+    }
+
+    private function resolveRules(array $config): array
+    {
+        if (! empty($config['rules']) && is_array($config['rules'])) {
+            return array_values($config['rules']);
+        }
+
+        $valueToMatch = trim((string) ($config['value_to_match'] ?? ''));
+        $operator = (string) ($config['operator'] ?? 'eq');
+        $legacyRules = [];
+
+        foreach (['case_1', 'case_2', 'case_3'] as $caseKey) {
+            $expected = trim((string) ($config[$caseKey] ?? ''));
+            if ($expected !== '') {
+                $legacyRules[] = [
+                    'id'        => $caseKey,
+                    'data_type' => 'string',
+                    'field'     => $valueToMatch,
+                    'operator'  => $operator,
+                    'value'     => $expected,
+                ];
+            }
+        }
+
+        return $legacyRules;
     }
 }

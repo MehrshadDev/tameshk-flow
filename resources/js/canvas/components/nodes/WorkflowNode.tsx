@@ -5,6 +5,7 @@ import { Tooltip } from '@canvas/components/ui/Tooltip';
 import type { FlowNode } from '@canvas/lib/graph';
 import { missingRequiredLabels } from '@canvas/lib/fields';
 import { Handle as HandleId, SPECIAL_HANDLES } from '@canvas/lib/handles';
+import { resolveNodeOutputs } from '@canvas/lib/nodeOutputs';
 import { handleLabels, nodeAppearance } from '@canvas/lib/nodeStyles';
 import { isTestableTrigger } from '@canvas/lib/triggers';
 import { useWorkflowStore } from '@canvas/store/useWorkflowStore';
@@ -53,8 +54,9 @@ export function WorkflowNode({ id, data, selected }: NodeProps<FlowNode>) {
             : [];
 
     const inputs = definition?.inputs ?? [];
-    const outputs = definition?.outputs ?? [];
-    const labeled = outputs.length > 1;
+    const resolvedOutputs = resolveNodeOutputs(data.nodeType, data.config, definition);
+    const outputs = resolvedOutputs.map((o) => o.id);
+    const labeled = resolvedOutputs.length > 1;
     const { iconName, iconStyle } = nodeAppearance(definition);
 
     const isSupplyNode =
@@ -81,14 +83,24 @@ export function WorkflowNode({ id, data, selected }: NodeProps<FlowNode>) {
             ? ((lastRunItem.output_data as { handle?: string } | null)?.handle ?? null)
             : null;
 
-    const switchOutcome =
+    const switchOutputData =
         isSwitch && lastRunItem?.status === 'success'
-            ? ((lastRunItem.output_data as { _matched_case?: string } | null)?._matched_case ?? null)
+            ? (lastRunItem.output_data as { _matched_case?: string | null; _matched_label?: string | null } | null)
             : null;
+
+    const switchOutcome = switchOutputData?._matched_case ?? null;
+    const switchOutcomeLabel =
+        switchOutputData?._matched_label ??
+        (switchOutcome
+            ? (resolvedOutputs.find((o) => o.id === switchOutcome)?.label ?? handleLabels[switchOutcome] ?? switchOutcome)
+            : null);
+
+    const outputsSignature = resolvedOutputs.map((o) => `${o.id}:${o.label}`).join('|');
+    const dynamicHeightPx = resolvedOutputs.length > 2 ? Math.max(72, resolvedOutputs.length * 28 + 16) : 72;
 
     useLayoutEffect(() => {
         updateNodeInternals(id);
-    }, [id, edges.length, updateNodeInternals]);
+    }, [id, edges.length, outputsSignature, updateNodeInternals]);
 
     return (
         <div
@@ -201,9 +213,8 @@ export function WorkflowNode({ id, data, selected }: NodeProps<FlowNode>) {
                 />
             ) : (
                 <div
+                    style={{ height: `${dynamicHeightPx}px` }}
                     className={`pointer-events-auto relative flex w-18 items-center justify-center rounded-2xl border bg-surface-card shadow-sm transition-all duration-200 ${
-                        outputs.length > 2 ? 'h-28' : 'h-18'
-                    } ${
                         selected
                             ? 'border-primary shadow-lg ring-4 ring-primary/20'
                             : isNodeExecuting
@@ -236,8 +247,10 @@ export function WorkflowNode({ id, data, selected }: NodeProps<FlowNode>) {
                         <Icon name={iconName} className="size-6" />
                     </div>
 
-                    {outputs.map((handleId, index) => {
-                        const top = handleTop(index, outputs.length);
+                    {resolvedOutputs.map((outItem, index) => {
+                        const handleId = outItem.id;
+                        const labelText = outItem.label;
+                        const top = handleTop(index, resolvedOutputs.length);
                         const isConnected = edges.some(
                             (edge) => edge.source === id && (edge.sourceHandle ?? HandleId.Main) === handleId,
                         );
@@ -262,17 +275,19 @@ export function WorkflowNode({ id, data, selected }: NodeProps<FlowNode>) {
                                     {showPlus && (
                                         <SidePlus
                                             labeled={labeled}
+                                            labelText={labelText}
+                                            badgeStyle={badgeStyle}
                                             onClick={() => startConnection(id, handleId)}
                                         />
                                     )}
                                 </Handle>
 
-                                {labeled && (
+                                {labeled && !showPlus && (
                                     <span
                                         dir="rtl"
-                                        className={`pointer-events-none absolute left-5 top-1/2 -translate-y-1/2 rounded-md border bg-surface-raised px-1.5 py-0.5 text-[9px] font-bold leading-none whitespace-nowrap shadow-xs ${badgeStyle}`}
+                                        className={`pointer-events-none absolute left-5 top-1/2 max-w-28 -translate-y-1/2 truncate rounded-md border bg-surface-raised px-1.5 py-0.5 text-[9px] font-bold leading-none whitespace-nowrap shadow-xs ${badgeStyle}`}
                                     >
-                                        {handleLabels[handleId] ?? handleId}
+                                        {labelText}
                                     </span>
                                 )}
                             </div>
@@ -308,14 +323,14 @@ export function WorkflowNode({ id, data, selected }: NodeProps<FlowNode>) {
                         </span>
                     )}
 
-                    {switchOutcome && (
+                    {switchOutcomeLabel && (
                         <span className="mt-0.5 inline-block rounded bg-orange-500/10 px-1.5 py-[0.2rem] text-[9px] font-bold text-orange-500">
-                            مسیر: {handleLabels[switchOutcome] ?? switchOutcome}
+                            مسیر: {switchOutcomeLabel}
                         </span>
                     )}
 
                     {!conditionOutcome &&
-                        !switchOutcome &&
+                        !switchOutcomeLabel &&
                         lastRunItem?.duration_ms !== null &&
                         lastRunItem?.duration_ms !== undefined && (
                             <p className="mt-0.5 text-[10px] text-content-muted" dir="ltr">
@@ -324,7 +339,7 @@ export function WorkflowNode({ id, data, selected }: NodeProps<FlowNode>) {
                         )}
 
                     {!conditionOutcome &&
-                        !switchOutcome &&
+                        !switchOutcomeLabel &&
                         (lastRunItem?.duration_ms === null || lastRunItem?.duration_ms === undefined) && (
                             <>
                                 {!definition && (

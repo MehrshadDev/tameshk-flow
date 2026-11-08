@@ -17,19 +17,19 @@ import {
 } from '@xyflow/react';
 import {useEffect, useRef, useState} from 'react';
 import {ContextMenu} from '@canvas/components/ContextMenu';
-import {WorkflowEdge} from '@canvas/components/edges/WorkflowEdge';
+import {WorkflowEdge, roundedPolylinePath} from '@canvas/components/edges/WorkflowEdge';
 import {NodePicker} from '@canvas/components/NodePicker';
 import {NoteNode} from '@canvas/components/nodes/NoteNode';
 import {WorkflowNode} from '@canvas/components/nodes/WorkflowNode';
 import {Icon} from '@canvas/components/ui/Icon';
+import {Tooltip} from '@canvas/components/ui/Tooltip';
+import {isSingleSlot} from '@canvas/lib/agentLayout';
 import type {FlowNodeData} from '@canvas/lib/graph';
-import { nodeColor } from '@canvas/lib/nodeStyles';
+import {Handle, isSpecialHandle} from '@canvas/lib/handles';
+import {resolveNodeOutputs} from '@canvas/lib/nodeOutputs';
+import {nodeColor} from '@canvas/lib/nodeStyles';
 import {useColorMode} from '@canvas/lib/useColorMode';
 import {useWorkflowStore} from '@canvas/store/useWorkflowStore';
-import {Handle, isSpecialHandle} from '@canvas/lib/handles';
-import {roundedPolylinePath} from '@canvas/components/edges/WorkflowEdge';
-import {isSingleSlot} from '@canvas/lib/agentLayout';
-import {Tooltip} from "@canvas/components/ui/Tooltip";
 
 const nodeTypes = {
     workflow: WorkflowNode,
@@ -60,10 +60,11 @@ const isValidConnection = (connection: Connection | Edge) => {
 
     if (!defA || !defB) return false;
 
-    const sourceHandle = connection.sourceHandle ?? defA.outputs[0] ?? Handle.Main;
+    const outputsA = resolveNodeOutputs(nodeA.data.nodeType, nodeA.data.config, defA).map((o) => o.id);
+    const sourceHandle = connection.sourceHandle ?? outputsA[0] ?? Handle.Main;
     const targetHandle = connection.targetHandle ?? defB.inputs[0] ?? Handle.Main;
 
-    if (!defA.outputs.includes(sourceHandle) || !defB.inputs.includes(targetHandle)) {
+    if (!outputsA.includes(sourceHandle) || !defB.inputs.includes(targetHandle)) {
         return false;
     }
 

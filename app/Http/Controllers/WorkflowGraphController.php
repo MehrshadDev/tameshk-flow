@@ -12,6 +12,7 @@ use App\Workflow\Enums\HandleType;
 use App\Workflow\Exceptions\WorkflowPublishException;
 use App\Workflow\Graph\GraphSaver;
 use App\Workflow\Graph\NodeConfigValidator;
+use App\Workflow\Nodes\Logic\SwitchNode;
 use App\Workflow\Nodes\Triggers\WebhookTriggerNode;
 use App\Workflow\Publishing\TriggerEndpoints;
 use App\Workflow\Publishing\WorkflowPublisher;
@@ -76,6 +77,7 @@ class WorkflowGraphController extends Controller
         $errors = [];
         $typeByKey = collect($nodes)->pluck('type', 'key');
         $nameByKey = collect($nodes)->pluck('name', 'key');
+        $configByKey = [];
 
         foreach ($nodes as $index => $nodeData) {
             $name = $nodeData['name'];
@@ -103,6 +105,28 @@ class WorkflowGraphController extends Controller
                 continue;
             }
 
+            if ($nodeData['type'] === 'logic.switch' && empty($config['rules']) && isset($config['value_to_match'])) {
+                $baseField = (string) ($config['value_to_match'] ?? '');
+                $baseOp = (string) ($config['operator'] ?? 'eq');
+                $migrated = [];
+
+                foreach (['case_1', 'case_2', 'case_3'] as $caseKey) {
+                    $val = trim((string) ($config[$caseKey] ?? ''));
+                    if ($val !== '' || $caseKey === 'case_1') {
+                        $migrated[] = [
+                            'id'            => $caseKey,
+                            'field'         => $baseField,
+                            'operator'      => $baseOp,
+                            'value'         => $val,
+                            'rename_output' => false,
+                            'output_name'   => '',
+                        ];
+                    }
+                }
+
+                $config['rules'] = $migrated;
+            }
+
             $config = array_intersect_key($config, $definition->configSchema + ['disabled' => true]);
 
             if ($nodeData['type'] === 'trigger.webhook' && array_key_exists('path', $config)) {
@@ -115,6 +139,7 @@ class WorkflowGraphController extends Controller
             }
 
             $nodes[$index]['config'] = $config;
+            $configByKey[$nodeData['key']] = $config;
 
             $fieldErrors = $this->configValidator->errors($definition, $config, collect(), complete: false);
 
@@ -128,8 +153,10 @@ class WorkflowGraphController extends Controller
         $usedSingleSlots = [];
 
         foreach ($edges as $index => $edge) {
-            $sourceDef = $definitions[$typeByKey[$edge['source']] ?? ''] ?? null;
-            $targetDef = $definitions[$typeByKey[$edge['target']] ?? ''] ?? null;
+            $sourceType = $typeByKey[$edge['source']] ?? '';
+            $targetType = $typeByKey[$edge['target']] ?? '';
+            $sourceDef = $definitions[$sourceType] ?? null;
+            $targetDef = $definitions[$targetType] ?? null;
 
             if (! $sourceDef || ! $targetDef) {
                 continue;
@@ -139,7 +166,11 @@ class WorkflowGraphController extends Controller
             $sourceHandle = $edge['sourceHandle'] ?? HandleType::Main->value;
             $targetHandle = $edge['targetHandle'] ?? ($targetDef->inputs[0] ?? HandleType::Main->value);
 
-            if (! in_array($sourceHandle, $sourceDef->outputs, true)) {
+            $allowedOutputs = $sourceType === 'logic.switch'
+                ? SwitchNode::allowedOutputsForConfig($configByKey[$edge['source']] ?? [])
+                : $sourceDef->outputs;
+
+            if (! in_array($sourceHandle, $allowedOutputs, true)) {
                 $errors["edges.$index.sourceHandle"] = "$label: این نود چنین خروجی‌ای ندارد.";
             } elseif (! in_array($targetHandle, $targetDef->inputs, true)) {
                 $errors["edges.$index.targetHandle"] = "$label: این نود ورودی ندارد یا ورودی انتخاب‌شده نامعتبر است.";

@@ -13,6 +13,7 @@ import {
     isSingleSlot,
     slotRatio,
 } from '@canvas/lib/agentLayout';
+import { resolveNodeOutputs } from '@canvas/lib/nodeOutputs';
 import type { NodeDefinition, NodePreset } from '@canvas/types/graph';
 import type {
     PendingConnection,
@@ -201,10 +202,27 @@ export const createNodeSlice: Slice<NodeSlice> = (set, get) => ({
                 nextData.label = getUniqueLabel(data.label, state.nodes, id);
             }
 
+            const targetNode = state.nodes.find((n) => n.id === id);
+            const updatedNodes = state.nodes.map((node) =>
+                node.id === id ? { ...node, data: { ...node.data, ...nextData } } : node,
+            );
+
+            let updatedEdges = state.edges;
+
+            if (targetNode && nextData.config) {
+                const def = state.definitions.find((d) => d.type === targetNode.data.nodeType);
+                const allowedOutIds = new Set(
+                    resolveNodeOutputs(targetNode.data.nodeType, nextData.config, def).map((o) => o.id),
+                );
+
+                updatedEdges = state.edges.filter(
+                    (edge) => edge.source !== id || allowedOutIds.has(edge.sourceHandle ?? 'main'),
+                );
+            }
+
             return {
-                nodes: state.nodes.map((node) =>
-                    node.id === id ? { ...node, data: { ...node.data, ...nextData } } : node,
-                ),
+                nodes: updatedNodes,
+                edges: updatedEdges,
                 ...dirty(state),
             };
         }),
