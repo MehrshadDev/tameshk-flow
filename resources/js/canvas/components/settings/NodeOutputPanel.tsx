@@ -1,8 +1,10 @@
+import type { RefObject } from 'react';
 import { Icon } from '@canvas/components/ui/Icon';
 import { useWorkflowStore } from '@canvas/store/useWorkflowStore';
 import type { NodeRunData } from '@canvas/types/graph';
 
 type NodeOutputPanelProps = {
+    panelRef?: RefObject<HTMLElement | null>;
     width: number;
     visibleOnMobile: boolean;
     isManualTrigger: boolean;
@@ -10,6 +12,7 @@ type NodeOutputPanelProps = {
 };
 
 export function NodeOutputPanel({
+                                    panelRef,
                                     width,
                                     visibleOnMobile,
                                     isManualTrigger,
@@ -31,6 +34,7 @@ export function NodeOutputPanel({
 
     return (
         <section
+            ref={panelRef}
             style={{ width: window.innerWidth >= 768 ? width : '100%' }}
             className={`min-h-0 shrink-0 flex-col bg-surface-card/40 ${
                 visibleOnMobile ? 'flex' : 'hidden md:flex'

@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, type RefObject } from 'react';
 import { DataTreeViewer } from '@canvas/components/settings/DataTreeViewer';
 import { Icon } from '@canvas/components/ui/Icon';
 import type { FlowNode } from '@canvas/lib/graph';
@@ -14,13 +14,20 @@ export type UpstreamNodeItem = {
 };
 
 type NodeInputPanelProps = {
+    panelRef?: RefObject<HTMLElement | null>;
     nodeId: string;
     width: number;
     visibleOnMobile: boolean;
     upstreamDataList: UpstreamNodeItem[];
 };
 
-export function NodeInputPanel({ nodeId, width, visibleOnMobile, upstreamDataList }: NodeInputPanelProps) {
+export function NodeInputPanel({
+                                   panelRef,
+                                   nodeId,
+                                   width,
+                                   visibleOnMobile,
+                                   upstreamDataList,
+                               }: NodeInputPanelProps) {
     const [expandedNodes, setExpandedNodes] = useState<Record<string, boolean>>({});
     const scrollRef = useRef<HTMLDivElement>(null);
 
@@ -47,6 +54,7 @@ export function NodeInputPanel({ nodeId, width, visibleOnMobile, upstreamDataLis
 
     return (
         <section
+            ref={panelRef}
             style={{ width: window.innerWidth >= 768 ? width : '100%' }}
             className={`min-h-0 shrink-0 flex-col bg-surface-card/40 ${
                 visibleOnMobile ? 'flex' : 'hidden md:flex'

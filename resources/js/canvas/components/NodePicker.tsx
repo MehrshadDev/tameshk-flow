@@ -105,10 +105,10 @@ function PickerPanel() {
     const closePanel = useWorkflowStore((state) => state.closePanel);
     const store = useStoreApi();
     const { getViewport } = useReactFlow();
-    const { width, isResizing, onPointerDown, reset } = useResizablePanel({
+    const { panelRef, width, isResizing, onPointerDown, reset } = useResizablePanel({
         storageKey: 'tameshk_picker_width',
-        min: 320,
-        max: 720,
+        min: 300,
+        max: 760,
         initial: 384,
     });
 
@@ -246,28 +246,32 @@ function PickerPanel() {
 
     return (
         <aside
+            ref={panelRef}
             dir="rtl"
-            style={{ width }}
-            className={`absolute inset-y-0 right-0 z-50 flex max-w-[calc(100%-1rem)] flex-col border-l border-line-border bg-surface-raised/95 shadow-2xl backdrop-blur-xl animate-in slide-in-from-right duration-200 ${
-                isResizing ? 'select-none' : ''
+            style={{ width, willChange: isResizing ? 'width' : undefined }}
+            className={` nodrag nopan absolute inset-y-0 right-0 z-50 flex max-w-[calc(100%-1rem)] flex-col border-l border-line-border bg-surface-raised/95 shadow-2xl ${
+                isResizing
+                    ? 'select-none transition-none!'
+                    : 'backdrop-blur-xl animate-in slide-in-from-right duration-150'
             }`}
         >
             <div
                 role="separator"
                 aria-orientation="vertical"
+                title="برای تغییر عرض بکشید (دوبار کلیک = اندازه پیش‌فرض)"
                 onPointerDown={onPointerDown}
                 onDoubleClick={reset}
-                className="group/resize absolute inset-y-0 -left-1.5 z-10 w-3 cursor-col-resize touch-none"
+                className="group/resize absolute inset-y-0 -left-2 z-20 w-4 cursor-col-resize touch-none"
             >
                 <span
-                    className={`absolute inset-y-0 left-1/2 w-0.5 -translate-x-1/2 rounded-full transition-colors duration-150 ${
+                    className={`absolute inset-y-0 left-1/2 w-0.75 -translate-x-1/2 rounded-full transition-colors duration-150 ${
                         isResizing ? 'bg-primary' : 'bg-transparent group-hover/resize:bg-primary/60'
                     }`}
                 />
                 <span
-                    className={`absolute left-1/2 top-1/2 h-10 w-1 -translate-x-1/2 -translate-y-1/2 rounded-full transition-all duration-150 ${
+                    className={`absolute left-1/2 top-1/2 h-12 w-1.5 -translate-x-1/2 -translate-y-1/2 rounded-full transition-all duration-150 ${
                         isResizing
-                            ? 'bg-primary opacity-100'
+                            ? 'bg-primary opacity-100 scale-y-110'
                             : 'bg-content-muted/50 opacity-0 group-hover/resize:opacity-100'
                     }`}
                 />
@@ -377,9 +381,9 @@ function PickerPanel() {
                                             <Icon name={meta.icon} className="size-5" />
                                         </div>
                                         <div className="min-w-0">
-                            <span className="block truncate text-xs font-bold text-content-main group-hover:text-primary transition-colors">
-                                {meta.title}
-                            </span>
+                                            <span className="block truncate text-xs font-bold text-content-main group-hover:text-primary transition-colors">
+                                                {meta.title}
+                                            </span>
                                             <p className="truncate text-[11px] text-content-muted mt-0.5 leading-4">
                                                 {meta.description}
                                             </p>
@@ -415,11 +419,9 @@ function PickerPanel() {
 
                                 {triggersOpen && (
                                     <div className="mt-2.5 space-y-2.5">
-                                        {
-                                            currentTriggerNodes.map((entry) => (
-                                                <NodeCard key={entry.key} entry={entry} onSelect={select} />
-                                            ))
-                                        }
+                                        {currentTriggerNodes.map((entry) => (
+                                            <NodeCard key={entry.key} entry={entry} onSelect={select} />
+                                        ))}
                                     </div>
                                 )}
                             </div>

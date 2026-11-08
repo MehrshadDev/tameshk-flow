@@ -35,14 +35,17 @@ function NodeStudio({ nodeId }: { nodeId: string }) {
     const [optionsMenuOpen, setOptionsMenuOpen] = useState(false);
     const optionsContainerRef = useRef<HTMLDivElement>(null);
 
-    const [leftWidth, setLeftWidth] = useState(380);
-    const [rightWidth, setRightWidth] = useState(380);
+    const leftPanelRef = useRef<HTMLElement | null>(null);
+    const rightPanelRef = useRef<HTMLElement | null>(null);
+    const [leftWidth, setLeftWidth] = useState(() => Number(localStorage.getItem('tameshk_studio_left_w')) || 380);
+    const [rightWidth, setRightWidth] = useState(() => Number(localStorage.getItem('tameshk_studio_right_w')) || 380);
     const [activeHandle, setActiveHandle] = useState<'left' | 'right' | null>(null);
 
-    const isDraggingLeft = useRef(false);
-    const isDraggingRight = useRef(false);
+    const activeSideRef = useRef<'left' | 'right' | null>(null);
     const dragStartX = useRef(0);
     const dragStartWidth = useRef(0);
+    const latestWidthRef = useRef(380);
+    const rafRef = useRef<number | null>(null);
 
     const isFullWorkflowRunning = useWorkflowStore((state) => state.isRunning);
     const node = useWorkflowStore((state) => state.nodes.find((item) => item.id === nodeId));
@@ -83,49 +86,93 @@ function NodeStudio({ nodeId }: { nodeId: string }) {
     }, [optionsMenuOpen]);
 
     useEffect(() => {
-        const handleMouseMove = (e: MouseEvent) => {
-            if (isDraggingLeft.current) {
-                const deltaX = e.clientX - dragStartX.current;
-                setLeftWidth(Math.max(280, Math.min(650, dragStartWidth.current + deltaX)));
-            } else if (isDraggingRight.current) {
-                const deltaX = dragStartX.current - e.clientX;
-                setRightWidth(Math.max(260, Math.min(650, dragStartWidth.current + deltaX)));
+        if (!activeHandle) return;
+
+        const handlePointerMove = (e: PointerEvent) => {
+            if (!activeSideRef.current) return;
+
+            const isLeft = activeSideRef.current === 'left';
+            const deltaX = isLeft ? e.clientX - dragStartX.current : dragStartX.current - e.clientX;
+            const minW = isLeft ? 260 : 260;
+            const maxW = 680;
+            const clamped = Math.max(minW, Math.min(maxW, dragStartWidth.current + deltaX));
+            latestWidthRef.current = clamped;
+
+            if (rafRef.current !== null) {
+                cancelAnimationFrame(rafRef.current);
             }
+
+            rafRef.current = requestAnimationFrame(() => {
+                const targetEl = isLeft ? leftPanelRef.current : rightPanelRef.current;
+                if (targetEl) {
+                    targetEl.style.width = `${clamped}px`;
+                }
+                rafRef.current = null;
+            });
         };
 
-        const handleMouseUp = () => {
-            isDraggingLeft.current = false;
-            isDraggingRight.current = false;
+        const handlePointerUp = () => {
+            if (rafRef.current !== null) {
+                cancelAnimationFrame(rafRef.current);
+                rafRef.current = null;
+            }
+
+            if (activeSideRef.current === 'left') {
+                setLeftWidth(latestWidthRef.current);
+                localStorage.setItem('tameshk_studio_left_w', String(latestWidthRef.current));
+            } else if (activeSideRef.current === 'right') {
+                setRightWidth(latestWidthRef.current);
+                localStorage.setItem('tameshk_studio_right_w', String(latestWidthRef.current));
+            }
+
+            activeSideRef.current = null;
             setActiveHandle(null);
             document.body.style.cursor = '';
             document.body.style.userSelect = '';
         };
 
-        window.addEventListener('mousemove', handleMouseMove);
-        window.addEventListener('mouseup', handleMouseUp);
+        window.addEventListener('pointermove', handlePointerMove, { passive: true });
+        window.addEventListener('pointerup', handlePointerUp);
+        window.addEventListener('pointercancel', handlePointerUp);
 
         return () => {
-            window.removeEventListener('mousemove', handleMouseMove);
-            window.removeEventListener('mouseup', handleMouseUp);
+            if (rafRef.current !== null) {
+                cancelAnimationFrame(rafRef.current);
+            }
+            window.removeEventListener('pointermove', handlePointerMove);
+            window.removeEventListener('pointerup', handlePointerUp);
+            window.removeEventListener('pointercancel', handlePointerUp);
         };
-    }, []);
+    }, [activeHandle]);
 
-    const startLeftResize = (e: React.MouseEvent) => {
+    const startLeftResize = (e: React.PointerEvent<HTMLDivElement>) => {
+        if (e.button !== 0) return;
         e.preventDefault();
-        isDraggingLeft.current = true;
-        setActiveHandle('left');
+        try {
+            e.currentTarget.setPointerCapture(e.pointerId);
+        } catch {}
+        const currentW = leftPanelRef.current?.getBoundingClientRect().width ?? leftWidth;
+        activeSideRef.current = 'left';
+        latestWidthRef.current = currentW;
         dragStartX.current = e.clientX;
-        dragStartWidth.current = leftWidth;
+        dragStartWidth.current = currentW;
+        setActiveHandle('left');
         document.body.style.cursor = 'col-resize';
         document.body.style.userSelect = 'none';
     };
 
-    const startRightResize = (e: React.MouseEvent) => {
+    const startRightResize = (e: React.PointerEvent<HTMLDivElement>) => {
+        if (e.button !== 0) return;
         e.preventDefault();
-        isDraggingRight.current = true;
-        setActiveHandle('right');
+        try {
+            e.currentTarget.setPointerCapture(e.pointerId);
+        } catch {}
+        const currentW = rightPanelRef.current?.getBoundingClientRect().width ?? rightWidth;
+        activeSideRef.current = 'right';
+        latestWidthRef.current = currentW;
         dragStartX.current = e.clientX;
-        dragStartWidth.current = rightWidth;
+        dragStartWidth.current = currentW;
+        setActiveHandle('right');
         document.body.style.cursor = 'col-resize';
         document.body.style.userSelect = 'none';
     };
@@ -408,6 +455,7 @@ function NodeStudio({ nodeId }: { nodeId: string }) {
                     {!isTrigger && (
                         <>
                             <NodeInputPanel
+                                panelRef={leftPanelRef}
                                 nodeId={nodeId}
                                 width={leftWidth}
                                 visibleOnMobile={activeTab === 'input'}
@@ -415,15 +463,20 @@ function NodeStudio({ nodeId }: { nodeId: string }) {
                             />
 
                             <div
-                                onMouseDown={startLeftResize}
-                                className="group/handle relative z-10 hidden w-px shrink-0 cursor-col-resize select-none bg-line-border md:block"
+                                onPointerDown={startLeftResize}
+                                onDoubleClick={() => {
+                                    setLeftWidth(380);
+                                    if (leftPanelRef.current) leftPanelRef.current.style.width = '380px';
+                                    localStorage.setItem('tameshk_studio_left_w', '380');
+                                }}
+                                className="group/handle relative z-20 hidden w-px shrink-0 cursor-col-resize touch-none select-none bg-line-border md:block"
                             >
-                                <span className="absolute inset-y-0 -inset-x-1.5" />
+                                <span className="absolute inset-y-0 -inset-x-2" />
                                 <span
                                     className={`pointer-events-none absolute inset-y-0 left-1/2 -translate-x-1/2 rounded-full transition-all duration-150 ${
                                         activeHandle === 'left'
-                                            ? 'w-0.75 bg-primary'
-                                            : 'w-px bg-transparent group-hover/handle:w-0.75 group-hover/handle:bg-primary/60'
+                                            ? 'w-1 bg-primary'
+                                            : 'w-px bg-transparent group-hover/handle:w-1 group-hover/handle:bg-primary/60'
                                     }`}
                                 />
                             </div>
@@ -577,20 +630,26 @@ function NodeStudio({ nodeId }: { nodeId: string }) {
                     </section>
 
                     <div
-                        onMouseDown={startRightResize}
-                        className="group/handle relative z-10 hidden w-px shrink-0 cursor-col-resize select-none bg-line-border md:block"
+                        onPointerDown={startRightResize}
+                        onDoubleClick={() => {
+                            setRightWidth(380);
+                            if (rightPanelRef.current) rightPanelRef.current.style.width = '380px';
+                            localStorage.setItem('tameshk_studio_right_w', '380');
+                        }}
+                        className="group/handle relative z-20 hidden w-px shrink-0 cursor-col-resize touch-none select-none bg-line-border md:block"
                     >
-                        <span className="absolute inset-y-0 -inset-x-1.5" />
+                        <span className="absolute inset-y-0 -inset-x-2" />
                         <span
                             className={`pointer-events-none absolute inset-y-0 left-1/2 -translate-x-1/2 rounded-full transition-all duration-150 ${
                                 activeHandle === 'right'
-                                    ? 'w-0.75 bg-primary'
-                                    : 'w-px bg-transparent group-hover/handle:w-0.75 group-hover/handle:bg-primary/60'
+                                    ? 'w-1 bg-primary'
+                                    : 'w-px bg-transparent group-hover/handle:w-1 group-hover/handle:bg-primary/60'
                             }`}
                         />
                     </div>
 
                     <NodeOutputPanel
+                        panelRef={rightPanelRef}
                         width={rightWidth}
                         visibleOnMobile={activeTab === 'output'}
                         isManualTrigger={isManualTrigger}
