@@ -7,11 +7,61 @@
     'toc' => [],
 ])
 
+@php
+    $siteName = config('app.site_name') ?: config('app.name', 'تمشک فلو');
+    $homeUrl = route('home');
+    $canonicalUrl = $activePage === 'privacy' ? route('privacy') : route('terms');
+    $fullTitle = $title . ' | ' . $siteName;
+@endphp
+
 <x-layouts.app
-    :title="$title . ' | ' . config('app.name')"
+    :title="$fullTitle"
     :description="$subtitle"
+    :canonical="$canonicalUrl"
     :header_visibility="false"
     :footer_visibility="true">
+
+    <x-slot:schema>
+        <script type="application/ld+json">
+            {
+                "@@context": "https://schema.org",
+                "@@graph": [
+                    {
+                        "@@type": "WebPage",
+                        "@@id": "{{ $canonicalUrl }}#webpage",
+                        "url": "{{ $canonicalUrl }}",
+                        "name": "{{ $fullTitle }}",
+                        "description": "{{ $subtitle }}",
+                        "inLanguage": "fa-IR",
+                        "isPartOf": {
+                            "@@id": "{{ $homeUrl }}#website"
+                        },
+                        "breadcrumb": {
+                            "@@id": "{{ $canonicalUrl }}#breadcrumb"
+                        }
+                    },
+                    {
+                        "@@type": "BreadcrumbList",
+                        "@@id": "{{ $canonicalUrl }}#breadcrumb",
+                        "itemListElement": [
+                            {
+                                "@@type": "ListItem",
+                                "position": 1,
+                                "name": "{{ $siteName }}",
+                                "item": "{{ $homeUrl }}"
+                            },
+                            {
+                                "@@type": "ListItem",
+                                "position": 2,
+                                "name": "{{ $title }}",
+                                "item": "{{ $canonicalUrl }}"
+                            }
+                        ]
+                    }
+                ]
+            }
+        </script>
+    </x-slot:schema>
 
     <div x-data="{ mobileTocOpen: false }" class="min-h-screen bg-surface-base">
         <header class="sticky top-0 z-40 border-b border-line-border bg-surface-raised/90 backdrop-blur-xl">

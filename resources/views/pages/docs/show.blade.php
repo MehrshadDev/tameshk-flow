@@ -1,13 +1,87 @@
-@php use App\Docs\DocumentationRepository; @endphp
+@php
+    use App\Docs\DocumentationRepository;
+    use Carbon\Carbon;
+
+    $siteName = config('app.site_name') ?: config('app.name', 'تمشک فلو');
+    $homeUrl = route('home');
+    $docsIndexUrl = route('docs.index');
+    $canonicalUrl = route('docs.show', $article['slug']);
+    $fullTitle = $article['title'] . ' | مستندات ' . $siteName;
+    $logoUrl = asset('images/logo/favicon.png');
+
+    $viewPath = resource_path('views/' . str_replace('.', '/', $article['view']) . '.blade.php');
+    $lastModifiedIso = is_file($viewPath)
+        ? Carbon::createFromTimestamp(filemtime($viewPath), config('app.timezone', 'Asia/Tehran'))->toAtomString()
+        : now()->toAtomString();
+
+    $allArticles = DocumentationRepository::allArticles();
+@endphp
+
 <x-layouts.app
-    :title="$article['title'] . ' | مستندات ' . config('app.name')"
+    :title="$fullTitle"
     :description="$article['description']"
+    :canonical="$canonicalUrl"
+    og-type="article"
     :header_visibility="false"
     :footer_visibility="true">
 
-    @php
-        $allArticles = DocumentationRepository::allArticles();
-    @endphp
+    <x-slot:schema>
+        <script type="application/ld+json">
+            {
+                "@@context": "https://schema.org",
+                "@@graph": [
+                    {
+                        "@@type": "TechArticle",
+                        "@@id": "{{ $canonicalUrl }}#article",
+                        "mainEntityOfPage": {
+                            "@@type": "WebPage",
+                            "@@id": "{{ $canonicalUrl }}"
+                        },
+                        "headline": "{{ $article['title'] }}",
+                        "description": "{{ $article['description'] }}",
+                        "articleSection": "{{ $article['section_title'] }}",
+                        "inLanguage": "fa-IR",
+                        "url": "{{ $canonicalUrl }}",
+                        "dateModified": "{{ $lastModifiedIso }}",
+                        "image": "{{ $logoUrl }}",
+                        "author": {
+                            "@@id": "{{ $homeUrl }}#organization"
+                        },
+                        "publisher": {
+                            "@@id": "{{ $homeUrl }}#organization"
+                        },
+                        "isPartOf": {
+                            "@@id": "{{ $homeUrl }}#website"
+                        }
+                    },
+                    {
+                        "@@type": "BreadcrumbList",
+                        "@@id": "{{ $canonicalUrl }}#breadcrumb",
+                        "itemListElement": [
+                            {
+                                "@@type": "ListItem",
+                                "position": 1,
+                                "name": "{{ $siteName }}",
+                                "item": "{{ $homeUrl }}"
+                            },
+                            {
+                                "@@type": "ListItem",
+                                "position": 2,
+                                "name": "مستندات و آموزش",
+                                "item": "{{ $docsIndexUrl }}"
+                            },
+                            {
+                                "@@type": "ListItem",
+                                "position": 3,
+                                "name": "{{ $article['title'] }}",
+                                "item": "{{ $canonicalUrl }}"
+                            }
+                        ]
+                    }
+                ]
+            }
+        </script>
+    </x-slot:schema>
 
     <div x-data="{
              mobileMenuOpen: false,
