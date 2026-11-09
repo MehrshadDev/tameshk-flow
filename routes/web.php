@@ -32,6 +32,9 @@ Route::get('/billing/callback', [BillingController::class, 'callback'])
 Route::get('/docs', [DocsController::class, 'show'])->name('docs.index');
 Route::get('/docs/{slug}', [DocsController::class, 'show'])->name('docs.show');
 
+Route::view('/terms', 'pages.legal.terms')->name('terms');
+Route::view('/privacy', 'pages.legal.privacy')->name('privacy');
+
 Route::middleware([EnsureTerminalAccess::class])->group(function () {
     Route::get('/terminal', [TerminalController::class, 'index'])
         ->name('terminal.index');

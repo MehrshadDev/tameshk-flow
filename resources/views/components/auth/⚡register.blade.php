@@ -156,7 +156,15 @@ new class extends Component
 
         <x-auth.google-button label="ثبت‌نام با حساب گوگل"/>
 
-        <p class="mt-6 text-center text-sm text-content-muted">
+        <p class="mt-4 text-center text-[11px] leading-5 text-content-muted">
+            ثبت‌نام در تمشک به منزله پذیرش
+            <a href="{{ route('terms') }}" target="_blank" class="font-semibold text-content-main underline decoration-line-border underline-offset-4 transition hover:text-primary">قوانین و مقررات</a>
+            و
+            <a href="{{ route('privacy') }}" target="_blank" class="font-semibold text-content-main underline decoration-line-border underline-offset-4 transition hover:text-primary">حریم خصوصی</a>
+            است.
+        </p>
+
+        <p class="mt-5 text-center text-sm text-content-muted">
             حساب دارید؟
             <a href="{{ route('login') }}" wire:navigate class="text-primary hover:underline font-medium cursor-pointer">وارد شوید</a>
         </p>

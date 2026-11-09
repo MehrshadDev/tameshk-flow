@@ -10,13 +10,21 @@
             </p>
         </div>
 
-        <nav aria-label="پیوندهای مرتبط" class="flex items-center gap-6 text-sm text-content-muted">
-            <a href="https://github.com/MehrshadDev/tameshk-flow" class="transition-colors hover:text-primary">
-                گیت‌هاب
-            </a>
-
+        <nav aria-label="پیوندهای مرتبط" class="flex flex-wrap items-center justify-center gap-6 text-sm text-content-muted">
             <a href="{{ route('docs.index') }}" class="transition-colors hover:text-primary">
                 مستندات
+            </a>
+
+            <a href="{{ route('terms') }}" class="transition-colors hover:text-primary">
+                قوانین و مقررات
+            </a>
+
+            <a href="{{ route('privacy') }}" class="transition-colors hover:text-primary">
+                حریم خصوصی
+            </a>
+
+            <a href="https://github.com/MehrshadDev/tameshk-flow" target="_blank" rel="noopener noreferrer" class="transition-colors hover:text-primary">
+                گیت‌هاب
             </a>
         </nav>
     </div>
