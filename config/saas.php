@@ -15,6 +15,12 @@ return [
         'currency' => (string) env('ZARINPAL_CURRENCY', 'IRT'),
     ],
 
+    'enamad' => [
+        'id' => (string) env('ENAMAD_ID', ''),
+        'code' => (string) env('ENAMAD_CODE', ''),
+        'local_logo' => (string) env('ENAMAD_LOCAL_LOGO', 'images/enamad.webp'),
+    ],
+
     'plans' => [
         [
             'slug' => 'free',
