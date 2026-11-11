@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - main
+
   workflow_dispatch:
 
 jobs:
@@ -46,8 +47,14 @@ jobs:
 
       - name: Install System Dependencies & PNPM
         run: |
-          sudo apt-get update -yq
-          sudo apt-get install -yq lftp zip
+          sudo resolvectl dns eth0 1.1.1.1 8.8.8.8 2>/dev/null || true
+          echo -e "nameserver 1.1.1.1\nnameserver 8.8.8.8" | sudo tee /etc/resolv.conf > /dev/null
+
+          for i in {1..3}; do
+            sudo apt-get update -yq && break || (echo "APT update failed, retrying in 3s..." && sleep 3)
+          done
+
+          sudo apt-get install -yq --fix-missing lftp
           corepack enable
           corepack prepare pnpm@latest --activate
 
@@ -313,7 +320,7 @@ jobs:
         run: |
           TARGET_HOST=$(echo "$TARGET_URL" | sed -e 's~https://~~' -e 's~http://~~' | cut -d'/' -f1)
 
-          RESPONSE=$(curl -k -s -A "GitHubActions-Deployer" \
+          RESPONSE=$(curl -k -s -L -A "GitHubActions-Deployer" \
             --max-time 180 \
             --resolve "${TARGET_HOST}:443:${SERVER_IP}" \
             --resolve "${TARGET_HOST}:80:${SERVER_IP}" \
