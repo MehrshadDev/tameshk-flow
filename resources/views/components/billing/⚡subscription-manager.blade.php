@@ -62,7 +62,7 @@ new class extends Component {
     {
         return auth()->user()
             ->payments()
-            ->where('status', '!=', 'pending')
+            ->where('status', 'paid')
             ->with('plan:id,name,slug')
             ->latest('id')
             ->paginate(8);
@@ -82,11 +82,11 @@ new class extends Component {
              x-show="show"
              x-transition.opacity
             @class([
-                'flex items-start justify-between gap-3 rounded-2xl border p-4 shadow-2xs',
+                'flex items-center justify-between gap-3 rounded-2xl border p-4 shadow-2xs',
                 'border-emerald-500/30 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400' => ($paymentResult['status'] ?? '') === 'success',
                 'border-primary/30 bg-primary/10 text-primary' => ($paymentResult['status'] ?? '') !== 'success',
             ])>
-            <div class="flex items-start gap-3">
+            <div class="flex min-w-0 flex-1 items-center gap-3">
                 <div @class([
                     'flex size-10 shrink-0 items-center justify-center rounded-xl',
                     'bg-emerald-500/20 text-emerald-500' => ($paymentResult['status'] ?? '') === 'success',
@@ -95,11 +95,11 @@ new class extends Component {
                     <x-ui.icon :name="($paymentResult['status'] ?? '') === 'success' ? 'check' : 'alert-triangle'" class="size-5"/>
                 </div>
 
-                <div class="space-y-1 text-xs">
+                <div class="min-w-0 flex-1 space-y-1 text-xs">
                     <p class="font-bold leading-6">{{ $paymentResult['message'] }}</p>
                     @if (! empty($paymentResult['ref_id']))
                         <p class="font-mono text-[11px] opacity-90">
-                            کد رهگیری زرین‌پال:
+                            کد رهگیری زیبال:
                             <span class="font-bold select-all" dir="ltr">{{ $paymentResult['ref_id'] }}</span>
                         </p>
                     @endif

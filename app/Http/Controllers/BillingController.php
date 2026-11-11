@@ -5,7 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Payment;
 use App\Models\Plan;
 use App\Subscriptions\Exceptions\PaymentException;
-use App\Subscriptions\Gateways\ZarinpalGateway;
+use App\Subscriptions\Gateways\ZibalGateway;
 use App\Subscriptions\SubscriptionManager;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -19,7 +19,7 @@ class BillingController extends Controller
 {
     public function __construct(
         private readonly SubscriptionManager $subscriptions,
-        private readonly ZarinpalGateway $gateway,
+        private readonly ZibalGateway $gateway,
     ) {}
 
     public function index(): View
@@ -100,13 +100,13 @@ class BillingController extends Controller
             'plan_id' => $plan->id,
             'billing_cycle' => $billingCycle,
             'amount' => $amount,
-            'gateway' => 'zarinpal',
+            'gateway' => 'zibal',
             'status' => 'pending',
             'ip_address' => $request->ip(),
         ]);
 
         $cycleLabel = $billingCycle === 'yearly' ? 'سالانه' : 'ماهانه';
-        $description = "اشتراک $plan->name ({$cycleLabel}) - " . config('app.name');
+        $description = "اشتراک $plan->name ($cycleLabel) - " . config('app.name');
 
         try {
             $result = $this->gateway->request(
@@ -114,7 +114,6 @@ class BillingController extends Controller
                 description: $description,
                 callbackUrl: route('billing.callback'),
                 metadata: [
-                    'email' => $user->email,
                     'order_id' => $payment->public_id,
                 ]
             );
@@ -151,23 +150,29 @@ class BillingController extends Controller
     {
         abort_unless($this->subscriptions->isSaasEnabled(), 404);
 
-        $authority = trim((string) $request->query('Authority', ''));
-        $status = strtoupper(trim((string) $request->query('Status', '')));
+        $trackId = trim((string) $request->query('trackId', ''));
+        $success = trim((string) $request->query('success', ''));
+        $status = (int) $request->query('status', 0);
+        $orderId = trim((string) $request->query('orderId', ''));
 
-        if ($authority === '' || strlen($authority) > 64 || ! preg_match('/^[A-Za-z0-9\-_]+$/', $authority)) {
+        if ($trackId === '' || strlen($trackId) > 32 || ! ctype_digit($trackId)) {
             return $this->redirectAfterCallback('error', 'شناسه پرداخت بازگشتی از درگاه معتبر نیست.');
         }
 
         try {
-            return DB::transaction(function () use ($authority, $status, $request) {
+            return DB::transaction(function () use ($trackId, $success, $status, $orderId, $request) {
                 $payment = Payment::query()
                     ->with(['user', 'plan'])
-                    ->where('authority', $authority)
+                    ->where('authority', $trackId)
                     ->lockForUpdate()
                     ->first();
 
                 if (! $payment || ! $payment->user || ! $payment->plan) {
                     return $this->redirectAfterCallback('error', 'تراکنش مورد نظر در سیستم یافت نشد.');
+                }
+
+                if ($orderId !== '' && ! hash_equals((string) $payment->public_id, $orderId)) {
+                    return $this->redirectAfterCallback('error', 'اطلاعات سفارش بازگشتی از درگاه معتبر نیست.');
                 }
 
                 if ($request->user() && $payment->user_id !== $request->user()->id) {
@@ -186,14 +191,14 @@ class BillingController extends Controller
                     return $this->redirectAfterCallback('error', 'این تراکنش قبلاً منقضی یا لغو شده است.');
                 }
 
-                if ($status !== 'OK') {
+                if ($success !== '1') {
                     $payment->delete();
 
-                    return $this->redirectAfterCallback('error', 'فرآیند پرداخت توسط شما لغو شد.');
+                    return $this->redirectAfterCallback('error', $this->gateway->translateCallbackStatus($status));
                 }
 
                 try {
-                    $verified = $this->gateway->verify($payment->amount, $authority);
+                    $verified = $this->gateway->verify($payment->amount, $trackId, (string) $payment->public_id);
                 } catch (PaymentException $e) {
                     $payment->update(['status' => 'failed']);
 

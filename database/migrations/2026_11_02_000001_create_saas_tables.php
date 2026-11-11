@@ -46,7 +46,7 @@ return new class extends Migration
             $table->foreignId('subscription_id')->nullable()->constrained('subscriptions')->nullOnDelete();
             $table->string('billing_cycle', 20);
             $table->unsignedBigInteger('amount');
-            $table->string('gateway', 30)->default('zarinpal');
+            $table->string('gateway', 30)->default('zibal');
             $table->string('authority', 64)->nullable()->unique();
             $table->string('ref_id', 64)->nullable()->index();
             $table->string('card_pan', 32)->nullable();

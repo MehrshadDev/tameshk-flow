@@ -389,8 +389,8 @@
 
     <div class="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-line-border/70 bg-surface-base px-4 py-3 text-xs text-content-muted">
         <div class="flex items-center gap-2.5">
-            <x-ui.icon name="brand:zarinpal" class="size-5"/>
-            <span>پرداخت امن و آنی از طریق درگاه پرداخت اینترنتی <strong class="text-content-main">زرین‌پال</strong> با تمامی کارت‌های عضو شتاب</span>
+            <x-ui.icon name="brand:zibal" class="size-5"/>
+            <span>پرداخت امن و آنی از طریق درگاه پرداخت اینترنتی <strong class="text-content-main">زیبال</strong> با تمامی کارت‌های عضو شتاب</span>
         </div>
     </div>
 </div>

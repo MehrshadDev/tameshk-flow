@@ -9,10 +9,10 @@ return [
 
     'renewal_window_days' => 10,
 
-    'zarinpal' => [
-        'sandbox' => (bool) env('ZARINPAL_SANDBOX', true),
-        'merchant_id' => (string) env('ZARINPAL_MERCHANT_ID', '00000000-0000-0000-0000-000000000000'),
-        'currency' => (string) env('ZARINPAL_CURRENCY', 'IRT'),
+    'zibal' => [
+        'sandbox' => (bool) env('ZIBAL_SANDBOX', true),
+        'merchant_id' => (string) env('ZIBAL_MERCHANT_ID', 'zibal'),
+        'currency' => (string) env('ZIBAL_CURRENCY', 'IRT'),
     ],
 
     'enamad' => [
