@@ -17,4 +17,4 @@ Disallow: /webhook/
 Disallow: /webhook-test/
 Disallow: /livewire/
 
-Sitemap: https://localhost/sitemap.xml
+Sitemap: https://tameshkflow.ir/sitemap.xml
