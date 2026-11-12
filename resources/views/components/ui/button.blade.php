@@ -7,10 +7,12 @@
         'ghost' => 'text-content-muted hover:bg-line-border/50 hover:text-content-main',
     ];
 
+    $hasCustomRadius = str_contains((string) $attributes->get('class'), 'rounded-');
+
     $sizes = [
-           'md' => 'rounded-lg px-4 py-2 text-sm',
-           'lg' => 'rounded-xl px-7 py-3 text-base',
-       ];
+        'md' => ($hasCustomRadius ? '' : 'rounded-xl ') . 'px-4 py-2 text-sm',
+        'lg' => ($hasCustomRadius ? '' : 'rounded-xl ') . 'px-7 py-3 text-base',
+    ];
 
     $tag = $href ? 'a' : 'button';
 @endphp

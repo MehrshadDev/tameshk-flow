@@ -24,7 +24,7 @@
              style="background: radial-gradient(circle, color-mix(in oklab, var(--color-primary) 14%, transparent), transparent 60%);"></div>
     </div>
 
-    <div class="mx-auto flex max-w-5xl flex-col items-center px-4 pb-20 pt-20 text-center sm:px-6 sm:pb-28 sm:pt-32">
+    <div class="mx-auto flex max-w-5xl flex-col items-center px-4 pb-20 pt-28 text-center sm:px-6 sm:pb-28 sm:pt-36">
         <h1 class="hero-title max-w-4xl text-3xl font-extrabold leading-[1.6] tracking-tight text-content-main xs:text-4xl sm:text-5xl md:text-6xl">
             اتوماسیون کارها،
             <span class="hero-gradient-shift relative inline-block bg-linear-to-l from-primary via-rose-400 to-primary bg-clip-text text-transparent bg-size-[200%_auto]">
