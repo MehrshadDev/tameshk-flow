@@ -28,7 +28,12 @@ export const createExecutionSlice: Slice<ExecutionSlice> = (set, get) => ({
             if (get().saveStatus === 'error') return;
         }
 
-        set({ isRunning: true });
+        const triggerNode = get().nodes.find((n) => n.data.nodeType.startsWith('trigger.'));
+
+        set({
+            isRunning: true,
+            runningNodeId: triggerNode?.id ?? null,
+        });
 
         let nodeFailureLogged = false;
 

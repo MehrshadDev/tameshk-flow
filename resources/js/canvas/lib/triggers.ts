@@ -1,15 +1,14 @@
-const TESTABLE_TRIGGERS = [
-    'trigger.manual',
-    'trigger.schedule',
-    'trigger.webhook',
-    'trigger.telegram',
-    'trigger.gmail',
-    'trigger.google_sheets_row_added',
-    'trigger.google_sheets_row_updated',
-    'trigger.google_sheets_row_added_or_updated',
-];
+const NON_TESTABLE_TRIGGERS = ['trigger.chat'];
 
-export const isTestableTrigger = (nodeType: string): boolean => TESTABLE_TRIGGERS.includes(nodeType);
+const INSTANT_TRIGGERS = ['trigger.manual', 'trigger.schedule'];
+
+export const isTestableTrigger = (nodeType: string): boolean =>
+    nodeType.startsWith('trigger.') && !NON_TESTABLE_TRIGGERS.includes(nodeType);
+
+export const isListeningTrigger = (nodeType: string): boolean =>
+    nodeType.startsWith('trigger.') &&
+    !NON_TESTABLE_TRIGGERS.includes(nodeType) &&
+    !INSTANT_TRIGGERS.includes(nodeType);
 
 export const isScheduleTrigger = (nodeType: string): boolean => nodeType === 'trigger.schedule';
 
@@ -20,6 +19,14 @@ export const isTelegramTrigger = (nodeType: string): boolean => nodeType === 'tr
 export const isGmailTrigger = (nodeType: string): boolean => nodeType === 'trigger.gmail';
 
 export const isSheetsTrigger = (nodeType: string): boolean =>
-    nodeType === 'trigger.google_sheets_row_added'
-    || nodeType === 'trigger.google_sheets_row_updated'
-    || nodeType === 'trigger.google_sheets_row_added_or_updated';
+    nodeType === 'trigger.google_sheets_row_added' ||
+    nodeType === 'trigger.google_sheets_row_updated' ||
+    nodeType === 'trigger.google_sheets_row_added_or_updated';
+
+export const listeningTriggerLabel = (nodeType: string): string => {
+    if (isWebhookTrigger(nodeType)) return 'در انتظار دریافت وب‌هوک...';
+    if (isTelegramTrigger(nodeType)) return 'در انتظار پیام تلگرام...';
+    if (isGmailTrigger(nodeType)) return 'در انتظار ایمیل جدید...';
+    if (isSheetsTrigger(nodeType)) return 'در انتظار تغییر در شیت...';
+    return 'در انتظار دریافت رویداد...';
+};

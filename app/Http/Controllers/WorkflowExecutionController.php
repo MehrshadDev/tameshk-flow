@@ -24,6 +24,22 @@ class WorkflowExecutionController extends Controller
 
         if ($request->boolean('stream')) {
             return response()->stream(function () use ($workflow, $runner, $request) {
+                @ini_set('output_buffering', 'off');
+                @ini_set('zlib.output_compression', '0');
+
+                if (function_exists('apache_setenv')) {
+                    @apache_setenv('no-gzip', '1');
+                }
+
+                while (ob_get_level() > 0) {
+                    @ob_end_flush();
+                }
+
+                ob_implicit_flush(true);
+
+                echo ':' . str_repeat(' ', 2048) . "\n\n";
+                flush();
+
                 try {
                     $run = $runner->run($workflow, $request->input('data', []), function ($nodeId, $status, $nodeRun = null) {
                         $payload = [
@@ -35,27 +51,21 @@ class WorkflowExecutionController extends Controller
                             $payload['node_run'] = $nodeRun;
                         }
 
-                        echo "data: " . json_encode($payload) . "\n\n";
-
-                        if (ob_get_level() > 0) {
-                            ob_flush();
-                        }
+                        echo 'data: ' . json_encode($payload) . "\n\n";
                         flush();
                     });
 
-                    echo "data: " . json_encode(['event' => 'completed', 'run' => $run->load('nodeRuns')]) . "\n\n";
+                    echo 'data: ' . json_encode(['event' => 'completed', 'run' => $run->load('nodeRuns')]) . "\n\n";
                 } catch (Throwable $e) {
                     $latest = $workflow->runs()->latest()->with('nodeRuns')->first();
-                    echo "data: " . json_encode(['event' => 'failed', 'error' => $this->safeErrorMessage($e), 'run' => $latest]) . "\n\n";
+                    echo 'data: ' . json_encode(['event' => 'failed', 'error' => $this->safeErrorMessage($e), 'run' => $latest]) . "\n\n";
                 }
 
-                if (ob_get_level() > 0) {
-                    ob_flush();
-                }
                 flush();
             }, 200, [
-                'Content-Type' => 'text/event-stream',
-                'Cache-Control' => 'no-cache',
+                'Content-Type' => 'text/event-stream; charset=UTF-8',
+                'Cache-Control' => 'no-cache, no-transform',
+                'Connection' => 'keep-alive',
                 'X-Accel-Buffering' => 'no',
             ]);
         }

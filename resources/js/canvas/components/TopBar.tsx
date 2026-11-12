@@ -1,6 +1,6 @@
 import { Icon } from '@canvas/components/ui/Icon';
 import { Tooltip } from '@canvas/components/ui/Tooltip';
-import { isWebhookTrigger, isTelegramTrigger, isGmailTrigger, isSheetsTrigger, isTestableTrigger } from '@canvas/lib/triggers';
+import { isListeningTrigger, isTestableTrigger, listeningTriggerLabel } from '@canvas/lib/triggers';
 import { useColorMode } from '@canvas/lib/useColorMode';
 import { useWorkflowStore } from '@canvas/store/useWorkflowStore';
 import { SaveButton } from '@canvas/components/SaveButton';
@@ -26,18 +26,11 @@ export function TopBar({ backUrl }: TopBarProps) {
 
     const canTest = nodes.some((n) => isTestableTrigger(n.data.nodeType));
     const isBusy = isRunning || runningNodeId !== null;
-    const runningTrigger = nodes.find((n) => n.id === runningNodeId);
-    const listeningText = runningTrigger
-        ? isWebhookTrigger(runningTrigger.data.nodeType)
-            ? 'در انتظار دریافت وب‌هوک...'
-            : isTelegramTrigger(runningTrigger.data.nodeType)
-                ? 'در انتظار پیام تلگرام...'
-                : isGmailTrigger(runningTrigger.data.nodeType)
-                    ? 'در انتظار ایمیل جدید...'
-                    : isSheetsTrigger(runningTrigger.data.nodeType)
-                        ? 'در انتظار تغییر در شیت...'
-                        : null
-        : null;
+    const runningNode = nodes.find((n) => n.id === runningNodeId);
+    const listeningText =
+        runningNode && isListeningTrigger(runningNode.data.nodeType)
+            ? listeningTriggerLabel(runningNode.data.nodeType)
+            : null;
 
     const handleBack = () => {
         if (saveStatus === 'saved') {
@@ -74,8 +67,8 @@ export function TopBar({ backUrl }: TopBarProps) {
                 {isBusy ? (
                     <>
                         {listeningText && (
-                            <span className="flex items-center gap-1.5 text-xs text-content-muted">
-                                <Icon name="loader" className="size-3.5 animate-spin text-primary" />
+                            <span className="hidden items-center gap-1.5 rounded-xl border border-amber-500/25 bg-amber-500/10 px-3 py-1.5 text-xs font-semibold text-amber-500 sm:flex">
+                                <Icon name="loader" className="size-3.5 animate-spin text-amber-500" />
                                 {listeningText}
                             </span>
                         )}
@@ -83,7 +76,7 @@ export function TopBar({ backUrl }: TopBarProps) {
                         <button
                             type="button"
                             onClick={() => void cancelWorkflow()}
-                            className="flex items-center gap-2 rounded-xl bg-amber-500/10 border border-amber-500/20 px-3.5 py-1.5 text-xs font-bold text-amber-500 shadow-sm transition hover:bg-amber-500/20"
+                            className="flex items-center gap-2 rounded-xl border border-amber-500/20 bg-amber-500/10 px-3.5 py-1.5 text-xs font-bold text-amber-500 shadow-sm transition hover:bg-amber-500/20"
                         >
                             <Icon name="player-stop" className="size-4" />
                             <span>توقف اجرا</span>

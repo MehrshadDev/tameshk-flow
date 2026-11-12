@@ -1,3 +1,4 @@
+import { useId } from 'react';
 import { Icon } from '@canvas/components/ui/Icon';
 import type { NodeRunStatus } from '@canvas/types/graph';
 
@@ -13,6 +14,7 @@ const BADGE_BASE =
 export type NodeBadgeProps = {
     disabled: boolean;
     executing: boolean;
+    listening?: boolean;
     missing: string[];
     status?: NodeRunStatus;
     successCount: number;
@@ -70,9 +72,78 @@ export function SidePlus({
     );
 }
 
-export function NodeBadge({ disabled, executing, missing, status, successCount }: NodeBadgeProps) {
+export function NodeSnakeBorder({ height }: { height: number }) {
+    const uid = useId().replace(/:/g, '');
+    const w = 72;
+    const h = height;
+
+    return (
+        <div className="pointer-events-none absolute inset-0 z-10 overflow-visible rounded-2xl">
+            <span className="absolute -inset-1.5 animate-pulse rounded-3xl bg-amber-500/15 blur-md" />
+            <svg
+                className="pointer-events-none absolute -inset-[2px] size-[calc(100%+4px)] overflow-visible"
+                viewBox={`-2 -2 ${w + 4} ${h + 4}`}
+                fill="none"
+            >
+                <defs>
+                    <linearGradient id={`snake-grad-${uid}`} x1="0%" y1="0%" x2="100%" y2="100%">
+                        <stop offset="0%" stopColor="#fde047" />
+                        <stop offset="50%" stopColor="#f59e0b" />
+                        <stop offset="100%" stopColor="#ea580c" />
+                    </linearGradient>
+                </defs>
+                <rect
+                    x="0"
+                    y="0"
+                    width={w}
+                    height={h}
+                    rx="16"
+                    ry="16"
+                    pathLength="100"
+                    stroke="rgba(245, 158, 11, 0.25)"
+                    strokeWidth="2.5"
+                />
+                <rect
+                    x="0"
+                    y="0"
+                    width={w}
+                    height={h}
+                    rx="16"
+                    ry="16"
+                    pathLength="100"
+                    stroke={`url(#snake-grad-${uid})`}
+                    strokeWidth="3.5"
+                    strokeLinecap="round"
+                    strokeDasharray="32 68"
+                    style={{
+                        filter: 'drop-shadow(0 0 6px rgba(245, 158, 11, 0.85))',
+                    }}
+                >
+                    <animate
+                        attributeName="stroke-dashoffset"
+                        from="100"
+                        to="0"
+                        dur="1.5s"
+                        repeatCount="indefinite"
+                    />
+                </rect>
+            </svg>
+        </div>
+    );
+}
+
+export function NodeBadge({ disabled, executing, listening = false, missing, status, successCount }: NodeBadgeProps) {
     if (disabled) {
         return null;
+    }
+
+    if (listening) {
+        return (
+            <span className={`${BADGE_BASE} bg-amber-500 shadow-amber-500/40`}>
+                <span className="absolute inset-0 animate-ping rounded-full bg-amber-400 opacity-75" />
+                <Icon name="loader" className="relative size-3 animate-spin" />
+            </span>
+        );
     }
 
     if (executing) {

@@ -7,10 +7,10 @@ import { missingRequiredLabels } from '@canvas/lib/fields';
 import { Handle as HandleId, SPECIAL_HANDLES } from '@canvas/lib/handles';
 import { resolveNodeOutputs } from '@canvas/lib/nodeOutputs';
 import { handleLabels, nodeAppearance } from '@canvas/lib/nodeStyles';
-import { isTestableTrigger } from '@canvas/lib/triggers';
+import { isListeningTrigger, isTestableTrigger } from '@canvas/lib/triggers';
 import { useWorkflowStore } from '@canvas/store/useWorkflowStore';
 import { AiAgentNodeCard } from './AiAgentNodeCard';
-import { DOT_HANDLE, handleTop, NodeBadge, SidePlus } from './NodeParts';
+import { DOT_HANDLE, handleTop, NodeBadge, NodeSnakeBorder, SidePlus } from './NodeParts';
 import { SupplyNodeCard } from './SupplyNodeCard';
 
 export function WorkflowNode({ id, data, selected }: NodeProps<FlowNode>) {
@@ -46,6 +46,7 @@ export function WorkflowNode({ id, data, selected }: NodeProps<FlowNode>) {
     const isSwitch = data.nodeType === 'logic.switch';
     const isDisabled = Boolean(data.config?.disabled) && !isTrigger;
     const isNodeExecuting = runningNodeId === id;
+    const isNodeListening = isNodeExecuting && isListeningTrigger(data.nodeType);
 
     const hasEverRun = lastRun !== null;
     const missingFields =
@@ -215,16 +216,19 @@ export function WorkflowNode({ id, data, selected }: NodeProps<FlowNode>) {
                 <div
                     style={{ height: `${dynamicHeightPx}px` }}
                     className={`pointer-events-auto relative flex w-18 items-center justify-center rounded-2xl border bg-surface-card shadow-sm transition-all duration-200 ${
-                        selected
-                            ? 'border-primary shadow-lg ring-4 ring-primary/20'
-                            : isNodeExecuting
-                                ? 'border-amber-500 shadow-lg ring-4 ring-amber-500/20'
+                        isNodeExecuting
+                            ? 'border-transparent shadow-lg'
+                            : selected
+                                ? 'border-primary shadow-lg ring-4 ring-primary/20'
                                 : 'border-line-border hover:border-content-muted/40'
                     } ${isDisabled ? 'border-dashed' : ''}`}
                 >
+                    {isNodeExecuting && <NodeSnakeBorder height={dynamicHeightPx} />}
+
                     <NodeBadge
                         disabled={isDisabled}
                         executing={isNodeExecuting}
+                        listening={isNodeListening}
                         missing={missingFields}
                         status={lastRunItem?.status}
                         successCount={successCount}
@@ -243,7 +247,11 @@ export function WorkflowNode({ id, data, selected }: NodeProps<FlowNode>) {
                         );
                     })}
 
-                    <div className={`flex size-11 items-center justify-center rounded-xl shadow-inner ${iconStyle}`}>
+                    <div
+                        className={`relative z-10 flex size-11 items-center justify-center rounded-xl shadow-inner transition-transform duration-300 ${
+                            isNodeListening ? 'scale-105' : ''
+                        } ${iconStyle}`}
+                    >
                         <Icon name={iconName} className="size-6" />
                     </div>
 
@@ -311,7 +319,17 @@ export function WorkflowNode({ id, data, selected }: NodeProps<FlowNode>) {
                         {data.label}
                     </p>
 
-                    {conditionOutcome && (
+                    {isNodeListening && (
+                        <span
+                            dir="rtl"
+                            className="mt-1 inline-flex items-center gap-1 rounded-full border border-amber-500/40 bg-amber-500/15 px-2 py-0.5 text-[9px] font-bold text-amber-500 shadow-2xs animate-pulse"
+                        >
+                            <span className="size-1.5 rounded-full bg-amber-500" />
+                            <span>در انتظار رویداد...</span>
+                        </span>
+                    )}
+
+                    {!isNodeListening && conditionOutcome && (
                         <span
                             className={`mt-0.5 inline-block rounded px-1.5 py-[0.2rem] text-[9px] font-bold ${
                                 conditionOutcome === HandleId.True
@@ -323,13 +341,14 @@ export function WorkflowNode({ id, data, selected }: NodeProps<FlowNode>) {
                         </span>
                     )}
 
-                    {switchOutcomeLabel && (
+                    {!isNodeListening && switchOutcomeLabel && (
                         <span className="mt-0.5 inline-block rounded bg-orange-500/10 px-1.5 py-[0.2rem] text-[9px] font-bold text-orange-500">
                             مسیر: {switchOutcomeLabel}
                         </span>
                     )}
 
-                    {!conditionOutcome &&
+                    {!isNodeListening &&
+                        !conditionOutcome &&
                         !switchOutcomeLabel &&
                         lastRunItem?.duration_ms !== null &&
                         lastRunItem?.duration_ms !== undefined && (
@@ -338,7 +357,8 @@ export function WorkflowNode({ id, data, selected }: NodeProps<FlowNode>) {
                             </p>
                         )}
 
-                    {!conditionOutcome &&
+                    {!isNodeListening &&
+                        !conditionOutcome &&
                         !switchOutcomeLabel &&
                         (lastRunItem?.duration_ms === null || lastRunItem?.duration_ms === undefined) && (
                             <>
