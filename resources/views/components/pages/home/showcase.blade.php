@@ -111,7 +111,7 @@
 @endphp
 
 <section x-data="tameshkShowcase(@js($orbsLayout), @js($detachedNodes))"
-         class="relative h-[280vh] w-full border-t border-line-border bg-surface-base font-vazirmatn-rd select-none">
+         class="showcase-paused relative h-[280vh] w-full border-t border-line-border bg-surface-base font-vazirmatn-rd select-none">
 
     <div class="sticky top-0 flex h-dvh w-full items-center justify-center overflow-hidden">
         <div class="showcase-dot-grid pointer-events-none absolute inset-0 opacity-85" aria-hidden="true"></div>
@@ -141,7 +141,7 @@
                     </linearGradient>
                 </defs>
 
-                <g x-ref="sparksGroup" style="opacity: 0">
+                <g x-ref="sparksGroup" style="opacity: 0; display: none">
                     <path d="M -38 -42 Q 0 -10 42 -36" stroke="url(#showcase-spark-grad)" stroke-width="2" stroke-dasharray="4 6" class="showcase-spark-line"/>
                     <path d="M -52 6 Q 0 -22 54 8" stroke="url(#showcase-spark-grad)" stroke-width="2.2" stroke-dasharray="3 5" class="showcase-spark-line"/>
                     <path d="M -28 44 Q 4 12 32 42" stroke="url(#showcase-spark-grad)" stroke-width="1.8" stroke-dasharray="4 6" class="showcase-spark-line"/>
@@ -151,7 +151,7 @@
                     <circle cx="0" cy="24" r="3" fill="#E21C48"/>
                 </g>
 
-                <g x-ref="edgesGroup" style="opacity: 0">
+                <g x-ref="edgesGroup" style="opacity: 0; display: none">
                     @foreach ($detachedNodes as $idx => $n)
                         <path data-edge-bg="{{ $idx }}"
                               d="M 0 0 L 0 0"
@@ -280,6 +280,7 @@
             background-size: 22px 22px;
             -webkit-mask-image: radial-gradient(ellipse 80% 75% at 50% 50%, #000 35%, transparent 100%);
             mask-image: radial-gradient(ellipse 80% 75% at 50% 50%, #000 35%, transparent 100%);
+            transform: translateZ(0);
         }
 
         .showcase-orb-sphere {
@@ -306,6 +307,11 @@
         .showcase-spark-line {
             animation: showcase-dash-flow 0.6s linear infinite;
         }
+
+        .showcase-paused .showcase-edge-flow,
+        .showcase-paused .showcase-spark-line {
+            animation-play-state: paused;
+        }
     </style>
 
     <script>
@@ -321,73 +327,215 @@
                 edgeLines: [],
                 edgeBgs: [],
                 edgeDots: [],
+                sectionTop: 0,
+                sectionH: 0,
+                vh: 0,
+                visible: false,
+                lastP: -1,
+                observer: null,
+                onScroll: null,
+                onResize: null,
 
                 init() {
                     const section = this.$el;
 
-                    this.orbEls = orbsConfig.map((cfg, idx) => {
-                        const shell = section.querySelector(`[data-orb-index="${idx}"]`);
-                        return {
-                            cfg,
-                            shell,
-                            skin: section.querySelector(`[data-orb-skin="${idx}"]`),
-                            card: section.querySelector(`[data-node-card="${idx}"]`),
-                            badge: section.querySelector(`[data-node-badge="${idx}"]`),
-                            label: section.querySelector(`[data-node-label="${idx}"]`),
-                            nodeCfg: cfg.nodeIndex !== null ? nodesConfig[cfg.nodeIndex] : null,
-                        };
-                    });
+                    this.orbEls = orbsConfig.map((cfg, idx) => ({
+                        cfg,
+                        shell: section.querySelector(`[data-orb-index="${idx}"]`),
+                        skin: section.querySelector(`[data-orb-skin="${idx}"]`),
+                        card: section.querySelector(`[data-node-card="${idx}"]`),
+                        badge: section.querySelector(`[data-node-badge="${idx}"]`),
+                        label: section.querySelector(`[data-node-label="${idx}"]`),
+                        nodeCfg: cfg.nodeIndex !== null ? nodesConfig[cfg.nodeIndex] : null,
+                    }));
 
                     this.edgeLines = nodesConfig.map((_, i) => section.querySelector(`[data-edge-line="${i}"]`));
                     this.edgeBgs = nodesConfig.map((_, i) => section.querySelector(`[data-edge-bg="${i}"]`));
                     this.edgeDots = nodesConfig.map((_, i) => section.querySelector(`[data-edge-dot="${i}"]`));
 
-                    const updateBounds = () => {
-                        if (!this.$refs.stage) return;
+                    const measure = () => {
                         const rect = this.$refs.stage.getBoundingClientRect();
                         this.stageW = Math.max(320, rect.width);
                         this.stageH = Math.max(420, rect.height);
                         this.isMobile = window.innerWidth < 640;
+                        this.vh = window.innerHeight;
+                        this.sectionH = section.offsetHeight;
+                        this.sectionTop = section.getBoundingClientRect().top + window.scrollY;
 
-                        if (this.$refs.networkSvg) {
-                            this.$refs.networkSvg.setAttribute(
-                                'viewBox',
-                                `${-this.stageW / 2} ${-this.stageH / 2} ${this.stageW} ${this.stageH}`
-                            );
-                        }
+                        this.$refs.networkSvg.setAttribute(
+                            'viewBox',
+                            `${-this.stageW / 2} ${-this.stageH / 2} ${this.stageW} ${this.stageH}`
+                        );
 
+                        this.lastP = -1;
+                        this.onScroll();
                         this.renderFrame(this.currentProgress);
                     };
 
-                    const onScroll = () => {
-                        const rect = section.getBoundingClientRect();
-                        const scrollable = Math.max(1, rect.height - window.innerHeight);
-                        const raw = -rect.top / scrollable;
-                        this.targetProgress = Math.max(0, Math.min(1, raw));
+                    this.onScroll = () => {
+                        if (!this.visible) return;
+                        const scrollable = Math.max(1, this.sectionH - this.vh);
+                        this.targetProgress = this.clamp01((window.scrollY - this.sectionTop) / scrollable);
                         this.startLoop();
                     };
 
-                    updateBounds();
-                    onScroll();
+                    this.observer = new IntersectionObserver(([entry]) => {
+                        this.visible = entry.isIntersecting;
+                        section.classList.toggle('showcase-paused', !this.visible);
+                        if (this.visible) this.onScroll();
+                    }, { rootMargin: '200px 0px' });
 
-                    window.addEventListener('scroll', onScroll, { passive: true });
-                    window.addEventListener('resize', updateBounds, { passive: true });
+                    this.observer.observe(section);
+
+                    let resizeTimer;
+                    this.onResize = () => {
+                        clearTimeout(resizeTimer);
+                        resizeTimer = setTimeout(measure, 150);
+                    };
+
+                    this.bakeGlow();
+                    measure();
+
+                    window.addEventListener('scroll', this.onScroll, { passive: true });
+                    window.addEventListener('resize', this.onResize, { passive: true });
+                },
+
+                bakeGlow() {
+                    const el = this.$refs.ambientGlow;
+                    if (!el) return;
+
+                    const k = 4;
+                    const size = 480;
+                    const pad = 192;
+                    const n = (size + pad * 2) / k;
+                    const c = n / 2;
+                    const radius = size / 2 / k;
+                    const sigma = 64 / k;
+
+                    const canvas = document.createElement('canvas');
+                    canvas.width = n;
+                    canvas.height = n;
+
+                    const ctx = canvas.getContext('2d');
+                    if (!ctx) return;
+
+                    const grad = ctx.createRadialGradient(c, c, 0, c, c, radius * Math.SQRT2);
+                    grad.addColorStop(0, 'rgba(226,28,72,0.28)');
+                    grad.addColorStop(0.45, 'rgba(168,85,247,0.22)');
+                    grad.addColorStop(0.7, 'rgba(245,158,11,0.12)');
+                    grad.addColorStop(1, 'rgba(245,158,11,0)');
+
+                    ctx.fillStyle = grad;
+                    ctx.beginPath();
+                    ctx.arc(c, c, radius, 0, Math.PI * 2);
+                    ctx.fill();
+
+                    const img = ctx.getImageData(0, 0, n, n);
+                    const d = img.data;
+                    const len = n * n * 4;
+
+                    const bufA = new Float32Array(len);
+                    const bufB = new Float32Array(len);
+
+                    for (let i = 0; i < len; i += 4) {
+                        const al = d[i + 3] / 255;
+                        bufA[i] = d[i] * al;
+                        bufA[i + 1] = d[i + 1] * al;
+                        bufA[i + 2] = d[i + 2] * al;
+                        bufA[i + 3] = d[i + 3];
+                    }
+
+                    const rad = Math.ceil(sigma * 3);
+                    const kernel = new Float32Array(rad * 2 + 1);
+                    let sum = 0;
+
+                    for (let i = -rad; i <= rad; i++) {
+                        const w = Math.exp(-(i * i) / (2 * sigma * sigma));
+                        kernel[i + rad] = w;
+                        sum += w;
+                    }
+
+                    for (let i = 0; i < kernel.length; i++) kernel[i] /= sum;
+
+                    const pass = (src, dst, horizontal) => {
+                        for (let y = 0; y < n; y++) {
+                            for (let x = 0; x < n; x++) {
+                                let s0 = 0, s1 = 0, s2 = 0, s3 = 0;
+
+                                for (let j = -rad; j <= rad; j++) {
+                                    const xx = horizontal ? x + j : x;
+                                    const yy = horizontal ? y : y + j;
+                                    if (xx < 0 || yy < 0 || xx >= n || yy >= n) continue;
+
+                                    const w = kernel[j + rad];
+                                    const idx = (yy * n + xx) * 4;
+                                    s0 += src[idx] * w;
+                                    s1 += src[idx + 1] * w;
+                                    s2 += src[idx + 2] * w;
+                                    s3 += src[idx + 3] * w;
+                                }
+
+                                const o = (y * n + x) * 4;
+                                dst[o] = s0;
+                                dst[o + 1] = s1;
+                                dst[o + 2] = s2;
+                                dst[o + 3] = s3;
+                            }
+                        }
+                    };
+
+                    pass(bufA, bufB, true);
+                    pass(bufB, bufA, false);
+
+                    for (let i = 0; i < len; i += 4) {
+                        const al = bufA[i + 3] / 255;
+                        if (al > 0.0001) {
+                            d[i] = bufA[i] / al;
+                            d[i + 1] = bufA[i + 1] / al;
+                            d[i + 2] = bufA[i + 2] / al;
+                            d[i + 3] = bufA[i + 3];
+                        } else {
+                            d[i] = d[i + 1] = d[i + 2] = d[i + 3] = 0;
+                        }
+                    }
+
+                    ctx.putImageData(img, 0, 0);
+
+                    const total = size + pad * 2;
+                    canvas.style.cssText = `position:absolute;left:-${pad}px;top:-${pad}px;width:${total}px;height:${total}px;pointer-events:none`;
+
+                    el.appendChild(canvas);
+                    el.style.background = 'none';
+                    el.style.filter = 'none';
+                },
+
+                destroy() {
+                    this.observer?.disconnect();
+                    window.removeEventListener('scroll', this.onScroll);
+                    window.removeEventListener('resize', this.onResize);
+                    if (this.rafId !== null) cancelAnimationFrame(this.rafId);
                 },
 
                 startLoop() {
                     if (this.rafId !== null) return;
 
-                    const tick = () => {
+                    let last = performance.now();
+
+                    const tick = (now) => {
+                        const dt = Math.min(48, now - last);
+                        last = now;
+
                         const diff = this.targetProgress - this.currentProgress;
 
-                        if (Math.abs(diff) < 0.0006) {
+                        if (Math.abs(diff) < 0.0008) {
                             this.currentProgress = this.targetProgress;
                             this.renderFrame(this.currentProgress);
                             this.rafId = null;
                             return;
                         }
 
-                        this.currentProgress += diff * 0.14;
+                        const k = 1 - Math.pow(1 - 0.14, dt / 16.667);
+                        this.currentProgress += diff * k;
                         this.renderFrame(this.currentProgress);
                         this.rafId = requestAnimationFrame(tick);
                     };
@@ -422,20 +570,22 @@
                     const yNorm01 = this.clamp01((yRot + 0.9) / 1.8);
                     const coneEnvelope = 1.04 - 0.72 * Math.pow(yNorm01, 1.45);
 
-                    const x = x0 * coneEnvelope * baseR * expandFactor;
-                    const y = yRot * baseH * expandFactor;
-                    const z = zRot;
-
-                    return { x, y, z };
+                    return {
+                        x: x0 * coneEnvelope * baseR * expandFactor,
+                        y: yRot * baseH * expandFactor,
+                        z: zRot,
+                    };
                 },
 
                 renderFrame(p) {
+                    if (Math.abs(p - this.lastP) < 0.0004) return;
+                    this.lastP = p;
+
                     const p1 = this.clamp01(p / 0.30);
                     const p2 = this.smoothstep((p - 0.30) / 0.45);
                     const p3 = this.smoothstep((p - 0.72) / 0.24);
 
                     const rotAngle = p1 * Math.PI * 1.45 + p2 * Math.PI * 0.35;
-
                     const chargePulse = Math.sin(p1 * Math.PI);
                     const expandFactor = 1 + chargePulse * 0.25 - p2 * 0.24 - p3 * 0.10;
 
@@ -443,6 +593,7 @@
                         const sparkOpacity = this.clamp01(Math.sin(this.clamp01(p / 0.42) * Math.PI) * 1.15);
                         this.$refs.sparksGroup.style.opacity = sparkOpacity.toFixed(3);
                         this.$refs.sparksGroup.style.transform = `scale(${(1 + chargePulse * 0.15).toFixed(3)})`;
+                        this.$refs.sparksGroup.style.display = sparkOpacity < 0.01 ? 'none' : '';
                     }
 
                     if (this.$refs.ambientGlow) {
@@ -457,20 +608,21 @@
                         this.$refs.crown.style.transform = `translate3d(0, ${crownY.toFixed(1)}px, 0) scale(${crownScale.toFixed(3)}) rotate(${crownTilt.toFixed(1)}deg)`;
                     }
 
+                    const edgesVisible = p3 > 0.01;
+
                     for (let i = 0; i < this.orbEls.length; i++) {
                         const item = this.orbEls[i];
                         const clusterPos = this.computeClusterPos(item.cfg, rotAngle, expandFactor);
 
                         const depthNorm = this.clamp01((clusterPos.z + 1) / 2);
                         const baseScale = (this.isMobile ? 0.72 : 0.84) + depthNorm * 0.34;
-                        const baseBrightness = 0.58 + depthNorm * 0.55;
+                        const brightness = 0.58 + depthNorm * 0.55 + p3 * 0.30;
 
                         if (!item.nodeCfg) {
                             const coreScale = baseScale * (1 - p2 * 0.16 + p3 * 0.08);
-                            const zIdx = Math.round(10 + depthNorm * 20);
-                            item.shell.style.zIndex = String(zIdx);
+                            item.shell.style.zIndex = String(Math.round(10 + depthNorm * 20));
                             item.shell.style.transform = `translate3d(${clusterPos.x.toFixed(1)}px, ${clusterPos.y.toFixed(1)}px, 0) scale(${coreScale.toFixed(3)})`;
-                            item.skin.style.filter = `brightness(${(baseBrightness + p3 * 0.30).toFixed(2)})`;
+                            item.skin.style.filter = `brightness(${brightness.toFixed(2)})`;
                             continue;
                         }
 
@@ -486,11 +638,9 @@
 
                         const targetScale = this.isMobile ? 0.86 : 1.0;
                         const scale = baseScale * (1 - p2) + targetScale * p2;
-                        const radiusPx = 32 - p2 * 16;
 
-                        const zIdx = p2 > 0.15 ? 35 : Math.round(10 + depthNorm * 20);
-                        item.shell.style.zIndex = String(zIdx);
-                        item.shell.style.borderRadius = `${radiusPx.toFixed(1)}px`;
+                        item.shell.style.zIndex = p2 > 0.15 ? '35' : String(Math.round(10 + depthNorm * 20));
+                        item.shell.style.borderRadius = `${(32 - p2 * 16).toFixed(1)}px`;
                         item.shell.style.transform = `translate3d(${x.toFixed(1)}px, ${y.toFixed(1)}px, 0) scale(${scale.toFixed(3)})`;
 
                         const cardOpacity = this.smoothstep((p2 - 0.18) / 0.65);
@@ -498,8 +648,7 @@
                         item.card.style.opacity = cardOpacity.toFixed(3);
 
                         if (item.label) {
-                            const labelOpacity = this.smoothstep((p2 - 0.55) / 0.40);
-                            item.label.style.opacity = labelOpacity.toFixed(3);
+                            item.label.style.opacity = this.smoothstep((p2 - 0.55) / 0.40).toFixed(3);
                         }
 
                         if (item.badge) {
@@ -508,29 +657,25 @@
                         }
 
                         const edgeIdx = item.cfg.nodeIndex;
-                        if (edgeIdx !== null && this.edgeLines[edgeIdx]) {
+                        if (edgesVisible && this.edgeLines[edgeIdx]) {
                             const qx = targetX * 0.45;
                             const qy = targetY * 0.15;
                             const pathD = `M 0 0 Q ${qx.toFixed(1)} ${qy.toFixed(1)} ${targetX.toFixed(1)} ${targetY.toFixed(1)}`;
                             this.edgeLines[edgeIdx].setAttribute('d', pathD);
                             this.edgeBgs[edgeIdx].setAttribute('d', pathD);
 
+                            const dotT = (p3 * 1.4 + edgeIdx * 0.12) % 1;
+                            const dInv = 1 - dotT;
                             const dotEl = this.edgeDots[edgeIdx];
-                            if (dotEl) {
-                                const dotT = (p3 * 1.4 + edgeIdx * 0.12) % 1;
-                                const dInv = 1 - dotT;
-                                const dotX = 2 * dInv * dotT * qx + dotT * dotT * targetX;
-                                const dotY = 2 * dInv * dotT * qy + dotT * dotT * targetY;
-
-                                dotEl.setAttribute('cx', dotX.toFixed(1));
-                                dotEl.setAttribute('cy', dotY.toFixed(1));
-                                dotEl.style.opacity = p3 > 0.2 ? '1' : '0';
-                            }
+                            dotEl.setAttribute('cx', (2 * dInv * dotT * qx + dotT * dotT * targetX).toFixed(1));
+                            dotEl.setAttribute('cy', (2 * dInv * dotT * qy + dotT * dotT * targetY).toFixed(1));
+                            dotEl.style.opacity = p3 > 0.2 ? '1' : '0';
                         }
                     }
 
                     if (this.$refs.edgesGroup) {
                         this.$refs.edgesGroup.style.opacity = p3.toFixed(3);
+                        this.$refs.edgesGroup.style.display = edgesVisible ? '' : 'none';
                     }
                 },
             }));
