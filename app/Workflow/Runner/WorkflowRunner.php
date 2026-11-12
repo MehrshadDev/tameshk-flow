@@ -3,6 +3,7 @@
 namespace App\Workflow\Runner;
 
 use App\Credentials\CredentialResolver;
+use App\Jobs\ResumeWorkflowRunJob;
 use App\Models\Node;
 use App\Models\NodeRun;
 use App\Models\Workflow;
@@ -55,11 +56,22 @@ class WorkflowRunner
         ]);
 
         try {
-            $this->executeGraph($workflow, $run, $triggerData, $onNodeStatus);
+            $graph = new WorkflowGraph($workflow);
+            $triggerNodes = $graph->triggerNodes();
+
+            if ($triggerNodes->isEmpty()) {
+                throw new RuntimeException('Workflow has no trigger node.');
+            }
+
+            $queue = $triggerNodes
+                ->map(fn (Node $node) => [$node, $triggerData])
+                ->all();
+
+            $suspended = $this->processQueue($workflow, $run, $queue, [], 0, $onNodeStatus);
 
             $run->refresh();
 
-            if ($run->status === 'running') {
+            if (! $suspended && $run->status === 'running') {
                 $run->update([
                     'status' => 'success',
                     'finished_at' => now(),
@@ -85,6 +97,70 @@ class WorkflowRunner
             ]);
 
             throw $e;
+        }
+
+        return $run->fresh(['nodeRuns']);
+    }
+
+    public function resume(int $workflowRunId): ?WorkflowRun
+    {
+        $run = WorkflowRun::query()->with('workflow.nodes', 'workflow.edges')->find($workflowRunId);
+
+        if (! $run || $run->status !== 'running') {
+            return $run;
+        }
+
+        $workflow = $run->workflow;
+
+        if (! $workflow || ! $workflow->isPublished() || ! $workflow->is_active) {
+            $run->update(['status' => 'canceled', 'finished_at' => now()]);
+
+            return $run;
+        }
+
+        $state = $run->output['_suspended_state'] ?? null;
+
+        if (! is_array($state)) {
+            return $run;
+        }
+
+        $this->nodeOutputsByName = is_array($state['node_outputs'] ?? null) ? $state['node_outputs'] : [];
+        $nodeIterations = is_array($state['node_iterations'] ?? null) ? $state['node_iterations'] : [];
+        $steps = (int) ($state['steps'] ?? 0);
+
+        $queue = [];
+        foreach ((array) ($state['queue'] ?? []) as $item) {
+            $node = $workflow->nodes->firstWhere('id', (int) ($item['node_id'] ?? 0));
+            if ($node) {
+                $queue[] = [$node, $item['input'] ?? []];
+            }
+        }
+
+        $run->update(['output' => null]);
+
+        try {
+            $suspended = $this->processQueue($workflow, $run, $queue, $nodeIterations, $steps, null);
+
+            $run->refresh();
+
+            if (! $suspended && $run->status === 'running') {
+                $run->update([
+                    'status' => 'success',
+                    'finished_at' => now(),
+                ]);
+            }
+        } catch (Throwable $e) {
+            $run->refresh();
+
+            if ($run->status !== 'canceled') {
+                $run->update([
+                    'status' => 'failed',
+                    'error' => $this->resolveSafeErrorMessage($e),
+                    'finished_at' => now(),
+                ]);
+            }
+
+            report($e);
         }
 
         return $run->fresh(['nodeRuns']);
@@ -201,26 +277,21 @@ class WorkflowRunner
         }
     }
 
-    private function executeGraph(Workflow $workflow, WorkflowRun $run, array $input, ?callable $onNodeStatus = null): void
-    {
+    private function processQueue(
+        Workflow $workflow,
+        WorkflowRun $run,
+        array $queue,
+        array $nodeIterations,
+        int $steps,
+        ?callable $onNodeStatus = null,
+    ): bool {
         $graph = new WorkflowGraph($workflow);
-        $triggerNodes = $graph->triggerNodes();
-
-        if ($triggerNodes->isEmpty()) {
-            throw new RuntimeException('Workflow has no trigger node.');
-        }
-
-        $queue = $triggerNodes
-            ->map(fn (Node $node) => [$node, $input])
-            ->all();
-
-        $nodeIterations = [];
-        $steps = 0;
 
         while (! empty($queue)) {
             if (Cache::get("cancel_workflow_run_$run->id")) {
                 $run->update(['status' => 'canceled', 'finished_at' => now()]);
-                return;
+
+                return false;
             }
 
             if (++$steps > self::MAX_STEPS) {
@@ -232,7 +303,7 @@ class WorkflowRunner
             $nodeIterations[$node->id] = ($nodeIterations[$node->id] ?? 0) + 1;
 
             if ($nodeIterations[$node->id] > self::MAX_NODE_ITERATIONS) {
-                throw new RuntimeException("Node [$node->name] exceeded loop iteration limit (" . self::MAX_NODE_ITERATIONS . ").");
+                throw new RuntimeException("Node [$node->name] exceeded loop iteration limit (" . self::MAX_NODE_ITERATIONS . ').');
             }
 
             if ($onNodeStatus) {
@@ -267,7 +338,33 @@ class WorkflowRunner
                     $queue[] = [$target, $result->output];
                 }
             }
+
+            $asyncDelay = (int) ($result->meta['async_delay_seconds'] ?? 0);
+
+            if ($asyncDelay > 0 && $onNodeStatus === null && ! empty($queue)) {
+                $serializedQueue = array_map(fn (array $pair) => [
+                    'node_id' => $pair[0]->id,
+                    'input'   => $pair[1],
+                ], $queue);
+
+                $run->update([
+                    'output' => [
+                        '_suspended_state' => [
+                            'queue'           => $serializedQueue,
+                            'node_outputs'    => $this->nodeOutputsByName,
+                            'node_iterations' => $nodeIterations,
+                            'steps'           => $steps,
+                        ],
+                    ],
+                ]);
+
+                ResumeWorkflowRunJob::dispatch($run->id)->delay(now()->addSeconds($asyncDelay));
+
+                return true;
+            }
         }
+
+        return false;
     }
 
     private function executeNode(Node $node, mixed $input, WorkflowRun $run, ?callable $onNodeStatus = null): NodeResult

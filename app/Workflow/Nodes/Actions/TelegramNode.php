@@ -20,7 +20,7 @@ class TelegramNode implements NodeContract
             type: 'action.telegram',
             name: 'Telegram',
             category: NodeCategory::Action,
-            description: 'ارسال و ویرایش پیام، تصویر، سند، پاسخ به دکمه‌ها و مدیریت چت تلگرام.',
+            description: 'ارسال و ویرایش پیام، تصویر، سند، پاسخ به دکمه‌ها و مدیریت چت یا اکانت بیزینس تلگرام.',
             icon: 'brand:telegram',
             group: 'telegram',
             inputs: ['main'],
@@ -115,6 +115,14 @@ class TelegramNode implements NodeContract
                     'depends_on' => ['operation' => 'send_action'],
                 ],
 
+                'business_connection_id' => [
+                    'type'        => 'text',
+                    'label'       => 'شناسه اتصال بیزینس (Business Connection ID)',
+                    'placeholder' => '{{ input.business_connection_id }}',
+                    'help'        => 'برای ارسال پیام از طرف اکانت شخصی تلگرام بیزینس (در صورت شروع ورکفلو با پیام بیزینس، به صورت خودکار تشخیص داده می‌شود).',
+                    'advanced'    => true,
+                    'depends_on'  => ['operation' => ['send_message', 'send_photo', 'send_document', 'edit_message', 'send_action', 'pin_message']],
+                ],
                 'parse_mode' => [
                     'type'       => 'select',
                     'label'      => 'نوع قالب‌بندی (Parse Mode)',
@@ -179,7 +187,7 @@ class TelegramNode implements NodeContract
                 [
                     'key'         => 'send_message',
                     'name'        => 'Send a text message',
-                    'description' => 'ارسال پیام متنی به کاربر، گروه یا کانال.',
+                    'description' => 'ارسال پیام متنی به کاربر، پی‌وی بیزینس، گروه یا کانال.',
                     'config'      => ['operation' => 'send_message'],
                 ],
                 [
@@ -295,9 +303,47 @@ class TelegramNode implements NodeContract
         return $payload;
     }
 
+    private function withBusinessConnection(array $payload, NodeContext $context): array
+    {
+        $explicit = $this->value($context, 'business_connection_id');
+
+        if ($explicit !== '') {
+            $payload['business_connection_id'] = $explicit;
+
+            return $payload;
+        }
+
+        $triggerData = $context->run->trigger_data ?? [];
+        $triggerBusinessId = trim((string) (
+            data_get($context->input, 'business_connection_id')
+            ?? data_get($triggerData, 'business_message.business_connection_id')
+            ?? data_get($triggerData, 'edited_business_message.business_connection_id')
+            ?? data_get($triggerData, 'business_connection_id')
+            ?? ''
+        ));
+
+        if ($triggerBusinessId === '') {
+            return $payload;
+        }
+
+        $triggerChatId = (string) (
+            data_get($context->input, 'chat_id')
+            ?? data_get($triggerData, 'business_message.chat.id')
+            ?? data_get($triggerData, 'edited_business_message.chat.id')
+            ?? ''
+        );
+
+        if ($triggerChatId === '' || (string) ($payload['chat_id'] ?? '') === $triggerChatId) {
+            $payload['business_connection_id'] = $triggerBusinessId;
+        }
+
+        return $payload;
+    }
+
     private function applyMessageOptions(array $payload, NodeContext $context): array
     {
         $payload = $this->withParseMode($payload, $context);
+        $payload = $this->withBusinessConnection($payload, $context);
         $replyTo = $this->value($context, 'reply_to_message_id');
 
         if ($replyTo !== '') {
@@ -361,12 +407,12 @@ class TelegramNode implements NodeContract
     {
         [$chatId, $messageId] = $this->resolveChatAndMessageId($context);
 
-        $payload = $this->withParseMode([
+        $payload = $this->withBusinessConnection($this->withParseMode([
             'chat_id'                  => $chatId,
             'message_id'               => $messageId,
             'text'                     => $this->required($context, 'text', 'متن جدید پیام الزامی است.'),
             'disable_web_page_preview' => $this->flag($context, 'disable_preview'),
-        ], $context);
+        ], $context), $context);
 
         $result = $this->request($botToken, 'editMessageText', $payload);
 
@@ -404,7 +450,9 @@ class TelegramNode implements NodeContract
         $chatId = $this->required($context, 'chat_id', 'شناسه چت الزامی است.');
         $action = (string) ($context->config['chat_action'] ?? 'typing');
 
-        $this->request($botToken, 'sendChatAction', ['chat_id' => $chatId, 'action' => $action]);
+        $payload = $this->withBusinessConnection(['chat_id' => $chatId, 'action' => $action], $context);
+
+        $this->request($botToken, 'sendChatAction', $payload);
 
         return $this->done(['chat_id' => $chatId, 'action' => $action]);
     }
@@ -413,11 +461,13 @@ class TelegramNode implements NodeContract
     {
         [$chatId, $messageId] = $this->resolveChatAndMessageId($context);
 
-        $this->request($botToken, 'pinChatMessage', [
+        $payload = $this->withBusinessConnection([
             'chat_id'              => $chatId,
             'message_id'           => $messageId,
             'disable_notification' => $this->flag($context, 'disable_notification'),
-        ]);
+        ], $context);
+
+        $this->request($botToken, 'pinChatMessage', $payload);
 
         return $this->done(['chat_id' => $chatId, 'message_id' => $messageId]);
     }

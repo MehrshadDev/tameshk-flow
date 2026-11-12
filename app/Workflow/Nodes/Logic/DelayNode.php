@@ -6,12 +6,15 @@ use App\Workflow\Contracts\NodeContract;
 use App\Workflow\DTOs\NodeContext;
 use App\Workflow\DTOs\NodeDefinition;
 use App\Workflow\DTOs\NodeResult;
+use App\Workflow\Enums\HandleType;
 use App\Workflow\Enums\NodeCategory;
 use App\Workflow\Exceptions\NodeExecutionException;
 use Illuminate\Support\Facades\Cache;
 
 class DelayNode implements NodeContract
 {
+    private const ASYNC_THRESHOLD_SECONDS = 15;
+
     public static function definition(): NodeDefinition
     {
         return new NodeDefinition(
@@ -29,9 +32,9 @@ class DelayNode implements NodeContract
                     'required'    => true,
                     'default'     => 5,
                     'min'         => 0,
-                    'max'         => 3600,
+                    'max'         => 86400,
                     'integer'     => true,
-                    'placeholder' => 'مثلاً 5',
+                    'placeholder' => 'مثلاً 1200 برای ۲۰ دقیقه',
                 ],
             ],
             color: 'yellow',
@@ -53,6 +56,17 @@ class DelayNode implements NodeContract
         }
 
         $context->log("تاخیر $seconds ثانیه‌ای");
+
+        $isLiveStream = $context->onProgress !== null;
+        $queueDriver = (string) config('queue.default', 'sync');
+
+        if (! $isLiveStream && $seconds > self::ASYNC_THRESHOLD_SECONDS && $queueDriver !== 'sync') {
+            return NodeResult::of(
+                output: $context->input,
+                handle: HandleType::Main->value,
+                meta: ['async_delay_seconds' => $seconds],
+            );
+        }
 
         if ($seconds > 0) {
             $runId = $context->run->id;

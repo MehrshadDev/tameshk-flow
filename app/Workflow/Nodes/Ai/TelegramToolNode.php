@@ -195,6 +195,23 @@ class TelegramToolNode implements NodeContract, ToolContract
         $parseMode = trim((string) ($context->config['parse_mode'] ?? 'None'));
         $extra = ($parseMode !== '' && $parseMode !== 'None') ? ['parse_mode' => $parseMode] : [];
 
+        $triggerData = $context->run->trigger_data ?? [];
+        $triggerBusinessId = trim((string) (
+            data_get($triggerData, 'business_message.business_connection_id')
+            ?? data_get($triggerData, 'edited_business_message.business_connection_id')
+            ?? data_get($triggerData, 'business_connection_id')
+            ?? ''
+        ));
+        $triggerChatId = (string) (
+            data_get($triggerData, 'business_message.chat.id')
+            ?? data_get($triggerData, 'edited_business_message.chat.id')
+            ?? ''
+        );
+
+        if ($triggerBusinessId !== '' && ($triggerChatId === '' || $triggerChatId === $chatId) && $action !== 'delete_message') {
+            $extra['business_connection_id'] = $triggerBusinessId;
+        }
+
         return match ($action) {
             'send_message' => $this->send($botToken, 'sendMessage', [
                 'chat_id' => $chatId,
@@ -216,6 +233,7 @@ class TelegramToolNode implements NodeContract, ToolContract
             'pin_message' => $this->send($botToken, 'pinChatMessage', [
                 'chat_id'    => $chatId,
                 'message_id' => (int) $this->requireArg($arguments, 'message_id', 'شناسه پیام (message_id) الزامی است.'),
+                ...$extra,
             ]),
             'delete_message' => $this->send($botToken, 'deleteMessage', [
                 'chat_id'    => $chatId,

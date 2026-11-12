@@ -28,7 +28,7 @@ class TelegramTriggerNode implements NodeContract, WebhookTriggerContract
             type: 'trigger.telegram',
             name: 'Telegram Trigger',
             category: NodeCategory::Trigger,
-            description: 'آغاز خودکار ورکفلو با دریافت رویدادهای ربات تلگرام؛ نوع رویداد از فیلد «اجرا هنگام» انتخاب می‌شود.',
+            description: 'آغاز خودکار ورکفلو با دریافت رویدادهای ربات یا اکانت بیزینس تلگرام؛ نوع رویداد از فیلد «اجرا هنگام» انتخاب می‌شود.',
             icon: 'brand:telegram',
             group: 'telegram',
             inputs: [],
@@ -45,7 +45,7 @@ class TelegramTriggerNode implements NodeContract, WebhookTriggerContract
                     'label'    => 'اجرا هنگام (Trigger On)',
                     'required' => true,
                     'default'  => ['message'],
-                    'help'     => 'یک یا چند نوع رویداد را انتخاب کنید. با هر تغییر، پس از ذخیره webhook دوباره ثبت می‌شود.',
+                    'help'     => 'یک یا چند نوع رویداد را انتخاب کنید. برای اکانت‌های تلگرام بیزینس، گزینه «پیام اکانت بیزینس» را نیز انتخاب نمایید.',
                     'options'  => collect($catalog)
                         ->map(fn (array $item, string $key) => ['value' => $key, 'label' => $item[1]])
                         ->values()
@@ -68,12 +68,15 @@ class TelegramTriggerNode implements NodeContract, WebhookTriggerContract
     private static function catalog(): array
     {
         return [
+            'message' => ['On message', 'پیام جدید به ربات (Message)', 'آغاز خودکار ورکفلو به محض ارسال پیام جدید توسط کاربر به ربات.'],
+            'business_message' => ['On business message', 'پیام اکانت بیزینس (Business Message)', 'اجرا هنگام دریافت یا ارسال پیام در پی‌وی اکانت تلگرام بیزینس متصل به ربات.'],
+            'edited_business_message' => ['On edited business message', 'ویرایش پیام بیزینس (Edited Business Message)', 'اجرا هنگام ویرایش پیام در گفتگوی بیزینس تلگرام.'],
+            'business_connection' => ['On business connection', 'اتصال اکانت بیزینس (Business Connection)', 'اجرا هنگام اتصال یا قطع اتصال ربات به یک اکانت تلگرام بیزینس.'],
             'callback_query' => ['On callback query', 'کلیک روی دکمه (Callback Query)', 'اجرا هنگام کلیک کاربر روی دکمه‌های شیشه‌ای ربات.'],
             'channel_post' => ['On channel post', 'پست کانال (Channel Post)', 'اجرا هنگام انتشار پست جدید در کانالی که ربات در آن عضو است.'],
             'edited_channel_post' => ['On edited channel post', 'ویرایش پست کانال (Edited Channel Post)', 'اجرا هنگام ویرایش یک پست در کانال.'],
             'edited_message' => ['On edited message', 'ویرایش پیام (Edited Message)', 'اجرا هنگام ویرایش یک پیام توسط کاربر.'],
             'inline_query' => ['On inline query', 'کوئری اینلاین (Inline Query)', 'اجرا هنگام جستجوی اینلاین کاربر با نام کاربری ربات.'],
-            'message' => ['On message', 'پیام جدید (Message)', 'آغاز خودکار ورکفلو به محض ارسال پیام جدید توسط کاربر به ربات.'],
             'poll' => ['On Poll Change', 'تغییر نظرسنجی (Poll)', 'اجرا هنگام تغییر وضعیت یا آمار یک نظرسنجی ارسال‌شده توسط ربات.'],
             'pre_checkout_query' => ['On pre checkout query', 'پیش از پرداخت (Pre-Checkout Query)', 'اجرا هنگام تأیید نهایی پرداخت پیش از کسر وجه.'],
             'shipping_query' => ['On shipping query', 'آدرس ارسال (Shipping Query)', 'اجرا هنگام درخواست محاسبه هزینه یا گزینه‌های ارسال.'],
@@ -248,6 +251,11 @@ class TelegramTriggerNode implements NodeContract, WebhookTriggerContract
                 data_get($payload, 'invoice_payload', ''),
                 null,
             ],
+            'business_connection' => [
+                data_get($payload, 'user_chat_id', data_get($payload, 'user.id')),
+                '',
+                null,
+            ],
             default => [
                 data_get($payload, 'chat.id'),
                 data_get($payload, 'text', data_get($payload, 'caption', '')),
@@ -256,21 +264,41 @@ class TelegramTriggerNode implements NodeContract, WebhookTriggerContract
         };
 
         $text = (string) ($text ?? '');
+        $fromId = data_get($payload, 'from.id', data_get($payload, 'user.id'));
+
+        $businessConnectionId = (string) (
+            data_get($payload, 'business_connection_id')
+            ?? data_get($payload, 'message.business_connection_id')
+            ?? ($type === 'business_connection' ? data_get($payload, 'id') : '')
+            ?? ''
+        );
+
+        $isBusinessMessage = in_array($type, ['business_message', 'edited_business_message'], true)
+            || $businessConnectionId !== '';
+
+        $isFromBusinessOwner = $isBusinessMessage
+            && $chatId !== null
+            && $fromId !== null
+            && (string) $fromId !== (string) $chatId;
 
         return NodeResult::of([
-            'update_id'         => data_get($update, 'update_id'),
-            'update_type'       => $type,
-            'message_id'        => $messageId,
-            'chat_id'           => $chatId,
-            'from_id'           => data_get($payload, 'from.id'),
-            'text'              => $text,
-            'chatInput'         => $text,
-            'username'          => data_get($payload, 'from.username', ''),
-            'first_name'        => data_get($payload, 'from.first_name', ''),
-            'chat_type'         => data_get($payload, 'chat.type', data_get($payload, 'message.chat.type')),
-            'callback_query_id' => $type === 'callback_query' ? data_get($payload, 'id') : null,
-            'query_id'          => data_get($payload, 'id'),
-            'raw'               => $update,
+            'update_id'              => data_get($update, 'update_id'),
+            'update_type'            => $type,
+            'message_id'             => $messageId,
+            'chat_id'                => $chatId,
+            'from_id'                => $fromId,
+            'business_connection_id' => $businessConnectionId !== '' ? $businessConnectionId : null,
+            'is_business_message'    => $isBusinessMessage,
+            'is_from_business_owner' => $isFromBusinessOwner,
+            'sender_role'            => $isBusinessMessage ? ($isFromBusinessOwner ? 'owner' : 'customer') : 'user',
+            'text'                   => $text,
+            'chatInput'              => $text,
+            'username'               => data_get($payload, 'from.username', data_get($payload, 'user.username', '')),
+            'first_name'             => data_get($payload, 'from.first_name', data_get($payload, 'user.first_name', '')),
+            'chat_type'              => data_get($payload, 'chat.type', data_get($payload, 'message.chat.type')),
+            'callback_query_id'      => $type === 'callback_query' ? data_get($payload, 'id') : null,
+            'query_id'               => data_get($payload, 'id'),
+            'raw'                    => $update,
         ]);
     }
 }

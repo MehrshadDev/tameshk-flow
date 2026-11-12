@@ -11,7 +11,7 @@ $run = function (string $command, string $name) {
     })->name($name);
 };
 
-$run('queue:work redis --stop-when-empty --tries=3 --max-time=50', 'tameshk-queue-worker')
+$run('queue:work --stop-when-empty --tries=3 --max-time=50', 'tameshk-queue-worker')
     ->everyMinute()
     ->withoutOverlapping();
 
