@@ -68,6 +68,7 @@
     </x-slot:schema>
 
     <x-pages.home.hero/>
+    <x-pages.home.showcase/>
     <x-pages.home.features/>
     <x-pages.home.pricing/>
 </x-layouts.app>
