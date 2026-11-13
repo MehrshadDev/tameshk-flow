@@ -3,7 +3,7 @@
 return [
     'admin_emails' => array_values(array_filter(array_map(
         fn (string $email) => strtolower(trim($email)),
-        explode(',', (string) env('SUPPORT_ADMIN_EMAILS', ''))
+        explode(',', (string) env('ADMIN_EMAILS', env('SUPPORT_ADMIN_EMAILS', '')))
     ))),
 
     'telegram' => [

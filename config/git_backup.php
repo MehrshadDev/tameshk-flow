@@ -64,6 +64,16 @@ return [
             ],
         ],
 
+        'discount_codes' => [
+            'model' => \App\Models\DiscountCode::class,
+            'mode' => 'immediate',
+            'primary_key' => 'id',
+            'excluded_columns' => [],
+            'ignored_trigger_columns' => [
+                'updated_at',
+            ],
+        ],
+
         'subscriptions' => [
             'model' => Subscription::class,
             'mode' => 'immediate',

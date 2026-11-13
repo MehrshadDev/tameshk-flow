@@ -3,6 +3,7 @@
 use App\Http\Controllers\Auth\GoogleAuthController;
 use App\Http\Controllers\BillingController;
 use App\Http\Controllers\CredentialController;
+use App\Http\Controllers\DiscountCodeController;
 use App\Http\Controllers\DocsController;
 use App\Http\Controllers\GoogleSheetsOptionsController;
 use App\Http\Controllers\HomeController;
@@ -83,6 +84,8 @@ Route::middleware('auth')
         Route::post('/billing/checkout', [BillingController::class, 'checkout'])
             ->middleware('throttle:10,1')
             ->name('billing.checkout');
+        Route::get('/discounts', [DiscountCodeController::class, 'index'])
+            ->name('discounts.index');
 
         Route::prefix('api')->name('api.')->group(function () {
             Route::get('ping', fn () => response()->json(['status' => 'ok']))->name('ping');

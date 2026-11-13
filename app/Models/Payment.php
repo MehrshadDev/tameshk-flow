@@ -16,8 +16,10 @@ class Payment extends Model
         'user_id',
         'plan_id',
         'subscription_id',
+        'discount_code_id',
         'billing_cycle',
         'amount',
+        'discount_amount',
         'gateway',
         'authority',
         'ref_id',
@@ -39,6 +41,7 @@ class Payment extends Model
     {
         return [
             'amount' => 'integer',
+            'discount_amount' => 'integer',
             'paid_at' => 'datetime',
             'raw_response' => 'array',
         ];
@@ -64,6 +67,11 @@ class Payment extends Model
     public function subscription(): BelongsTo
     {
         return $this->belongsTo(Subscription::class);
+    }
+
+    public function discountCode(): BelongsTo
+    {
+        return $this->belongsTo(DiscountCode::class);
     }
 
     public function isPaid(): bool

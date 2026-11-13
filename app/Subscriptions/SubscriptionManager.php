@@ -2,6 +2,7 @@
 
 namespace App\Subscriptions;
 
+use App\Models\DiscountCode;
 use App\Models\Node;
 use App\Models\Plan;
 use App\Models\Subscription;
@@ -170,71 +171,249 @@ final class SubscriptionManager
         return ['allowed' => true, 'reason' => null];
     }
 
-    public function calculateQuote(User $user, Plan $targetPlan, string $billingCycle): array
-    {
+    public function calculateQuote(
+        User $user,
+        Plan $targetPlan,
+        string $billingCycle,
+        ?DiscountCode $discount = null
+    ): array {
         $basePrice = $targetPlan->priceFor($billingCycle);
         $activeSub = $user->activeSubscription()->with('plan')->first();
 
-        $defaultQuote = [
-            'base_price' => $basePrice,
-            'credit_amount' => 0,
-            'payable_amount' => $basePrice,
-            'unused_days' => 0,
-            'is_prorated' => false,
-        ];
+        $credit = 0;
+        $unusedDays = 0;
+        $isProrated = false;
 
-        if (! $activeSub || ! $activeSub->plan || $activeSub->plan->isFree() || $activeSub->isInGracePeriod()) {
-            return $defaultQuote;
+        if ($activeSub && $activeSub->plan && ! $activeSub->plan->isFree() && ! $activeSub->isInGracePeriod()) {
+            $currentPlan = $activeSub->plan;
+
+            $isUpgradeTier = $targetPlan->sort_order > $currentPlan->sort_order;
+            $isUpgradeCycle = $targetPlan->id === $currentPlan->id
+                && $activeSub->billing_cycle === 'monthly'
+                && $billingCycle === 'yearly';
+
+            if ($isUpgradeTier || $isUpgradeCycle) {
+                $candidateUnusedDays = $activeSub->unusedDays();
+                $totalDays = $activeSub->totalCycleDays();
+
+                if ($candidateUnusedDays > 0 && $totalDays > 0) {
+                    $latestPaidPayment = $activeSub->payments()
+                        ->where('status', 'paid')
+                        ->latest('id')
+                        ->first(['amount']);
+
+                    $cycleValue = $latestPaidPayment !== null
+                        ? (int) $latestPaidPayment->amount
+                        : $currentPlan->priceFor($activeSub->billing_cycle);
+
+                    if ($cycleValue > 0) {
+                        if ($candidateUnusedDays >= $totalDays) {
+                            $rawCredit = $cycleValue;
+                        } else {
+                            $rawCredit = (int) (ceil((($cycleValue * $candidateUnusedDays) / $totalDays) / 1000) * 1000);
+                        }
+
+                        $candidateCredit = min($cycleValue, $rawCredit);
+
+                        if ($candidateCredit > 0 && $candidateCredit < $basePrice) {
+                            $credit = $candidateCredit;
+                            $unusedDays = $candidateUnusedDays;
+                            $isProrated = true;
+                        }
+                    }
+                }
+            }
         }
 
-        $currentPlan = $activeSub->plan;
+        $subtotal = $isProrated ? max(1000, $basePrice - $credit) : $basePrice;
+        $discountAmount = 0;
 
-        $isUpgradeTier = $targetPlan->sort_order > $currentPlan->sort_order;
-        $isUpgradeCycle = $targetPlan->id === $currentPlan->id
-            && $activeSub->billing_cycle === 'monthly'
-            && $billingCycle === 'yearly';
+        if ($discount !== null && $subtotal > 0) {
+            $discountAmount = $discount->calculateDiscount($subtotal);
+            $payableAfterDiscount = $subtotal - $discountAmount;
 
-        if (! $isUpgradeTier && ! $isUpgradeCycle) {
-            return $defaultQuote;
-        }
+            if ($payableAfterDiscount > 0 && $payableAfterDiscount < 1000) {
+                $payableAfterDiscount = 1000;
+                $discountAmount = max(0, $subtotal - 1000);
+            }
 
-        $unusedDays = $activeSub->unusedDays();
-        $totalDays = $activeSub->totalCycleDays();
-
-        if ($unusedDays <= 0 || $totalDays <= 0) {
-            return $defaultQuote;
-        }
-
-        $paidRecordAmount = (int) ($activeSub->payments()
-            ->where('status', 'paid')
-            ->latest('id')
-            ->value('amount') ?? 0);
-
-        $cycleValue = max($paidRecordAmount, $currentPlan->priceFor($activeSub->billing_cycle));
-
-        if ($cycleValue <= 0) {
-            return $defaultQuote;
-        }
-
-        if ($unusedDays >= $totalDays) {
-            $credit = $cycleValue;
+            $payable = max(0, $payableAfterDiscount);
         } else {
-            $rawCredit = ($cycleValue * $unusedDays) / $totalDays;
-            $credit = min($cycleValue, (int) (ceil($rawCredit / 1000) * 1000));
+            $payable = $subtotal;
         }
-
-        if ($credit <= 0 || $credit >= $basePrice) {
-            return $defaultQuote;
-        }
-
-        $payable = max(1000, $basePrice - $credit);
 
         return [
             'base_price' => $basePrice,
             'credit_amount' => $credit,
+            'subtotal_amount' => $subtotal,
+            'discount_amount' => $discountAmount,
+            'discount_code' => $discount?->code,
             'payable_amount' => $payable,
             'unused_days' => $unusedDays,
-            'is_prorated' => true,
+            'is_prorated' => $isProrated,
+        ];
+    }
+
+    /**
+     * @return array{valid: bool, message: ?string, discount: ?DiscountCode, quote: array}
+     */
+    public function validateDiscountCode(
+        User $user,
+        Plan $targetPlan,
+        string $billingCycle,
+        string $rawCode,
+        bool $lockForUpdate = false
+    ): array {
+        $baseQuote = $this->calculateQuote($user, $targetPlan, $billingCycle);
+        $cleanCode = strtoupper(strtr(trim($rawCode), [
+            '۰' => '0', '۱' => '1', '۲' => '2', '۳' => '3', '۴' => '4',
+            '۵' => '5', '۶' => '6', '۷' => '7', '۸' => '8', '۹' => '9',
+            '٠' => '0', '١' => '1', '٢' => '2', '٣' => '3', '٤' => '4',
+            '٥' => '5', '٦' => '6', '٧' => '7', '٨' => '8', '٩' => '9',
+        ]));
+
+        if ($cleanCode === '') {
+            return [
+                'valid' => false,
+                'message' => 'لطفاً کد تخفیف را وارد کنید.',
+                'discount' => null,
+                'quote' => $baseQuote,
+            ];
+        }
+
+        $query = DiscountCode::query()->where('code', $cleanCode);
+
+        if ($lockForUpdate) {
+            $query->lockForUpdate();
+        }
+
+        $discount = $query->first();
+
+        if (! $discount) {
+            return [
+                'valid' => false,
+                'message' => 'کد تخفیف واردشده معتبر نیست.',
+                'discount' => null,
+                'quote' => $baseQuote,
+            ];
+        }
+
+        if (! $discount->is_active) {
+            return [
+                'valid' => false,
+                'message' => 'این کد تخفیف غیرفعال شده است.',
+                'discount' => null,
+                'quote' => $baseQuote,
+            ];
+        }
+
+        if ($discount->isNotStartedYet()) {
+            return [
+                'valid' => false,
+                'message' => 'زمان استفاده از این کد تخفیف هنوز فرا نرسیده است.',
+                'discount' => null,
+                'quote' => $baseQuote,
+            ];
+        }
+
+        if ($discount->isExpired()) {
+            return [
+                'valid' => false,
+                'message' => 'مهلت استفاده از این کد تخفیف به پایان رسیده است.',
+                'discount' => null,
+                'quote' => $baseQuote,
+            ];
+        }
+
+        if ($discount->isExhausted()) {
+            return [
+                'valid' => false,
+                'message' => 'ظرفیت استفاده از این کد تخفیف تکمیل شده است.',
+                'discount' => null,
+                'quote' => $baseQuote,
+            ];
+        }
+
+        if (! $discount->appliesToPlan($targetPlan->slug)) {
+            return [
+                'valid' => false,
+                'message' => "این کد تخفیف برای پلن «{$targetPlan->name}» قابل استفاده نیست.",
+                'discount' => null,
+                'quote' => $baseQuote,
+            ];
+        }
+
+        if (! $discount->appliesToCycle($billingCycle)) {
+            $cycleLabel = $billingCycle === 'yearly' ? 'ماهانه' : 'سالانه';
+
+            return [
+                'valid' => false,
+                'message' => "این کد تخفیف فقط برای دوره پرداخت $cycleLabel قابل استفاده است.",
+                'discount' => null,
+                'quote' => $baseQuote,
+            ];
+        }
+
+        if ($discount->first_purchase_only) {
+            $hasPreviousPurchase = $user->payments()
+                ->where('status', 'paid')
+                ->exists();
+
+            if ($hasPreviousPurchase) {
+                return [
+                    'valid' => false,
+                    'message' => 'این کد تخفیف فقط مخصوص اولین خرید اشتراک است.',
+                    'discount' => null,
+                    'quote' => $baseQuote,
+                ];
+            }
+        }
+
+        if ($discount->max_uses_per_user !== null) {
+            $userUses = $user->payments()
+                ->where('status', 'paid')
+                ->where('discount_code_id', $discount->id)
+                ->count();
+
+            if ($userUses >= $discount->max_uses_per_user) {
+                return [
+                    'valid' => false,
+                    'message' => 'شما قبلاً از این کد تخفیف استفاده کرده‌اید.',
+                    'discount' => null,
+                    'quote' => $baseQuote,
+                ];
+            }
+        }
+
+        $subtotal = $baseQuote['subtotal_amount'];
+
+        if ($discount->min_order_amount !== null && $subtotal < $discount->min_order_amount) {
+            $minFormatted = number_format($discount->min_order_amount);
+
+            return [
+                'valid' => false,
+                'message' => "حداقل مبلغ سفارش برای استفاده از این کد تخفیف $minFormatted تومان است.",
+                'discount' => null,
+                'quote' => $baseQuote,
+            ];
+        }
+
+        $discountedQuote = $this->calculateQuote($user, $targetPlan, $billingCycle, $discount);
+
+        if ($discountedQuote['discount_amount'] <= 0) {
+            return [
+                'valid' => false,
+                'message' => 'این کد تخفیف روی مبلغ فعلی سفارش قابل اعمال نیست.',
+                'discount' => null,
+                'quote' => $baseQuote,
+            ];
+        }
+
+        return [
+            'valid' => true,
+            'message' => 'کد تخفیف با موفقیت اعمال شد.',
+            'discount' => $discount,
+            'quote' => $discountedQuote,
         ];
     }
 

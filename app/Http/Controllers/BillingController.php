@@ -2,8 +2,11 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\DiscountCode;
 use App\Models\Payment;
 use App\Models\Plan;
+use App\Models\Subscription;
+use App\Models\User;
 use App\Subscriptions\Exceptions\PaymentException;
 use App\Subscriptions\Gateways\ZibalGateway;
 use App\Subscriptions\SubscriptionManager;
@@ -11,6 +14,7 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\RateLimiter;
+use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 use Illuminate\View\View;
 use Throwable;
@@ -50,6 +54,7 @@ class BillingController extends Controller
         $validated = $request->validate([
             'plan' => ['required', 'string', 'max:50'],
             'billing_cycle' => ['required', 'string', Rule::in(['monthly', 'yearly'])],
+            'discount_code' => ['nullable', 'string', 'max:40'],
         ]);
 
         $plan = Plan::query()
@@ -78,10 +83,36 @@ class BillingController extends Controller
                 ]);
         }
 
-        $quote = $this->subscriptions->calculateQuote($user, $plan, $billingCycle);
-        $amount = $quote['payable_amount'];
+        $rawDiscountCode = trim((string) ($validated['discount_code'] ?? ''));
+        $discount = null;
 
-        if ($amount <= 0) {
+        if ($rawDiscountCode !== '') {
+            $discountCheck = $this->subscriptions->validateDiscountCode(
+                user: $user,
+                targetPlan: $plan,
+                billingCycle: $billingCycle,
+                rawCode: $rawDiscountCode,
+            );
+
+            if (! $discountCheck['valid']) {
+                return redirect()
+                    ->route('app.billing.index')
+                    ->with('payment_result', [
+                        'status' => 'error',
+                        'message' => $discountCheck['message'],
+                    ]);
+            }
+
+            $discount = $discountCheck['discount'];
+            $quote = $discountCheck['quote'];
+        } else {
+            $quote = $this->subscriptions->calculateQuote($user, $plan, $billingCycle);
+        }
+
+        $amount = (int) $quote['payable_amount'];
+        $discountAmount = (int) $quote['discount_amount'];
+
+        if ($amount < 0 || ($amount === 0 && $discount === null)) {
             return redirect()
                 ->route('app.billing.index')
                 ->with('payment_result', [
@@ -95,11 +126,17 @@ class BillingController extends Controller
             ->where('status', 'pending')
             ->delete();
 
+        if ($amount === 0 && $discount !== null) {
+            return $this->completeFreeDiscountCheckout($request, $plan, $billingCycle, $rawDiscountCode);
+        }
+
         $payment = Payment::create([
             'user_id' => $user->id,
             'plan_id' => $plan->id,
+            'discount_code_id' => $discount?->id,
             'billing_cycle' => $billingCycle,
             'amount' => $amount,
+            'discount_amount' => $discountAmount,
             'gateway' => 'zibal',
             'status' => 'pending',
             'ip_address' => $request->ip(),
@@ -213,6 +250,15 @@ class BillingController extends Controller
                     return $this->redirectAfterCallback('error', 'شماره پیگیری این تراکنش تکراری است.');
                 }
 
+                if ($payment->discount_code_id) {
+                    $lockedDiscount = DiscountCode::query()
+                        ->whereKey($payment->discount_code_id)
+                        ->lockForUpdate()
+                        ->first();
+
+                    $lockedDiscount?->increment('used_count');
+                }
+
                 $subscription = $this->subscriptions->activateSubscription(
                     $payment->user,
                     $payment->plan,
@@ -230,21 +276,7 @@ class BillingController extends Controller
                 ]);
 
                 if (auth()->check()) {
-                    return redirect()
-                        ->route('app.workflows.index')
-                        ->with('subscription_celebration', [
-                            'plan_name' => $payment->plan->name,
-                            'plan_slug' => $payment->plan->slug,
-                            'billing_cycle' => $payment->billing_cycle === 'yearly' ? 'سالانه' : 'ماهانه',
-                            'max_runs' => $payment->plan->max_monthly_runs !== null
-                                ? number_format($payment->plan->max_monthly_runs)
-                                : 'نامحدود',
-                            'max_active' => $payment->plan->max_active_workflows !== null
-                                ? $payment->plan->max_active_workflows . ' ورک‌فلو'
-                                : 'نامحدود',
-                            'remaining_days' => $subscription->remainingDays(),
-                            'ref_id' => $refId,
-                        ]);
+                    return $this->redirectWithCelebration($payment->plan, $subscription, $payment->billing_cycle, $refId);
                 }
 
                 return $this->redirectAfterCallback(
@@ -258,6 +290,102 @@ class BillingController extends Controller
 
             return $this->redirectAfterCallback('error', 'خطایی در بررسی نهایی تراکنش رخ داد. لطفاً با پشتیبانی تماس بگیرید.');
         }
+    }
+
+    private function completeFreeDiscountCheckout(
+        Request $request,
+        Plan $plan,
+        string $billingCycle,
+        string $rawDiscountCode
+    ): RedirectResponse {
+        try {
+            return DB::transaction(function () use ($request, $plan, $billingCycle, $rawDiscountCode) {
+                $user = User::query()->whereKey($request->user()->id)->lockForUpdate()->firstOrFail();
+
+                $discountCheck = $this->subscriptions->validateDiscountCode(
+                    user: $user,
+                    targetPlan: $plan,
+                    billingCycle: $billingCycle,
+                    rawCode: $rawDiscountCode,
+                    lockForUpdate: true,
+                );
+
+                if (! $discountCheck['valid'] || ! $discountCheck['discount']) {
+                    return redirect()
+                        ->route('app.billing.index')
+                        ->with('payment_result', [
+                            'status' => 'error',
+                            'message' => $discountCheck['message'] ?? 'کد تخفیف معتبر نیست.',
+                        ]);
+                }
+
+                $lockedDiscount = $discountCheck['discount'];
+                $quote = $discountCheck['quote'];
+
+                if ((int) $quote['payable_amount'] !== 0) {
+                    return redirect()
+                        ->route('app.billing.index')
+                        ->with('payment_result', [
+                            'status' => 'error',
+                            'message' => 'مبلغ سفارش تغییر کرده است. لطفاً مجدداً تلاش کنید.',
+                        ]);
+                }
+
+                $lockedDiscount->increment('used_count');
+
+                $subscription = $this->subscriptions->activateSubscription($user, $plan, $billingCycle);
+                $refId = 'GIFT-' . strtoupper(Str::random(8));
+
+                Payment::create([
+                    'user_id' => $user->id,
+                    'plan_id' => $plan->id,
+                    'subscription_id' => $subscription->id,
+                    'discount_code_id' => $lockedDiscount->id,
+                    'billing_cycle' => $billingCycle,
+                    'amount' => 0,
+                    'discount_amount' => (int) $quote['discount_amount'],
+                    'gateway' => 'discount',
+                    'ref_id' => $refId,
+                    'status' => 'paid',
+                    'paid_at' => now(),
+                    'ip_address' => $request->ip(),
+                ]);
+
+                return $this->redirectWithCelebration($plan, $subscription, $billingCycle, $refId);
+            });
+        } catch (Throwable $e) {
+            report($e);
+
+            return redirect()
+                ->route('app.billing.index')
+                ->with('payment_result', [
+                    'status' => 'error',
+                    'message' => 'خطایی در فعال‌سازی اشتراک رخ داد. لطفاً دوباره تلاش کنید.',
+                ]);
+        }
+    }
+
+    private function redirectWithCelebration(
+        Plan $plan,
+        Subscription $subscription,
+        string $billingCycle,
+        ?string $refId
+    ): RedirectResponse {
+        return redirect()
+            ->route('app.workflows.index')
+            ->with('subscription_celebration', [
+                'plan_name' => $plan->name,
+                'plan_slug' => $plan->slug,
+                'billing_cycle' => $billingCycle === 'yearly' ? 'سالانه' : 'ماهانه',
+                'max_runs' => $plan->max_monthly_runs !== null
+                    ? number_format($plan->max_monthly_runs)
+                    : 'نامحدود',
+                'max_active' => $plan->max_active_workflows !== null
+                    ? $plan->max_active_workflows . ' ورک‌فلو'
+                    : 'نامحدود',
+                'remaining_days' => $subscription->remainingDays(),
+                'ref_id' => $refId,
+            ]);
     }
 
     private function redirectAfterCallback(string $status, string $message, ?string $refId = null): RedirectResponse

@@ -34,7 +34,7 @@ class User extends Authenticatable
 
     public function isAdmin(): bool
     {
-        $admins = config('tickets.admin_emails', []);
+        $admins = config('app.admin_emails') ?: config('tickets.admin_emails', []);
 
         return in_array(strtolower(trim((string) $this->email)), $admins, true);
     }

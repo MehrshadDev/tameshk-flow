@@ -2,12 +2,14 @@
 
 namespace App\Providers;
 
-use App\Backup\GitBackupObserver;
 use App\Backup\GitBackupCipher;
+use App\Backup\GitBackupObserver;
 use App\Models\Credential;
+use App\Models\DiscountCode;
 use App\Models\Ticket;
 use App\Models\Workflow;
 use App\Policies\CredentialPolicy;
+use App\Policies\DiscountCodePolicy;
 use App\Policies\TicketPolicy;
 use App\Policies\WorkflowPolicy;
 use App\Subscriptions\SubscriptionManager;
@@ -32,6 +34,7 @@ class AppServiceProvider extends ServiceProvider
         Gate::policy(Credential::class, CredentialPolicy::class);
         Gate::policy(Workflow::class, WorkflowPolicy::class);
         Gate::policy(Ticket::class, TicketPolicy::class);
+        Gate::policy(DiscountCode::class, DiscountCodePolicy::class);
 
         $this->registerGitBackupObservers();
     }

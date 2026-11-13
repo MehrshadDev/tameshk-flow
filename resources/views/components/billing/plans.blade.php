@@ -181,29 +181,23 @@
 
                         <div>
                             @if ($canRenewCurrent)
-                                <form method="POST" action="{{ route('app.billing.checkout') }}">
-                                    @csrf
-                                    <input type="hidden" name="plan" value="{{ $plan->slug }}">
-                                    <input type="hidden" name="billing_cycle" value="{{ $billingCycle }}">
-
-                                    <button type="submit"
-                                            class="flex w-full items-center justify-center gap-2 rounded-xl bg-primary px-4 py-2.5 text-xs font-bold text-white shadow-sm shadow-primary/20 transition hover:bg-primary/90 active:scale-[0.99] cursor-pointer">
-                                        <x-ui.icon name="credit-card" class="size-4"/>
-                                        <span>تمدید اشتراک {{ $plan->name }} ({{ $billingCycle === 'yearly' ? 'سالانه' : 'ماهانه' }})</span>
-                                    </button>
-                                </form>
+                                <button type="button"
+                                        wire:click="openCheckout('{{ $plan->slug }}', '{{ $billingCycle }}')"
+                                        wire:loading.attr="disabled"
+                                        wire:target="openCheckout('{{ $plan->slug }}', '{{ $billingCycle }}')"
+                                        class="flex w-full items-center justify-center gap-2 rounded-xl bg-primary px-4 py-2.5 text-xs font-bold text-white shadow-sm shadow-primary/20 transition hover:bg-primary/90 active:scale-[0.99] cursor-pointer disabled:opacity-60">
+                                    <x-ui.icon name="credit-card" class="size-4"/>
+                                    <span>تمدید اشتراک {{ $plan->name }} ({{ $billingCycle === 'yearly' ? 'سالانه' : 'ماهانه' }})</span>
+                                </button>
                             @elseif ($currentSubCycle === 'monthly')
-                                <form method="POST" action="{{ route('app.billing.checkout') }}">
-                                    @csrf
-                                    <input type="hidden" name="plan" value="{{ $plan->slug }}">
-                                    <input type="hidden" name="billing_cycle" value="yearly">
-
-                                    <button type="submit"
-                                            class="flex w-full items-center justify-center gap-2 rounded-xl border border-primary/40 bg-primary/10 px-4 py-2.5 text-xs font-bold text-primary transition hover:bg-primary hover:text-white active:scale-[0.99] cursor-pointer">
-                                        <x-ui.icon name="sparkles" class="size-4"/>
-                                        <span>ارتقا به دوره سالانه — پرداخت <span dir="ltr" class="font-mono">{{ $payableFormatted['value'] }}</span> {{ $payableFormatted['unit'] }}</span>
-                                    </button>
-                                </form>
+                                <button type="button"
+                                        wire:click="openCheckout('{{ $plan->slug }}', 'yearly')"
+                                        wire:loading.attr="disabled"
+                                        wire:target="openCheckout('{{ $plan->slug }}', 'yearly')"
+                                        class="flex w-full items-center justify-center gap-2 rounded-xl border border-primary/40 bg-primary/10 px-4 py-2.5 text-xs font-bold text-primary transition hover:bg-primary hover:text-white active:scale-[0.99] cursor-pointer disabled:opacity-60">
+                                    <x-ui.icon name="sparkles" class="size-4"/>
+                                    <span>ارتقا به دوره سالانه — پرداخت <span dir="ltr" class="font-mono">{{ $payableFormatted['value'] }}</span> {{ $payableFormatted['unit'] }}</span>
+                                </button>
                             @else
                                 <div class="flex w-full items-center justify-center gap-2 rounded-xl border border-emerald-500/30 bg-emerald-500/10 px-4 py-2.5 text-xs font-bold text-emerald-600 dark:text-emerald-400 select-none">
                                     <x-ui.icon name="check" class="size-4"/>
@@ -338,29 +332,23 @@
                             </div>
                         @elseif ($isCurrentPlan)
                             @if ($canRenewCurrent)
-                                <form method="POST" action="{{ route('app.billing.checkout') }}">
-                                    @csrf
-                                    <input type="hidden" name="plan" value="{{ $plan->slug }}">
-                                    <input type="hidden" name="billing_cycle" value="{{ $billingCycle }}">
-
-                                    <button type="submit"
-                                            class="flex w-full items-center justify-center gap-2 rounded-xl bg-primary px-4 py-2.5 text-xs font-bold text-white shadow-sm shadow-primary/20 transition hover:bg-primary/90 active:scale-[0.99] cursor-pointer">
-                                        <x-ui.icon name="credit-card" class="size-4"/>
-                                        <span>تمدید اشتراک {{ $plan->name }} ({{ $billingCycle === 'yearly' ? 'سالانه' : 'ماهانه' }})</span>
-                                    </button>
-                                </form>
+                                <button type="button"
+                                        wire:click="openCheckout('{{ $plan->slug }}', '{{ $billingCycle }}')"
+                                        wire:loading.attr="disabled"
+                                        wire:target="openCheckout('{{ $plan->slug }}', '{{ $billingCycle }}')"
+                                        class="flex w-full items-center justify-center gap-2 rounded-xl bg-primary px-4 py-2.5 text-xs font-bold text-white shadow-sm shadow-primary/20 transition hover:bg-primary/90 active:scale-[0.99] cursor-pointer disabled:opacity-60">
+                                    <x-ui.icon name="credit-card" class="size-4"/>
+                                    <span>تمدید اشتراک {{ $plan->name }} ({{ $billingCycle === 'yearly' ? 'سالانه' : 'ماهانه' }})</span>
+                                </button>
                             @elseif ($currentSubCycle === 'monthly')
-                                <form method="POST" action="{{ route('app.billing.checkout') }}">
-                                    @csrf
-                                    <input type="hidden" name="plan" value="{{ $plan->slug }}">
-                                    <input type="hidden" name="billing_cycle" value="yearly">
-
-                                    <button type="submit"
-                                            class="flex w-full items-center justify-center gap-2 rounded-xl border border-primary/40 bg-primary/10 px-4 py-2.5 text-xs font-bold text-primary transition hover:bg-primary hover:text-white active:scale-[0.99] cursor-pointer">
-                                        <x-ui.icon name="sparkles" class="size-4"/>
-                                        <span>ارتقا به دوره سالانه — پرداخت <span dir="ltr" class="font-mono">{{ $payableFormatted['value'] }}</span> {{ $payableFormatted['unit'] }}</span>
-                                    </button>
-                                </form>
+                                <button type="button"
+                                        wire:click="openCheckout('{{ $plan->slug }}', 'yearly')"
+                                        wire:loading.attr="disabled"
+                                        wire:target="openCheckout('{{ $plan->slug }}', 'yearly')"
+                                        class="flex w-full items-center justify-center gap-2 rounded-xl border border-primary/40 bg-primary/10 px-4 py-2.5 text-xs font-bold text-primary transition hover:bg-primary hover:text-white active:scale-[0.99] cursor-pointer disabled:opacity-60">
+                                    <x-ui.icon name="sparkles" class="size-4"/>
+                                    <span>ارتقا به دوره سالانه — پرداخت <span dir="ltr" class="font-mono">{{ $payableFormatted['value'] }}</span> {{ $payableFormatted['unit'] }}</span>
+                                </button>
                             @else
                                 <div class="flex w-full items-center justify-center gap-2 rounded-xl border border-emerald-500/30 bg-emerald-500/10 px-4 py-2.5 text-xs font-bold text-emerald-600 dark:text-emerald-400 select-none">
                                     <x-ui.icon name="check" class="size-4"/>
@@ -368,37 +356,33 @@
                                 </div>
                             @endif
                         @elseif ($isDowngrade)
-                            <form method="POST" action="{{ route('app.billing.checkout') }}">
-                                @csrf
-                                <input type="hidden" name="plan" value="{{ $plan->slug }}">
-                                <input type="hidden" name="billing_cycle" value="{{ $billingCycle }}">
-
-                                <button type="submit"
-                                        class="flex w-full items-center justify-center gap-2 rounded-xl border border-line-border bg-surface-card px-4 py-2.5 text-xs font-bold text-content-main transition hover:border-primary hover:text-primary active:scale-[0.99] cursor-pointer">
+                            <div>
+                                <button type="button"
+                                        wire:click="openCheckout('{{ $plan->slug }}', '{{ $billingCycle }}')"
+                                        wire:loading.attr="disabled"
+                                        wire:target="openCheckout('{{ $plan->slug }}', '{{ $billingCycle }}')"
+                                        class="flex w-full items-center justify-center gap-2 rounded-xl border border-line-border bg-surface-card px-4 py-2.5 text-xs font-bold text-content-main transition hover:border-primary hover:text-primary active:scale-[0.99] cursor-pointer disabled:opacity-60">
                                     <x-ui.icon name="credit-card" class="size-4"/>
                                     <span>تغییر به پلن {{ $plan->name }} ({{ $billingCycle === 'yearly' ? 'سالانه' : 'ماهانه' }})</span>
                                 </button>
                                 <p class="mt-1.5 text-center text-[10px] text-content-muted">
                                     با تغییر به پرو، حداکثر ۱۰ ورک‌فلوی آخر شما فعال می‌ماند و بقیه متوقف می‌شوند.
                                 </p>
-                            </form>
+                            </div>
                         @else
-                            <form method="POST" action="{{ route('app.billing.checkout') }}">
-                                @csrf
-                                <input type="hidden" name="plan" value="{{ $plan->slug }}">
-                                <input type="hidden" name="billing_cycle" value="{{ $billingCycle }}">
-
-                                <button type="submit"
-                                        class="flex w-full items-center justify-center gap-2 rounded-xl bg-primary px-4 py-2.5 text-xs font-bold text-white shadow-sm shadow-primary/20 transition hover:bg-primary/90 active:scale-[0.99] cursor-pointer">
-                                    <x-ui.icon name="credit-card" class="size-4"/>
-                                    <span>
-                                        ارتقا به پلن {{ $plan->name }}
-                                        @if ($quote['is_prorated'])
-                                            (<span dir="ltr" class="font-mono">{{ $payableFormatted['value'] }}</span> {{ $payableFormatted['unit'] }})
-                                        @endif
-                                    </span>
-                                </button>
-                            </form>
+                            <button type="button"
+                                    wire:click="openCheckout('{{ $plan->slug }}', '{{ $billingCycle }}')"
+                                    wire:loading.attr="disabled"
+                                    wire:target="openCheckout('{{ $plan->slug }}', '{{ $billingCycle }}')"
+                                    class="flex w-full items-center justify-center gap-2 rounded-xl bg-primary px-4 py-2.5 text-xs font-bold text-white shadow-sm shadow-primary/20 transition hover:bg-primary/90 active:scale-[0.99] cursor-pointer disabled:opacity-60">
+                                <x-ui.icon name="credit-card" class="size-4"/>
+                                <span>
+                                    ارتقا به پلن {{ $plan->name }}
+                                    @if ($quote['is_prorated'])
+                                        (<span dir="ltr" class="font-mono">{{ $payableFormatted['value'] }}</span> {{ $payableFormatted['unit'] }})
+                                    @endif
+                                </span>
+                            </button>
                         @endif
                     </div>
                 </div>

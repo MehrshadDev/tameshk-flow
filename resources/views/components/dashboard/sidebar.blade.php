@@ -1,5 +1,7 @@
 @php
-    use App\Models\Ticket;use App\Models\WorkflowRun;
+    use App\Models\DiscountCode;
+    use App\Models\Ticket;
+    use App\Models\WorkflowRun;
     use App\Subscriptions\SubscriptionManager;
 
     $user = auth()->user();
@@ -26,6 +28,9 @@
         ? ($user->isAdmin()
             ? Ticket::query()->whereIn('status', ['open', 'customer_reply'])->count()
             : $user->tickets()->count())
+        : 0;
+    $activeDiscountsCount = ($user && $user->isAdmin())
+        ? DiscountCode::query()->where('is_active', true)->count()
         : 0;
 @endphp
 
@@ -119,6 +124,16 @@
                 :active="request()->routeIs('app.billing.*')"
                 :badge="$summary['plan']->name">
                 اشتراک و صورتحساب
+            </x-dashboard.sidebar-link>
+        @endif
+
+        @if ($user?->isAdmin())
+            <x-dashboard.sidebar-link
+                icon="discount-2"
+                :href="route('app.discounts.index')"
+                :active="request()->routeIs('app.discounts.*')"
+                :count="$activeDiscountsCount > 0 ? $activeDiscountsCount : null">
+                کدهای تخفیف
             </x-dashboard.sidebar-link>
         @endif
 
