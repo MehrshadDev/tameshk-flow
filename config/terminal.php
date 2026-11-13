@@ -19,6 +19,7 @@ return [
         'queue:flush' => 'Deletes all failed queue jobs from the failed_jobs table.',
         'queue:clear' => 'Deletes all pending jobs from the specified queue.',
         'log:clear' => 'Truncates storage/logs/laravel.log and permanently removes existing log entries.',
+        'git-backup:restore' => 'Overwrites current database records with the encrypted snapshot from the Git backup repository!',
     ],
 
     'quick_groups' => [
@@ -40,6 +41,16 @@ return [
                 ['label' => 'Run Pending Migrations', 'command' => 'migrate'],
                 ['label' => 'Run Workflow Schedules', 'command' => 'workflow:run-scheduled'],
                 ['label' => 'Run Laravel Cron', 'command' => 'schedule:run'],
+            ],
+        ],
+        [
+            'title' => 'Git Cloud Backup',
+            'icon' => 'cloud-upload',
+            'items' => [
+                ['label' => 'Init Git Repo', 'command' => 'git-backup:init'],
+                ['label' => 'Backup Now (Sync)', 'command' => 'git-backup:run'],
+                ['label' => 'Backup in Background', 'command' => 'git-backup:run --queue'],
+                ['label' => 'Restore from Git', 'command' => 'git-backup:restore'],
             ],
         ],
         [

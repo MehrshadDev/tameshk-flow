@@ -18,3 +18,7 @@ $run('queue:work --stop-when-empty --tries=3 --max-time=50', 'tameshk-queue-work
 $run('workflow:run-scheduled', 'tameshk-workflow-runner')
     ->everyMinute()
     ->withoutOverlapping();
+
+$run('git-backup:run --periodic', 'tameshk-git-periodic-backup')
+    ->everyThirtyMinutes()
+    ->withoutOverlapping();
