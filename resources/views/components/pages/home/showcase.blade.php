@@ -83,35 +83,35 @@
     ];
 
     $orbsLayout = [
-        ['row' => 0, 'y' => -0.72, 'r' => 0.74, 'angle' => 0,   'nodeIndex' => 0],
-        ['row' => 0, 'y' => -0.72, 'r' => 0.74, 'angle' => 72,  'nodeIndex' => 5],
-        ['row' => 0, 'y' => -0.72, 'r' => 0.74, 'angle' => 144, 'nodeIndex' => null],
-        ['row' => 0, 'y' => -0.72, 'r' => 0.74, 'angle' => 216, 'nodeIndex' => null],
-        ['row' => 0, 'y' => -0.72, 'r' => 0.74, 'angle' => 288, 'nodeIndex' => 1],
+        ['row' => 0, 'y' => -0.72, 'r' => 0.74, 'angle' => 0,   'nodeIndex' => 0,    'lite' => true],
+        ['row' => 0, 'y' => -0.72, 'r' => 0.74, 'angle' => 72,  'nodeIndex' => 5,    'lite' => true],
+        ['row' => 0, 'y' => -0.72, 'r' => 0.74, 'angle' => 144, 'nodeIndex' => null, 'lite' => true],
+        ['row' => 0, 'y' => -0.72, 'r' => 0.74, 'angle' => 216, 'nodeIndex' => null, 'lite' => false],
+        ['row' => 0, 'y' => -0.72, 'r' => 0.74, 'angle' => 288, 'nodeIndex' => 1,    'lite' => true],
 
-        ['row' => 1, 'y' => -0.34, 'r' => 1.00, 'angle' => 25,  'nodeIndex' => 6],
-        ['row' => 1, 'y' => -0.34, 'r' => 1.00, 'angle' => 85,  'nodeIndex' => null],
-        ['row' => 1, 'y' => -0.34, 'r' => 1.00, 'angle' => 145, 'nodeIndex' => 2],
-        ['row' => 1, 'y' => -0.34, 'r' => 1.00, 'angle' => 205, 'nodeIndex' => null],
-        ['row' => 1, 'y' => -0.34, 'r' => 1.00, 'angle' => 265, 'nodeIndex' => null],
-        ['row' => 1, 'y' => -0.34, 'r' => 1.00, 'angle' => 325, 'nodeIndex' => 7],
+        ['row' => 1, 'y' => -0.34, 'r' => 1.00, 'angle' => 25,  'nodeIndex' => 6,    'lite' => true],
+        ['row' => 1, 'y' => -0.34, 'r' => 1.00, 'angle' => 85,  'nodeIndex' => null, 'lite' => true],
+        ['row' => 1, 'y' => -0.34, 'r' => 1.00, 'angle' => 145, 'nodeIndex' => 2,    'lite' => true],
+        ['row' => 1, 'y' => -0.34, 'r' => 1.00, 'angle' => 205, 'nodeIndex' => null, 'lite' => false],
+        ['row' => 1, 'y' => -0.34, 'r' => 1.00, 'angle' => 265, 'nodeIndex' => null, 'lite' => false],
+        ['row' => 1, 'y' => -0.34, 'r' => 1.00, 'angle' => 325, 'nodeIndex' => 7,    'lite' => true],
 
-        ['row' => 2, 'y' => 0.08,  'r' => 0.82, 'angle' => 0,   'nodeIndex' => 4],
-        ['row' => 2, 'y' => 0.08,  'r' => 0.82, 'angle' => 72,  'nodeIndex' => null],
-        ['row' => 2, 'y' => 0.08,  'r' => 0.82, 'angle' => 144, 'nodeIndex' => 3],
-        ['row' => 2, 'y' => 0.08,  'r' => 0.82, 'angle' => 216, 'nodeIndex' => null],
-        ['row' => 2, 'y' => 0.08,  'r' => 0.82, 'angle' => 288, 'nodeIndex' => null],
+        ['row' => 2, 'y' => 0.08,  'r' => 0.82, 'angle' => 0,   'nodeIndex' => 4,    'lite' => true],
+        ['row' => 2, 'y' => 0.08,  'r' => 0.82, 'angle' => 72,  'nodeIndex' => null, 'lite' => true],
+        ['row' => 2, 'y' => 0.08,  'r' => 0.82, 'angle' => 144, 'nodeIndex' => 3,    'lite' => true],
+        ['row' => 2, 'y' => 0.08,  'r' => 0.82, 'angle' => 216, 'nodeIndex' => null, 'lite' => false],
+        ['row' => 2, 'y' => 0.08,  'r' => 0.82, 'angle' => 288, 'nodeIndex' => null, 'lite' => false],
 
-        ['row' => 3, 'y' => 0.46,  'r' => 0.52, 'angle' => 50,  'nodeIndex' => null],
-        ['row' => 3, 'y' => 0.46,  'r' => 0.52, 'angle' => 170, 'nodeIndex' => null],
-        ['row' => 3, 'y' => 0.46,  'r' => 0.52, 'angle' => 290, 'nodeIndex' => null],
+        ['row' => 3, 'y' => 0.46,  'r' => 0.52, 'angle' => 50,  'nodeIndex' => null, 'lite' => false],
+        ['row' => 3, 'y' => 0.46,  'r' => 0.52, 'angle' => 170, 'nodeIndex' => null, 'lite' => true],
+        ['row' => 3, 'y' => 0.46,  'r' => 0.52, 'angle' => 290, 'nodeIndex' => null, 'lite' => false],
 
-        ['row' => 4, 'y' => 0.80,  'r' => 0.12, 'angle' => 90,  'nodeIndex' => null],
+        ['row' => 4, 'y' => 0.80,  'r' => 0.12, 'angle' => 90,  'nodeIndex' => null, 'lite' => true],
     ];
 @endphp
 
 <section x-data="tameshkShowcase(@js($orbsLayout), @js($detachedNodes))"
-         class="showcase-paused relative h-[280vh] w-full border-t border-line-border bg-surface-base font-vazirmatn-rd select-none">
+         class="showcase-paused relative h-[280vh] w-full border-t border-line-border bg-surface-base font-vazirmatn-rd select-none max-lg:h-[230vh]">
 
     <div class="sticky top-0 flex h-dvh w-full items-center justify-center overflow-hidden">
         <div class="showcase-dot-grid pointer-events-none absolute inset-0 opacity-85" aria-hidden="true"></div>
@@ -176,7 +176,7 @@
 
             <div x-ref="crown"
                  class="pointer-events-none absolute left-1/2 top-1/2 z-40 -translate-x-1/2 -translate-y-1/2 will-change-transform">
-                <svg width="116" height="68" viewBox="0 0 116 68" fill="none" class="overflow-visible drop-shadow-[0_0_14px_rgba(16,185,129,0.55)]">
+                <svg width="116" height="68" viewBox="0 0 116 68" fill="none" class="showcase-crown-svg overflow-visible">
                     <defs>
                         <linearGradient id="crown-leaf-center" x1="58" y1="2" x2="58" y2="62" gradientUnits="userSpaceOnUse">
                             <stop offset="0%" stop-color="#6ee7b7"/>
@@ -240,7 +240,7 @@
 
                     @if ($nodeData)
                         <div data-node-card="{{ $index }}"
-                             class="pointer-events-none absolute inset-0 flex items-center justify-center rounded-2xl border border-line-border bg-surface-card shadow-lg"
+                             class="showcase-node-card pointer-events-none absolute inset-0 flex items-center justify-center rounded-2xl border border-line-border bg-surface-card shadow-lg"
                              style="opacity: 0">
                             <span data-node-badge="{{ $index }}"
                                   class="absolute -top-1.5 -right-1.5 z-20 flex size-5 items-center justify-center rounded-full bg-emerald-500 text-white shadow-sm ring-2 ring-surface-card"
@@ -251,7 +251,7 @@
                             <span class="pointer-events-none absolute -left-1.5 top-1/2 size-2.5 -translate-y-1/2 rounded-full border-2 border-surface-card bg-primary"></span>
                             <span class="pointer-events-none absolute -right-1.5 top-1/2 size-2.5 -translate-y-1/2 rounded-full border-2 border-surface-card bg-content-muted"></span>
 
-                            <div class="flex size-10 items-center justify-center rounded-xl shadow-inner {{ $nodeData['badgeBg'] }}">
+                            <div class="showcase-node-icon flex size-10 items-center justify-center rounded-xl {{ $nodeData['badgeBg'] }}">
                                 <x-ui.icon :name="$nodeData['icon']" class="size-5.5"/>
                             </div>
 
@@ -294,6 +294,14 @@
             border: 1px solid rgba(255, 255, 255, 0.24);
         }
 
+        .showcase-crown-svg {
+            filter: drop-shadow(0 0 14px rgba(16, 185, 129, 0.55));
+        }
+
+        .showcase-node-icon {
+            box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.05);
+        }
+
         @keyframes showcase-dash-flow {
             to {
                 stroke-dashoffset: -24;
@@ -312,99 +320,299 @@
         .showcase-paused .showcase-spark-line {
             animation-play-state: paused;
         }
+
+        .showcase-lite .showcase-dot-grid {
+            -webkit-mask-image: none;
+            mask-image: none;
+            background-size: 28px 28px;
+            opacity: 0.45;
+        }
+
+        .showcase-lite .showcase-orb-sphere {
+            box-shadow: 0 4px 10px -4px rgba(226, 28, 72, 0.4);
+        }
+
+        .showcase-lite .showcase-crown-svg {
+            filter: none;
+        }
+
+        .showcase-lite .showcase-node-card {
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.12);
+        }
+
+        .showcase-lite .showcase-node-icon {
+            box-shadow: none;
+        }
+
+        .showcase-lite .showcase-edge-flow,
+        .showcase-lite .showcase-spark-line {
+            animation: none;
+        }
     </style>
 
     <script>
         document.addEventListener('alpine:init', () => {
-            Alpine.data('tameshkShowcase', (orbsConfig, nodesConfig) => ({
-                targetProgress: 0,
-                currentProgress: 0,
-                rafId: null,
-                stageW: 1000,
-                stageH: 640,
-                isMobile: false,
-                orbEls: [],
-                edgeLines: [],
-                edgeBgs: [],
-                edgeDots: [],
-                sectionTop: 0,
-                sectionH: 0,
-                vh: 0,
-                visible: false,
-                lastP: -1,
-                observer: null,
-                onScroll: null,
-                onResize: null,
+            Alpine.data('tameshkShowcase', (orbsConfig, nodesConfig) => {
+                const liteQuery = window.matchMedia('(max-width: 1023px), (pointer: coarse), (prefers-reduced-motion: reduce)');
 
-                init() {
-                    const section = this.$el;
+                let section = null;
+                let refs = null;
+                let allOrbs = [];
+                let orbs = [];
+                let edgeLines = [];
+                let edgeBgs = [];
+                let edgeDots = [];
+                let edgeGeo = [];
+                let targetProgress = 0;
+                let currentProgress = 0;
+                let rafId = null;
+                let stageW = 1000;
+                let stageH = 640;
+                let lastW = 0;
+                let isMobile = false;
+                let isLite = false;
+                let sectionTop = 0;
+                let sectionH = 0;
+                let vh = 0;
+                let visible = false;
+                let lastP = -1;
+                let observer = null;
+                let resizeTimer = null;
 
-                    this.orbEls = orbsConfig.map((cfg, idx) => ({
-                        cfg,
-                        shell: section.querySelector(`[data-orb-index="${idx}"]`),
-                        skin: section.querySelector(`[data-orb-skin="${idx}"]`),
-                        card: section.querySelector(`[data-node-card="${idx}"]`),
-                        badge: section.querySelector(`[data-node-badge="${idx}"]`),
-                        label: section.querySelector(`[data-node-label="${idx}"]`),
-                        nodeCfg: cfg.nodeIndex !== null ? nodesConfig[cfg.nodeIndex] : null,
-                    }));
+                const clamp01 = (v) => Math.max(0, Math.min(1, v));
 
-                    this.edgeLines = nodesConfig.map((_, i) => section.querySelector(`[data-edge-line="${i}"]`));
-                    this.edgeBgs = nodesConfig.map((_, i) => section.querySelector(`[data-edge-bg="${i}"]`));
-                    this.edgeDots = nodesConfig.map((_, i) => section.querySelector(`[data-edge-dot="${i}"]`));
+                const smoothstep = (t) => {
+                    const c = clamp01(t);
+                    return c * c * (3 - 2 * c);
+                };
 
-                    const measure = () => {
-                        const rect = this.$refs.stage.getBoundingClientRect();
-                        this.stageW = Math.max(320, rect.width);
-                        this.stageH = Math.max(420, rect.height);
-                        this.isMobile = window.innerWidth < 640;
-                        this.vh = window.innerHeight;
-                        this.sectionH = section.offsetHeight;
-                        this.sectionTop = section.getBoundingClientRect().top + window.scrollY;
+                const applyMode = () => {
+                    isLite = liteQuery.matches;
+                    section.classList.toggle('showcase-lite', isLite);
 
-                        this.$refs.networkSvg.setAttribute(
-                            'viewBox',
-                            `${-this.stageW / 2} ${-this.stageH / 2} ${this.stageW} ${this.stageH}`
-                        );
+                    orbs = allOrbs.filter((item) => {
+                        const on = !isLite || item.cfg.lite !== false;
+                        item.shell.style.display = on ? '' : 'none';
+                        return on;
+                    });
 
-                        this.lastP = -1;
-                        this.onScroll();
-                        this.renderFrame(this.currentProgress);
+                    if (!isLite) {
+                        orbs.forEach((item) => {
+                            item.shell.style.borderRadius = '32px';
+                        });
+                    }
+                };
+
+                const layoutEdges = () => {
+                    nodesConfig.forEach((n, i) => {
+                        const tx = (isMobile ? n.mx : n.dx) * stageW;
+                        const ty = (isMobile ? n.my : n.dy) * stageH;
+                        const qx = tx === 0 ? 8 : tx * 0.45;
+                        const qy = ty === 0 ? 8 : ty * 0.15;
+                        const d = `M 0 0 Q ${qx.toFixed(1)} ${qy.toFixed(1)} ${tx.toFixed(1)} ${ty.toFixed(1)}`;
+
+                        edgeGeo[i] = { tx, ty, qx, qy };
+                        edgeLines[i]?.setAttribute('d', d);
+                        edgeBgs[i]?.setAttribute('d', d);
+                    });
+                };
+
+                const computeClusterPos = (cfg, rotAngle, expandFactor) => {
+                    const baseR = isMobile ? 48 : 62;
+                    const baseH = isMobile ? 64 : 82;
+
+                    const rad = (cfg.angle * Math.PI) / 180;
+                    const x0 = Math.cos(rad);
+                    const z0 = Math.sin(rad) * cfg.r;
+                    const y0 = cfg.y;
+
+                    const cosA = Math.cos(rotAngle);
+                    const sinA = Math.sin(rotAngle);
+
+                    const yRot = y0 * cosA - z0 * sinA;
+                    const zRot = y0 * sinA + z0 * cosA;
+
+                    const yNorm01 = clamp01((yRot + 0.9) / 1.8);
+                    const coneEnvelope = 1.04 - 0.72 * Math.pow(yNorm01, 1.45);
+
+                    return {
+                        x: x0 * coneEnvelope * baseR * expandFactor,
+                        y: yRot * baseH * expandFactor,
+                        z: zRot,
+                    };
+                };
+
+                const renderFrame = (p) => {
+                    if (Math.abs(p - lastP) < 0.0004) return;
+                    lastP = p;
+
+                    const p1 = clamp01(p / 0.30);
+                    const p2 = smoothstep((p - 0.30) / 0.45);
+                    const p3 = smoothstep((p - 0.72) / 0.24);
+
+                    const rotAngle = p1 * Math.PI * 1.45 + p2 * Math.PI * 0.35;
+                    const chargePulse = Math.sin(p1 * Math.PI);
+                    const expandFactor = 1 + chargePulse * 0.25 - p2 * 0.24 - p3 * 0.10;
+
+                    if (!isLite && refs.sparksGroup) {
+                        const sparkOpacity = clamp01(Math.sin(clamp01(p / 0.42) * Math.PI) * 1.15);
+                        refs.sparksGroup.style.opacity = sparkOpacity.toFixed(3);
+                        refs.sparksGroup.style.transform = `scale(${(1 + chargePulse * 0.15).toFixed(3)})`;
+                        refs.sparksGroup.style.display = sparkOpacity < 0.01 ? 'none' : '';
+                    }
+
+                    if (refs.ambientGlow) {
+                        const glowScale = 0.9 + chargePulse * 0.35 + p3 * 0.45;
+                        refs.ambientGlow.style.transform = `translate3d(-50%, -50%, 0) scale(${glowScale.toFixed(3)})`;
+                    }
+
+                    if (refs.crown) {
+                        const crownY = -(isMobile ? 66 : 82) * expandFactor + p3 * 10;
+                        const crownScale = (isMobile ? 0.84 : 1) * (1 + chargePulse * 0.08 - p2 * 0.14);
+                        const crownTilt = Math.sin(p1 * Math.PI * 2) * 5;
+                        refs.crown.style.transform = `translate3d(0, ${crownY.toFixed(1)}px, 0) scale(${crownScale.toFixed(3)}) rotate(${crownTilt.toFixed(1)}deg)`;
+                    }
+
+                    const edgesVisible = p3 > 0.01;
+
+                    for (let i = 0; i < orbs.length; i++) {
+                        const item = orbs[i];
+                        const clusterPos = computeClusterPos(item.cfg, rotAngle, expandFactor);
+
+                        const depthNorm = clamp01((clusterPos.z + 1) / 2);
+                        const baseScale = (isMobile ? 0.72 : 0.84) + depthNorm * 0.34;
+
+                        if (!isLite) {
+                            const brightness = 0.58 + depthNorm * 0.55 + p3 * 0.30;
+                            item.skin.style.filter = `brightness(${brightness.toFixed(2)})`;
+                        }
+
+                        if (!item.nodeCfg) {
+                            const coreScale = baseScale * (1 - p2 * 0.16 + p3 * 0.08);
+                            item.shell.style.zIndex = String(Math.round(10 + depthNorm * 20));
+                            item.shell.style.transform = `translate3d(${clusterPos.x.toFixed(1)}px, ${clusterPos.y.toFixed(1)}px, 0) scale(${coreScale.toFixed(3)})`;
+                            continue;
+                        }
+
+                        const nCfg = item.nodeCfg;
+                        const edgeIdx = item.cfg.nodeIndex;
+                        const geo = edgeGeo[edgeIdx];
+                        const ctrlX = nCfg.cx * stageW;
+                        const ctrlY = nCfg.cy * stageH;
+
+                        const invT = 1 - p2;
+                        const x = invT * invT * clusterPos.x + 2 * invT * p2 * ctrlX + p2 * p2 * geo.tx;
+                        const y = invT * invT * clusterPos.y + 2 * invT * p2 * ctrlY + p2 * p2 * geo.ty;
+
+                        const targetScale = isMobile ? 0.86 : 1.0;
+                        const scale = baseScale * (1 - p2) + targetScale * p2;
+
+                        item.shell.style.zIndex = p2 > 0.15 ? '35' : String(Math.round(10 + depthNorm * 20));
+                        item.shell.style.transform = `translate3d(${x.toFixed(1)}px, ${y.toFixed(1)}px, 0) scale(${scale.toFixed(3)})`;
+
+                        if (!isLite) {
+                            item.shell.style.borderRadius = `${(32 - p2 * 16).toFixed(1)}px`;
+                        }
+
+                        const cardOpacity = smoothstep((p2 - 0.18) / 0.65);
+                        item.skin.style.opacity = (1 - cardOpacity).toFixed(3);
+                        item.card.style.opacity = cardOpacity.toFixed(3);
+
+                        if (item.label) {
+                            item.label.style.opacity = smoothstep((p2 - 0.55) / 0.40).toFixed(3);
+                        }
+
+                        if (item.badge) {
+                            item.badge.style.opacity = p3.toFixed(3);
+                            item.badge.style.transform = `scale(${(0.4 + p3 * 0.6).toFixed(3)})`;
+                        }
+
+                        const dotEl = edgeDots[edgeIdx];
+
+                        if (edgesVisible && dotEl) {
+                            const dotT = (p3 * 1.4 + edgeIdx * 0.12) % 1;
+                            const dInv = 1 - dotT;
+                            dotEl.setAttribute('cx', (2 * dInv * dotT * geo.qx + dotT * dotT * geo.tx).toFixed(1));
+                            dotEl.setAttribute('cy', (2 * dInv * dotT * geo.qy + dotT * dotT * geo.ty).toFixed(1));
+                            dotEl.style.opacity = p3 > 0.2 ? '1' : '0';
+                        }
+                    }
+
+                    if (refs.edgesGroup) {
+                        refs.edgesGroup.style.opacity = p3.toFixed(3);
+                        refs.edgesGroup.style.display = edgesVisible ? '' : 'none';
+                    }
+                };
+
+                const startLoop = () => {
+                    if (rafId !== null) return;
+
+                    let last = performance.now();
+
+                    const tick = (now) => {
+                        const dt = Math.min(48, now - last);
+                        last = now;
+
+                        const diff = targetProgress - currentProgress;
+
+                        if (Math.abs(diff) < 0.0008) {
+                            currentProgress = targetProgress;
+                            renderFrame(currentProgress);
+                            rafId = null;
+                            return;
+                        }
+
+                        const k = 1 - Math.pow(1 - 0.14, dt / 16.667);
+                        currentProgress += diff * k;
+                        renderFrame(currentProgress);
+                        rafId = requestAnimationFrame(tick);
                     };
 
-                    this.onScroll = () => {
-                        if (!this.visible) return;
-                        const scrollable = Math.max(1, this.sectionH - this.vh);
-                        this.targetProgress = this.clamp01((window.scrollY - this.sectionTop) / scrollable);
-                        this.startLoop();
-                    };
+                    rafId = requestAnimationFrame(tick);
+                };
 
-                    this.observer = new IntersectionObserver(([entry]) => {
-                        this.visible = entry.isIntersecting;
-                        section.classList.toggle('showcase-paused', !this.visible);
-                        if (this.visible) this.onScroll();
-                    }, { rootMargin: '200px 0px' });
+                const onScroll = () => {
+                    if (!visible) return;
+                    const scrollable = Math.max(1, sectionH - vh);
+                    targetProgress = clamp01((window.scrollY - sectionTop) / scrollable);
+                    startLoop();
+                };
 
-                    this.observer.observe(section);
+                const measure = () => {
+                    applyMode();
 
-                    let resizeTimer;
-                    this.onResize = () => {
-                        clearTimeout(resizeTimer);
-                        resizeTimer = setTimeout(measure, 150);
-                    };
+                    const rect = refs.stage.getBoundingClientRect();
+                    stageW = Math.max(320, rect.width);
+                    stageH = Math.max(420, rect.height);
+                    isMobile = window.innerWidth < 640;
+                    vh = window.innerHeight;
+                    lastW = window.innerWidth;
+                    sectionH = section.offsetHeight;
+                    sectionTop = section.getBoundingClientRect().top + window.scrollY;
 
-                    this.bakeGlow();
-                    measure();
+                    refs.networkSvg.setAttribute(
+                        'viewBox',
+                        `${-stageW / 2} ${-stageH / 2} ${stageW} ${stageH}`
+                    );
 
-                    window.addEventListener('scroll', this.onScroll, { passive: true });
-                    window.addEventListener('resize', this.onResize, { passive: true });
-                },
+                    layoutEdges();
 
-                bakeGlow() {
-                    const el = this.$refs.ambientGlow;
+                    lastP = -1;
+                    onScroll();
+                    renderFrame(currentProgress);
+                };
+
+                const onResize = () => {
+                    if (window.innerWidth === lastW) return;
+                    clearTimeout(resizeTimer);
+                    resizeTimer = setTimeout(measure, 150);
+                };
+
+                const bakeGlow = () => {
+                    const el = refs.ambientGlow;
                     if (!el) return;
 
-                    const k = 4;
+                    const k = isLite ? 8 : 4;
                     const size = 480;
                     const pad = 192;
                     const n = (size + pad * 2) / k;
@@ -507,178 +715,52 @@
                     el.appendChild(canvas);
                     el.style.background = 'none';
                     el.style.filter = 'none';
-                },
+                };
 
-                destroy() {
-                    this.observer?.disconnect();
-                    window.removeEventListener('scroll', this.onScroll);
-                    window.removeEventListener('resize', this.onResize);
-                    if (this.rafId !== null) cancelAnimationFrame(this.rafId);
-                },
+                return {
+                    init() {
+                        section = this.$el;
+                        refs = this.$refs;
 
-                startLoop() {
-                    if (this.rafId !== null) return;
+                        allOrbs = orbsConfig.map((cfg, idx) => ({
+                            cfg,
+                            shell: section.querySelector(`[data-orb-index="${idx}"]`),
+                            skin: section.querySelector(`[data-orb-skin="${idx}"]`),
+                            card: section.querySelector(`[data-node-card="${idx}"]`),
+                            badge: section.querySelector(`[data-node-badge="${idx}"]`),
+                            label: section.querySelector(`[data-node-label="${idx}"]`),
+                            nodeCfg: cfg.nodeIndex !== null ? nodesConfig[cfg.nodeIndex] : null,
+                        }));
 
-                    let last = performance.now();
+                        edgeLines = nodesConfig.map((_, i) => section.querySelector(`[data-edge-line="${i}"]`));
+                        edgeBgs = nodesConfig.map((_, i) => section.querySelector(`[data-edge-bg="${i}"]`));
+                        edgeDots = nodesConfig.map((_, i) => section.querySelector(`[data-edge-dot="${i}"]`));
 
-                    const tick = (now) => {
-                        const dt = Math.min(48, now - last);
-                        last = now;
+                        observer = new IntersectionObserver(([entry]) => {
+                            visible = entry.isIntersecting;
+                            section.classList.toggle('showcase-paused', !visible);
+                            if (visible) onScroll();
+                        }, { rootMargin: '200px 0px' });
 
-                        const diff = this.targetProgress - this.currentProgress;
+                        observer.observe(section);
 
-                        if (Math.abs(diff) < 0.0008) {
-                            this.currentProgress = this.targetProgress;
-                            this.renderFrame(this.currentProgress);
-                            this.rafId = null;
-                            return;
-                        }
+                        applyMode();
+                        bakeGlow();
+                        measure();
 
-                        const k = 1 - Math.pow(1 - 0.14, dt / 16.667);
-                        this.currentProgress += diff * k;
-                        this.renderFrame(this.currentProgress);
-                        this.rafId = requestAnimationFrame(tick);
-                    };
+                        window.addEventListener('scroll', onScroll, { passive: true });
+                        window.addEventListener('resize', onResize, { passive: true });
+                    },
 
-                    this.rafId = requestAnimationFrame(tick);
-                },
-
-                clamp01(v) {
-                    return Math.max(0, Math.min(1, v));
-                },
-
-                smoothstep(t) {
-                    const c = this.clamp01(t);
-                    return c * c * (3 - 2 * c);
-                },
-
-                computeClusterPos(cfg, rotAngle, expandFactor) {
-                    const baseR = this.isMobile ? 48 : 62;
-                    const baseH = this.isMobile ? 64 : 82;
-
-                    const rad = (cfg.angle * Math.PI) / 180;
-                    const x0 = Math.cos(rad);
-                    const z0 = Math.sin(rad) * cfg.r;
-                    const y0 = cfg.y;
-
-                    const cosA = Math.cos(rotAngle);
-                    const sinA = Math.sin(rotAngle);
-
-                    const yRot = y0 * cosA - z0 * sinA;
-                    const zRot = y0 * sinA + z0 * cosA;
-
-                    const yNorm01 = this.clamp01((yRot + 0.9) / 1.8);
-                    const coneEnvelope = 1.04 - 0.72 * Math.pow(yNorm01, 1.45);
-
-                    return {
-                        x: x0 * coneEnvelope * baseR * expandFactor,
-                        y: yRot * baseH * expandFactor,
-                        z: zRot,
-                    };
-                },
-
-                renderFrame(p) {
-                    if (Math.abs(p - this.lastP) < 0.0004) return;
-                    this.lastP = p;
-
-                    const p1 = this.clamp01(p / 0.30);
-                    const p2 = this.smoothstep((p - 0.30) / 0.45);
-                    const p3 = this.smoothstep((p - 0.72) / 0.24);
-
-                    const rotAngle = p1 * Math.PI * 1.45 + p2 * Math.PI * 0.35;
-                    const chargePulse = Math.sin(p1 * Math.PI);
-                    const expandFactor = 1 + chargePulse * 0.25 - p2 * 0.24 - p3 * 0.10;
-
-                    if (this.$refs.sparksGroup) {
-                        const sparkOpacity = this.clamp01(Math.sin(this.clamp01(p / 0.42) * Math.PI) * 1.15);
-                        this.$refs.sparksGroup.style.opacity = sparkOpacity.toFixed(3);
-                        this.$refs.sparksGroup.style.transform = `scale(${(1 + chargePulse * 0.15).toFixed(3)})`;
-                        this.$refs.sparksGroup.style.display = sparkOpacity < 0.01 ? 'none' : '';
-                    }
-
-                    if (this.$refs.ambientGlow) {
-                        const glowScale = 0.9 + chargePulse * 0.35 + p3 * 0.45;
-                        this.$refs.ambientGlow.style.transform = `translate3d(-50%, -50%, 0) scale(${glowScale.toFixed(3)})`;
-                    }
-
-                    if (this.$refs.crown) {
-                        const crownY = -(this.isMobile ? 66 : 82) * expandFactor + p3 * 10;
-                        const crownScale = (this.isMobile ? 0.84 : 1) * (1 + chargePulse * 0.08 - p2 * 0.14);
-                        const crownTilt = Math.sin(p1 * Math.PI * 2) * 5;
-                        this.$refs.crown.style.transform = `translate3d(0, ${crownY.toFixed(1)}px, 0) scale(${crownScale.toFixed(3)}) rotate(${crownTilt.toFixed(1)}deg)`;
-                    }
-
-                    const edgesVisible = p3 > 0.01;
-
-                    for (let i = 0; i < this.orbEls.length; i++) {
-                        const item = this.orbEls[i];
-                        const clusterPos = this.computeClusterPos(item.cfg, rotAngle, expandFactor);
-
-                        const depthNorm = this.clamp01((clusterPos.z + 1) / 2);
-                        const baseScale = (this.isMobile ? 0.72 : 0.84) + depthNorm * 0.34;
-                        const brightness = 0.58 + depthNorm * 0.55 + p3 * 0.30;
-
-                        if (!item.nodeCfg) {
-                            const coreScale = baseScale * (1 - p2 * 0.16 + p3 * 0.08);
-                            item.shell.style.zIndex = String(Math.round(10 + depthNorm * 20));
-                            item.shell.style.transform = `translate3d(${clusterPos.x.toFixed(1)}px, ${clusterPos.y.toFixed(1)}px, 0) scale(${coreScale.toFixed(3)})`;
-                            item.skin.style.filter = `brightness(${brightness.toFixed(2)})`;
-                            continue;
-                        }
-
-                        const nCfg = item.nodeCfg;
-                        const targetX = (this.isMobile ? nCfg.mx : nCfg.dx) * this.stageW;
-                        const targetY = (this.isMobile ? nCfg.my : nCfg.dy) * this.stageH;
-                        const ctrlX = nCfg.cx * this.stageW;
-                        const ctrlY = nCfg.cy * this.stageH;
-
-                        const invT = 1 - p2;
-                        const x = invT * invT * clusterPos.x + 2 * invT * p2 * ctrlX + p2 * p2 * targetX;
-                        const y = invT * invT * clusterPos.y + 2 * invT * p2 * ctrlY + p2 * p2 * targetY;
-
-                        const targetScale = this.isMobile ? 0.86 : 1.0;
-                        const scale = baseScale * (1 - p2) + targetScale * p2;
-
-                        item.shell.style.zIndex = p2 > 0.15 ? '35' : String(Math.round(10 + depthNorm * 20));
-                        item.shell.style.borderRadius = `${(32 - p2 * 16).toFixed(1)}px`;
-                        item.shell.style.transform = `translate3d(${x.toFixed(1)}px, ${y.toFixed(1)}px, 0) scale(${scale.toFixed(3)})`;
-
-                        const cardOpacity = this.smoothstep((p2 - 0.18) / 0.65);
-                        item.skin.style.opacity = (1 - cardOpacity).toFixed(3);
-                        item.card.style.opacity = cardOpacity.toFixed(3);
-
-                        if (item.label) {
-                            item.label.style.opacity = this.smoothstep((p2 - 0.55) / 0.40).toFixed(3);
-                        }
-
-                        if (item.badge) {
-                            item.badge.style.opacity = p3.toFixed(3);
-                            item.badge.style.transform = `scale(${(0.4 + p3 * 0.6).toFixed(3)})`;
-                        }
-
-                        const edgeIdx = item.cfg.nodeIndex;
-                        if (edgesVisible && this.edgeLines[edgeIdx]) {
-                            const qx = targetX * 0.45;
-                            const qy = targetY * 0.15;
-                            const pathD = `M 0 0 Q ${qx.toFixed(1)} ${qy.toFixed(1)} ${targetX.toFixed(1)} ${targetY.toFixed(1)}`;
-                            this.edgeLines[edgeIdx].setAttribute('d', pathD);
-                            this.edgeBgs[edgeIdx].setAttribute('d', pathD);
-
-                            const dotT = (p3 * 1.4 + edgeIdx * 0.12) % 1;
-                            const dInv = 1 - dotT;
-                            const dotEl = this.edgeDots[edgeIdx];
-                            dotEl.setAttribute('cx', (2 * dInv * dotT * qx + dotT * dotT * targetX).toFixed(1));
-                            dotEl.setAttribute('cy', (2 * dInv * dotT * qy + dotT * dotT * targetY).toFixed(1));
-                            dotEl.style.opacity = p3 > 0.2 ? '1' : '0';
-                        }
-                    }
-
-                    if (this.$refs.edgesGroup) {
-                        this.$refs.edgesGroup.style.opacity = p3.toFixed(3);
-                        this.$refs.edgesGroup.style.display = edgesVisible ? '' : 'none';
-                    }
-                },
-            }));
+                    destroy() {
+                        observer?.disconnect();
+                        clearTimeout(resizeTimer);
+                        window.removeEventListener('scroll', onScroll);
+                        window.removeEventListener('resize', onResize);
+                        if (rafId !== null) cancelAnimationFrame(rafId);
+                    },
+                };
+            });
         });
     </script>
 @endonce
