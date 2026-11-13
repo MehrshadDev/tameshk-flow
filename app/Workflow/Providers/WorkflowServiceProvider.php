@@ -15,11 +15,13 @@ use App\Credentials\Types\HttpBearerCredential;
 use App\Credentials\Types\OpenAiCredential;
 use App\Credentials\Types\OpenRouterCredential;
 use App\Credentials\Types\TelegramCredential;
+use App\Credentials\Types\WooCommerceCredential;
 use App\Workflow\Nodes\Actions\GeminiNode;
 use App\Workflow\Nodes\Actions\GmailNode;
 use App\Workflow\Nodes\Actions\GoogleSheetsNode;
 use App\Workflow\Nodes\Actions\HttpRequestNode;
 use App\Workflow\Nodes\Actions\TelegramNode;
+use App\Workflow\Nodes\Actions\WooCommerceNode;
 use App\Workflow\Nodes\Ai\AiAgentNode;
 use App\Workflow\Nodes\Ai\AnthropicChatModelNode;
 use App\Workflow\Nodes\Ai\CalculatorToolNode;
@@ -37,6 +39,7 @@ use App\Workflow\Nodes\Ai\SimpleMemoryNode;
 use App\Workflow\Nodes\Ai\TelegramToolNode;
 use App\Workflow\Nodes\Ai\WebScraperToolNode;
 use App\Workflow\Nodes\Ai\WikipediaToolNode;
+use App\Workflow\Nodes\Ai\WooCommerceToolNode;
 use App\Workflow\Nodes\Logic\ConditionNode;
 use App\Workflow\Nodes\Logic\DelayNode;
 use App\Workflow\Nodes\Logic\StopAndErrorNode;
@@ -57,6 +60,7 @@ use App\Workflow\Nodes\Triggers\ManualTriggerNode;
 use App\Workflow\Nodes\Triggers\ScheduleTriggerNode;
 use App\Workflow\Nodes\Triggers\TelegramTriggerNode;
 use App\Workflow\Nodes\Triggers\WebhookTriggerNode;
+use App\Workflow\Nodes\Triggers\WooCommerceTriggerNode;
 use App\Workflow\Registry\NodeRegistry;
 use App\Workflow\Runner\WorkflowRunner;
 use Illuminate\Support\ServiceProvider;
@@ -76,6 +80,7 @@ class WorkflowServiceProvider extends ServiceProvider
                 GoogleSheetsRowAddedTriggerNode::class,
                 GoogleSheetsRowUpdatedTriggerNode::class,
                 GoogleSheetsRowAddedOrUpdatedTriggerNode::class,
+                WooCommerceTriggerNode::class,
                 EditFieldsNode::class,
                 ItemListsNode::class,
                 TextTransformNode::class,
@@ -92,6 +97,7 @@ class WorkflowServiceProvider extends ServiceProvider
                 TelegramNode::class,
                 GmailNode::class,
                 GoogleSheetsNode::class,
+                WooCommerceNode::class,
                 AiAgentNode::class,
                 GeminiChatModelNode::class,
                 OpenAiChatModelNode::class,
@@ -103,6 +109,7 @@ class WorkflowServiceProvider extends ServiceProvider
                 GoogleSheetsToolNode::class,
                 GmailToolNode::class,
                 TelegramToolNode::class,
+                WooCommerceToolNode::class,
                 DataStoreToolNode::class,
                 HttpToolNode::class,
                 WebScraperToolNode::class,
@@ -127,6 +134,7 @@ class WorkflowServiceProvider extends ServiceProvider
                 TelegramCredential::class,
                 GmailCredential::class,
                 GoogleCredential::class,
+                WooCommerceCredential::class,
             ]);
         });
 

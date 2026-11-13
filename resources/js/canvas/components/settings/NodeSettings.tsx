@@ -15,6 +15,7 @@ import {
     isTelegramTrigger,
     isTestableTrigger,
     isWebhookTrigger,
+    isWooCommerceTrigger,
 } from '@canvas/lib/triggers';
 import { useBackdropClose } from '@canvas/lib/useBackdropClose';
 import { useWorkflowStore } from '@canvas/store/useWorkflowStore';
@@ -289,6 +290,7 @@ function NodeStudio({ nodeId }: { nodeId: string }) {
             isWebhookTrigger(node.data.nodeType) ||
             isTelegramTrigger(node.data.nodeType) ||
             isGmailTrigger(node.data.nodeType) ||
+            isWooCommerceTrigger(node.data.nodeType) ||
             isSheetsTrigger(node.data.nodeType));
 
     const activeTab = isTrigger && mobileTab === 'input' ? 'parameters' : mobileTab;
@@ -432,9 +434,11 @@ function NodeStudio({ nodeId }: { nodeId: string }) {
                                                 ? 'دریافت پیام تستی'
                                                 : isGmailTrigger(node.data.nodeType)
                                                     ? 'بررسی و دریافت ایمیل تستی'
-                                                    : isSheetsTrigger(node.data.nodeType)
-                                                        ? 'بررسی تغییرات شیت'
-                                                        : 'تست این مرحله'}
+                                                    : isWooCommerceTrigger(node.data.nodeType)
+                                                        ? 'انتظار برای رویداد ووکامرس'
+                                                        : isSheetsTrigger(node.data.nodeType)
+                                                            ? 'بررسی تغییرات شیت'
+                                                            : 'تست این مرحله'}
                                     </span>
                                 </button>
                             )
@@ -517,7 +521,7 @@ function NodeStudio({ nodeId }: { nodeId: string }) {
                     )}
 
                     <section
-                        className={`min-h-0 min-w-0 flex-1 flex-col bg-surface-raised md:min-w-[420px] ${
+                        className={`min-h-0 min-w-0 flex-1 flex-col bg-surface-raised md:min-w-105 ${
                             activeTab === 'parameters' ? 'flex' : 'hidden md:flex'
                         }`}
                         dir="rtl"

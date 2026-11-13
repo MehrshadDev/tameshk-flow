@@ -59,7 +59,7 @@ export const FOLDERS_CONFIG: Record<string, FolderItem> = {
     'ai/tools': {
         id: 'ai/tools',
         title: 'ابزارهای ایجنت',
-        description: 'ابزارهای عملکردی ایجنت مثل گوگل شیت، جیمیل، وب‌سرویس و محاسبات',
+        description: 'ابزارهای عملکردی ایجنت مثل گوگل شیت، ووکامرس، جیمیل، وب‌سرویس و محاسبات',
         icon: 'tools',
         iconClass: 'bg-amber-500/10 text-amber-500',
     },
@@ -90,6 +90,13 @@ export const FOLDERS_CONFIG: Record<string, FolderItem> = {
         description: 'خواندن، افزودن، به‌روزرسانی و پاک‌کردن داده‌ها در اسپردشیت گوگل',
         icon: 'brand:google-sheets',
         iconClass: 'bg-emerald-500/10 text-emerald-500',
+    },
+    'action/woocommerce': {
+        id: 'action/woocommerce',
+        title: 'WooCommerce',
+        description: 'مدیریت محصولات، سفارش‌ها، مشتریان و رویدادهای فروشگاه ووکامرس',
+        icon: 'brand:woocommerce',
+        iconClass: 'bg-purple-500/10 text-purple-500',
     },
 };
 

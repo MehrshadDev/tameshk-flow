@@ -192,7 +192,7 @@ class TelegramTriggerNode implements NodeContract, WebhookTriggerContract
         }
     }
 
-    public function unregisterWebhook(Credential $credential): void
+    public function unregisterWebhook(Credential $credential, string $url = ''): void
     {
         $botToken = trim((string) $credential->get('bot_token'));
 

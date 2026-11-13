@@ -3,6 +3,7 @@
 use App\Http\Controllers\ChatWebhookController;
 use App\Http\Controllers\TelegramWebhookController;
 use App\Http\Controllers\WebhookTriggerController;
+use App\Http\Controllers\WooCommerceWebhookController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/webhook/{token}/chat', [ChatWebhookController::class, 'show'])
@@ -16,6 +17,10 @@ Route::post('/webhook/{token}/chat', [ChatWebhookController::class, 'message'])
 Route::post('/webhook/{token}/telegram', TelegramWebhookController::class)
     ->middleware('throttle:600,1')
     ->name('webhooks.telegram');
+
+Route::post('/webhook/{token}/woocommerce', WooCommerceWebhookController::class)
+    ->middleware('throttle:600,1')
+    ->name('webhooks.woocommerce');
 
 Route::match(['GET', 'POST', 'PUT', 'PATCH', 'DELETE'], '/webhook-test/{path}', [WebhookTriggerController::class, 'test'])
     ->where('path', '.+')

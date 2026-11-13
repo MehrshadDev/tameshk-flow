@@ -8,5 +8,5 @@ interface WebhookTriggerContract extends PublishableTriggerContract
 {
     public function registerWebhook(Credential $credential, string $url, string $secret, array $config = []): void;
 
-    public function unregisterWebhook(Credential $credential): void;
+    public function unregisterWebhook(Credential $credential, string $url = ''): void;
 }

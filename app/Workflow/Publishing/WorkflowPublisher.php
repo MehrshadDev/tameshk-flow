@@ -110,7 +110,9 @@ final class WorkflowPublisher
             return;
         }
 
-        $this->assertCredentialFree($workflow, $trigger);
+        if ($trigger->type === 'trigger.telegram') {
+            $this->assertCredentialFree($workflow, $trigger);
+        }
 
         $credential = $this->credentialFor($workflow, $trigger);
 
@@ -121,7 +123,7 @@ final class WorkflowPublisher
         try {
             $executor->registerWebhook(
                 $credential,
-                $this->endpoints->telegram($workflow),
+                $this->endpoints->forTriggerType($workflow, $trigger->type),
                 self::secretFor($workflow),
                 $trigger->config ?? [],
             );
@@ -157,7 +159,10 @@ final class WorkflowPublisher
         }
 
         try {
-            $executor->unregisterWebhook($credential);
+            $executor->unregisterWebhook(
+                $credential,
+                $this->endpoints->forTriggerType($workflow, $trigger->type),
+            );
         } catch (Throwable $e) {
             report($e);
         }

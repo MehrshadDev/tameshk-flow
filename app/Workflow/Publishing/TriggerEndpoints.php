@@ -21,6 +21,19 @@ final class TriggerEndpoints
         return $this->base() . route('webhooks.telegram', ['token' => $workflow->webhook_token], false);
     }
 
+    public function woocommerce(Workflow $workflow): string
+    {
+        return $this->base() . route('webhooks.woocommerce', ['token' => $workflow->webhook_token], false);
+    }
+
+    public function forTriggerType(Workflow $workflow, string $triggerType): string
+    {
+        return match ($triggerType) {
+            'trigger.woocommerce' => $this->woocommerce($workflow),
+            default               => $this->telegram($workflow),
+        };
+    }
+
     public function webhookTest(Workflow $workflow): string
     {
         return $this->base() . route('webhooks.custom.test', ['path' => $workflow->webhook_token], false);
