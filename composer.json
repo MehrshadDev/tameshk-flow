@@ -12,7 +12,8 @@
         "laravel/framework": "^13.17",
         "laravel/tinker": "^3.0",
         "livewire/livewire": "^4.0",
-        "morilog/jalali": "^3.5"
+        "morilog/jalali": "^3.5",
+        "ext-zlib": "*"
     },
     "require-dev": {
         "fakerphp/faker": "^1.23",

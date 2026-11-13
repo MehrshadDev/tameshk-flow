@@ -4,14 +4,13 @@ namespace App\Console\Commands;
 
 use App\Backup\GitBackupCipher;
 use App\Backup\GitBackupObserver;
+use App\Backup\PureGitClient;
 use Carbon\Carbon;
 use Exception;
 use Illuminate\Console\Command;
-use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\File;
-use Illuminate\Support\Facades\Process;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Str;
 use Throwable;
@@ -22,7 +21,7 @@ class RestoreGitBackupCommand extends Command
 
     protected $description = 'Decrypt and restore database snapshot from the most up-to-date Git remote';
 
-    public function handle(GitBackupCipher $crypto): int
+    public function handle(GitBackupCipher $crypto, PureGitClient $gitClient): int
     {
         $commitRef = trim((string) ($this->option('commit') ?: 'HEAD'));
         $repoPath = (string) config('git_backup.local_repository_path', storage_path('app/git_backups_repo'));
@@ -32,71 +31,50 @@ class RestoreGitBackupCommand extends Command
 
         $this->warn("⚠️ Starting data restoration from Git (Target: $commitRef)...");
 
-        if (! File::exists("$repoPath/.git")) {
-            $this->info('⚙️ Local repository missing. Running initialization...');
-            Artisan::call('git-backup:init');
-        }
+        File::ensureDirectoryExists("$repoPath/data");
 
-        $lockFile = "$repoPath/.git/index.lock";
-        if (File::exists($lockFile)) {
-            File::delete($lockFile);
-        }
+        $bestSnapshot = null;
+        $bestRemoteName = null;
+        $latestTimestamp = -1;
 
-        $this->info('🔄 Fetching latest history from configured remotes...');
+        if ($remotes !== []) {
+            $this->info('🔄 Fetching snapshot from configured remotes over HTTPS...');
 
-        $bestRemote = null;
-        $latestTimestamp = 0;
+            foreach ($remotes as $index => $remoteUrl) {
+                $remoteName = 'remote_' . ($index + 1);
+                $maskedUrl = $gitClient->maskUrl($remoteUrl);
 
-        foreach ($remotes as $index => $remoteUrl) {
-            $remoteName = 'remote_' . ($index + 1);
-            $maskedUrl = $this->maskUrl($remoteUrl);
+                try {
+                    $snapshot = $gitClient->fetchRemoteSnapshot($remoteUrl, $branch, $commitRef);
+                    $commitTime = (int) ($snapshot['timestamp'] ?? 0);
 
-            $this->git($repoPath, ['git', 'remote', 'remove', $remoteName]);
-            $this->git($repoPath, ['git', 'remote', 'add', $remoteName, $remoteUrl]);
-
-            $fetchResult = $this->git($repoPath, ['git', 'fetch', $remoteName, $branch], 45);
-
-            if ($fetchResult->failed()) {
-                $this->warn("⚠️ Could not fetch from [$remoteName] ($maskedUrl). Skipping...");
-                continue;
-            }
-
-            $logResult = $this->git($repoPath, ['git', 'log', '-1', '--format=%ct', "$remoteName/$branch"]);
-
-            if ($logResult->successful()) {
-                $commitTime = (int) trim($logResult->output());
-
-                if ($commitTime > $latestTimestamp) {
-                    $latestTimestamp = $commitTime;
-                    $bestRemote = $remoteName;
+                    if ($commitTime > $latestTimestamp) {
+                        $latestTimestamp = $commitTime;
+                        $bestSnapshot = $snapshot;
+                        $bestRemoteName = $remoteName;
+                    }
+                } catch (Throwable $e) {
+                    $this->warn("⚠️ Could not fetch from [$remoteName] ($maskedUrl): " . $e->getMessage());
                 }
             }
         }
 
-        $hasLocalCommits = $this->git($repoPath, ['git', 'rev-parse', '--verify', 'HEAD'])->successful();
-        $targetRef = $commitRef;
+        if ($bestSnapshot !== null) {
+            $shortSha = substr($bestSnapshot['commit_sha'], 0, 8);
+            $humanTime = $latestTimestamp > 0
+                ? Carbon::createFromTimestamp($latestTimestamp)->diffForHumans()
+                : 'unknown time';
 
-        if ($commitRef === 'HEAD') {
-            if ($bestRemote !== null) {
-                $targetRef = "$bestRemote/$branch";
-                $humanTime = Carbon::createFromTimestamp($latestTimestamp)->diffForHumans();
-                $this->info("🎯 Selected most up-to-date remote: [$bestRemote] (Last commit: $humanTime)");
-            } elseif (! $hasLocalCommits) {
-                $this->error('❌ No accessible remote repository or local history found!');
-
-                return self::FAILURE;
-            }
-        }
-
-        $checkoutResult = $this->git($repoPath, ['git', 'checkout', '-f', $targetRef]);
-
-        if ($checkoutResult->failed()) {
-            $this->error("❌ Failed to checkout [$targetRef]: " . trim($checkoutResult->errorOutput()));
+            $this->info("🎯 Selected remote [$bestRemoteName] at commit [$shortSha] ($humanTime)");
+            $extractedCount = $gitClient->extractSnapshotToDirectory($bestSnapshot, $repoPath);
+            $this->info("📦 Unpacked $extractedCount encrypted record files from Git tree.");
+        } elseif (! File::isDirectory("$repoPath/data") || File::allFiles("$repoPath/data") === []) {
+            $this->error('❌ Failed to fetch snapshot from any remote and no local backup files exist!');
 
             return self::FAILURE;
+        } else {
+            $this->warn('⚠️ Using existing local backup files in ' . "$repoPath/data");
         }
-
-        $this->info("📌 Checked out snapshot at [$targetRef]");
 
         $wasEnabled = config('git_backup.enabled');
         config(['git_backup.enabled' => false]);
@@ -154,7 +132,7 @@ class RestoreGitBackupCommand extends Command
 
                         $totalRestored++;
                     } catch (Exception $e) {
-                        $this->error("❌ [{$table} / {$file->getFilename()}]: " . $e->getMessage());
+                        $this->error("❌ [$table / {$file->getFilename()}]: " . $e->getMessage());
                     }
                 }
             }
@@ -163,10 +141,6 @@ class RestoreGitBackupCommand extends Command
             config(['git_backup.enabled' => $wasEnabled]);
             Cache::forget(GitBackupObserver::IMMEDIATE_DIRTY_KEY);
             Cache::forget(GitBackupObserver::PERIODIC_DIRTY_KEY);
-        }
-
-        if ($bestRemote !== null) {
-            $this->git($repoPath, ['git', 'checkout', '-B', $branch, "$bestRemote/$branch"]);
         }
 
         $this->info("🎉 Restoration completed! Total records restored: $totalRestored");
@@ -219,22 +193,5 @@ class RestoreGitBackupCommand extends Command
         }
 
         return $result;
-    }
-
-    private function git(string $repoPath, array $command, int $timeout = 30)
-    {
-        return Process::path($repoPath)
-            ->timeout($timeout)
-            ->env([
-                'GIT_TERMINAL_PROMPT' => '0',
-                'GIT_ASKPASS' => 'echo',
-                'HOME' => $repoPath,
-            ])
-            ->run($command);
-    }
-
-    private function maskUrl(string $url): string
-    {
-        return (string) preg_replace('#(https?://)([^/@]+@)#i', '$1***@', $url);
     }
 }

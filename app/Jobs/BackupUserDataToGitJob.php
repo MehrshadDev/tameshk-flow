@@ -4,6 +4,7 @@ namespace App\Jobs;
 
 use App\Backup\GitBackupCipher;
 use App\Backup\GitBackupObserver;
+use App\Backup\PureGitClient;
 use Exception;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
@@ -11,12 +12,10 @@ use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\Middleware\WithoutOverlapping;
 use Illuminate\Queue\SerializesModels;
-use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\Process;
 use Illuminate\Support\Facades\Schema;
 use Throwable;
 
@@ -42,13 +41,15 @@ class BackupUserDataToGitJob implements ShouldQueue
         ];
     }
 
-    public function handle(GitBackupCipher $crypto): void
+    public function handle(GitBackupCipher $crypto, ?PureGitClient $gitClient = null): void
     {
         if (! config('git_backup.enabled', false)) {
             Cache::forget(GitBackupObserver::IMMEDIATE_PENDING_KEY);
 
             return;
         }
+
+        $gitClient ??= app(PureGitClient::class);
 
         ignore_user_abort(true);
         @set_time_limit(240);
@@ -67,15 +68,6 @@ class BackupUserDataToGitJob implements ShouldQueue
             $branch = (string) config('git_backup.branch', 'main');
             $remotes = (array) config('git_backup.remotes', []);
             $tables = $this->normalizedTables();
-
-            if (! File::exists("$repoPath/.git")) {
-                Artisan::call('git-backup:init');
-            }
-
-            $lockFile = "$repoPath/.git/index.lock";
-            if (File::exists($lockFile)) {
-                File::delete($lockFile);
-            }
 
             $dataDir = "$repoPath/data";
             File::ensureDirectoryExists($dataDir);
@@ -148,45 +140,60 @@ class BackupUserDataToGitJob implements ShouldQueue
                 }
             }
 
-            $botName = (string) config('git_backup.bot_name', 'Tameshk Backup Bot');
-            $botEmail = (string) config('git_backup.bot_email', 'backup@tameshkflow.ir');
-
-            $this->git($repoPath, ['git', 'config', 'user.name', $botName]);
-            $this->git($repoPath, ['git', 'config', 'user.email', $botEmail]);
-            $this->git($repoPath, ['git', 'add', '-A']);
-
-            $statusCheck = $this->git($repoPath, ['git', 'status', '--porcelain']);
-
-            if (trim($statusCheck->output()) !== '') {
-                $commitMsg = 'Snapshot Backup at ' . now()->setTimezone('Asia/Tehran')->format('Y-m-d H:i:s');
-                $this->git($repoPath, ['git', 'commit', '-m', $commitMsg]);
-            }
-
-            $hasCommits = $this->git($repoPath, ['git', 'rev-parse', '--verify', 'HEAD'])->successful();
-
-            if (! $hasCommits || $remotes === []) {
+            if ($remotes === []) {
                 return;
             }
 
-            $successfulPushes = 0;
+            $treeData = $gitClient->buildTreeObjects($dataDir);
+            $rootTreeSha = $treeData['root_tree_sha'];
+            $treeObjects = $treeData['objects'];
+
+            $stateFile = "$repoPath/state.json";
+            $state = File::exists($stateFile)
+                ? (json_decode(File::get($stateFile), true) ?: [])
+                : [];
+
+            $botName = (string) config('git_backup.bot_name', 'Tameshk Backup Bot');
+            $botEmail = (string) config('git_backup.bot_email', 'backup@tameshkflow.ir');
+            $commitMsg = 'Snapshot Backup at ' . now()->setTimezone('Asia/Tehran')->format('Y-m-d H:i:s');
+
+            $successfulRemotes = 0;
 
             foreach ($remotes as $remoteUrl) {
-                $pushResult = $this->git(
-                    $repoPath,
-                    ['git', 'push', $remoteUrl, "HEAD:refs/heads/$branch"],
-                    45
-                );
+                $remoteKey = md5($remoteUrl);
+                $knownTreeSha = $state['remotes'][$remoteKey]['tree_sha'] ?? null;
+                $knownCommitSha = $state['remotes'][$remoteKey]['commit_sha'] ?? null;
 
-                if ($pushResult->failed()) {
-                    Log::warning('Git backup push failed for remote: ' . $this->maskUrl($remoteUrl), [
-                        'error' => $pushResult->errorOutput(),
+                try {
+                    $pushResult = $gitClient->pushSnapshot(
+                        remoteUrl: $remoteUrl,
+                        branch: $branch,
+                        rootTreeSha: $rootTreeSha,
+                        treeObjects: $treeObjects,
+                        botName: $botName,
+                        botEmail: $botEmail,
+                        commitMessage: $commitMsg,
+                        knownTreeSha: $knownTreeSha,
+                        knownCommitSha: $knownCommitSha,
+                    );
+
+                    $state['remotes'][$remoteKey] = [
+                        'tree_sha' => $pushResult['tree_sha'],
+                        'commit_sha' => $pushResult['commit_sha'],
+                        'updated_at' => now()->toIso8601String(),
+                    ];
+
+                    $successfulRemotes++;
+                } catch (Throwable $e) {
+                    Log::warning('Git backup push failed for remote: ' . $gitClient->maskUrl($remoteUrl), [
+                        'error' => $e->getMessage(),
                     ]);
-                } else {
-                    $successfulPushes++;
                 }
             }
 
-            if ($successfulPushes === 0) {
+            File::put($stateFile, json_encode($state, JSON_PRETTY_PRINT));
+
+            if ($successfulRemotes === 0) {
                 throw new Exception('All configured Git remotes failed to accept push.');
             }
         } catch (Throwable $e) {
@@ -222,22 +229,5 @@ class BackupUserDataToGitJob implements ShouldQueue
         }
 
         return $result;
-    }
-
-    private function git(string $repoPath, array $command, int $timeout = 30)
-    {
-        return Process::path($repoPath)
-            ->timeout($timeout)
-            ->env([
-                'GIT_TERMINAL_PROMPT' => '0',
-                'GIT_ASKPASS' => 'echo',
-                'HOME' => $repoPath,
-            ])
-            ->run($command);
-    }
-
-    private function maskUrl(string $url): string
-    {
-        return (string) preg_replace('#(https?://)([^/@]+@)#i', '$1***@', $url);
     }
 }
