@@ -20,7 +20,7 @@ class TelegramNode implements NodeContract
             type: 'action.telegram',
             name: 'Telegram',
             category: NodeCategory::Action,
-            description: 'ارسال و ویرایش پیام، تصویر، سند، پاسخ به دکمه‌ها و مدیریت چت یا اکانت بیزینس تلگرام.',
+            description: 'ارسال و ویرایش پیام، دکمه‌های شیشه‌ای، تصویر، سند، دانلود ویس/فایل و مدیریت چت تلگرام.',
             icon: 'brand:telegram',
             group: 'telegram',
             inputs: ['main'],
@@ -39,6 +39,7 @@ class TelegramNode implements NodeContract
                         ['value' => 'send_message', 'label' => 'ارسال پیام متنی (Send text message)'],
                         ['value' => 'send_photo', 'label' => 'ارسال تصویر (Send photo)'],
                         ['value' => 'send_document', 'label' => 'ارسال فایل یا سند (Send document)'],
+                        ['value' => 'get_file', 'label' => 'دریافت و دانلود فایل یا ویس (Get / Download file)'],
                         ['value' => 'edit_message', 'label' => 'ویرایش پیام متنی (Edit text message)'],
                         ['value' => 'delete_message', 'label' => 'حذف پیام (Delete message)'],
                         ['value' => 'answer_callback', 'label' => 'پاسخ به کلیک دکمه (Answer callback query)'],
@@ -79,6 +80,15 @@ class TelegramNode implements NodeContract
                     'placeholder' => 'https://example.com/file.pdf یا file_id تلگرام',
                     'depends_on'  => ['operation' => 'send_document'],
                 ],
+                'file_id' => [
+                    'type'        => 'text',
+                    'label'       => 'شناسه فایل یا ویس (File ID)',
+                    'required'    => true,
+                    'default'     => '{{ input.file_id }}',
+                    'placeholder' => '{{ input.file_id }}',
+                    'help'        => 'شناسه فایل دریافتی از تلگرام جهت دانلود و تبدیل به Data URL / Base64 (مناسب برای ارسال ویس به هوش مصنوعی).',
+                    'depends_on'  => ['operation' => 'get_file'],
+                ],
                 'caption' => [
                     'type'        => 'textarea',
                     'label'       => 'توضیحات (Caption)',
@@ -115,6 +125,13 @@ class TelegramNode implements NodeContract
                     'depends_on' => ['operation' => 'send_action'],
                 ],
 
+                'inline_keyboard' => [
+                    'type'        => 'textarea',
+                    'label'       => 'دکمه‌های شیشه‌ای (Inline Buttons)',
+                    'placeholder' => "مثال: ✅ درسته | confirm , ❌ نه | cancel\n(برای قرار گرفتن دکمه‌ها کنار هم از کاما و برای ردیف بعدی از خط جدید استفاده کنید)",
+                    'advanced'    => true,
+                    'depends_on'  => ['operation' => ['send_message', 'send_photo', 'send_document', 'edit_message']],
+                ],
                 'business_connection_id' => [
                     'type'        => 'text',
                     'label'       => 'شناسه اتصال بیزینس (Business Connection ID)',
@@ -187,8 +204,14 @@ class TelegramNode implements NodeContract
                 [
                     'key'         => 'send_message',
                     'name'        => 'Send a text message',
-                    'description' => 'ارسال پیام متنی به کاربر، پی‌وی بیزینس، گروه یا کانال.',
+                    'description' => 'ارسال پیام متنی (به همراه دکمه‌های شیشه‌ای اختیاری) به کاربر، گروه یا کانال.',
                     'config'      => ['operation' => 'send_message'],
+                ],
+                [
+                    'key'         => 'get_file',
+                    'name'        => 'Get & download a file / voice',
+                    'description' => 'دریافت و دانلود فایل یا ویس از تلگرام با File ID (مناسب برای تبدیل ویس به متن).',
+                    'config'      => ['operation' => 'get_file'],
                 ],
                 [
                     'key'         => 'send_photo',
@@ -205,7 +228,7 @@ class TelegramNode implements NodeContract
                 [
                     'key'         => 'edit_message',
                     'name'        => 'Edit a message',
-                    'description' => 'ویرایش متن پیام قبلی ربات در چت.',
+                    'description' => 'ویرایش متن یا دکمه‌های پیام قبلی ربات در چت.',
                     'config'      => ['operation' => 'edit_message'],
                 ],
                 [
@@ -257,6 +280,7 @@ class TelegramNode implements NodeContract
             'send_message'    => $this->handleSendMessage($context, $botToken),
             'send_photo'      => $this->handleSendMedia($context, $botToken, 'sendPhoto', 'photo', 'آدرس یا شناسه تصویر (Photo) الزامی است.'),
             'send_document'   => $this->handleSendMedia($context, $botToken, 'sendDocument', 'document', 'آدرس یا شناسه فایل (Document) الزامی است.'),
+            'get_file'        => $this->handleGetFile($context, $botToken),
             'edit_message'    => $this->handleEditMessage($context, $botToken),
             'delete_message'  => $this->handleDeleteMessage($context, $botToken),
             'answer_callback' => $this->handleAnswerCallback($context, $botToken),
@@ -340,6 +364,86 @@ class TelegramNode implements NodeContract
         return $payload;
     }
 
+    private function buildReplyMarkup(NodeContext $context): ?array
+    {
+        $raw = $this->value($context, 'inline_keyboard');
+
+        if ($raw === '') {
+            return null;
+        }
+
+        if (str_starts_with($raw, '[') || str_starts_with($raw, '{')) {
+            $decoded = json_decode($raw, true);
+
+            if (json_last_error() === JSON_ERROR_NONE && is_array($decoded)) {
+                if (isset($decoded['inline_keyboard']) && is_array($decoded['inline_keyboard'])) {
+                    return ['inline_keyboard' => $decoded['inline_keyboard']];
+                }
+
+                if (isset($decoded[0]['text'])) {
+                    return ['inline_keyboard' => [$decoded]];
+                }
+
+                return ['inline_keyboard' => $decoded];
+            }
+        }
+
+        $lines = preg_split('/\r\n|\r|\n/', $raw) ?: [];
+        $keyboard = [];
+
+        foreach ($lines as $line) {
+            $line = trim($line);
+
+            if ($line === '') {
+                continue;
+            }
+
+            $parts = preg_split('/[,،]+/u', $line) ?: [];
+            $row = [];
+
+            foreach ($parts as $part) {
+                $part = trim($part);
+
+                if ($part === '') {
+                    continue;
+                }
+
+                if (str_contains($part, '|')) {
+                    [$btnLabel, $btnData] = array_map('trim', explode('|', $part, 2));
+                } else {
+                    $btnLabel = $part;
+                    $btnData = $part;
+                }
+
+                if ($btnLabel === '') {
+                    continue;
+                }
+
+                if ($btnData === '') {
+                    $btnData = $btnLabel;
+                }
+
+                if (preg_match('#^https?://#i', $btnData)) {
+                    $row[] = [
+                        'text' => $btnLabel,
+                        'url'  => $btnData,
+                    ];
+                } else {
+                    $row[] = [
+                        'text'          => $btnLabel,
+                        'callback_data' => mb_strcut($btnData, 0, 64, 'UTF-8'),
+                    ];
+                }
+            }
+
+            if ($row !== []) {
+                $keyboard[] = $row;
+            }
+        }
+
+        return $keyboard !== [] ? ['inline_keyboard' => $keyboard] : null;
+    }
+
     private function applyMessageOptions(array $payload, NodeContext $context): array
     {
         $payload = $this->withParseMode($payload, $context);
@@ -348,6 +452,12 @@ class TelegramNode implements NodeContract
 
         if ($replyTo !== '') {
             $payload['reply_to_message_id'] = $replyTo;
+        }
+
+        $replyMarkup = $this->buildReplyMarkup($context);
+
+        if ($replyMarkup !== null) {
+            $payload['reply_markup'] = $replyMarkup;
         }
 
         return $payload;
@@ -403,6 +513,78 @@ class TelegramNode implements NodeContract
         ]);
     }
 
+    private function handleGetFile(NodeContext $context, string $botToken): NodeResult
+    {
+        $fileId = $this->required($context, 'file_id', 'شناسه فایل یا ویس (File ID) الزامی است.');
+
+        $fileInfo = $this->request($botToken, 'getFile', ['file_id' => $fileId]);
+        $filePath = trim((string) data_get($fileInfo, 'file_path', ''));
+
+        if ($filePath === '') {
+            throw NodeExecutionException::because('مسیر دانلود فایل از تلگرام دریافت نشد.');
+        }
+
+        $downloadUrl = TelegramApi::fileUrl($botToken, $filePath);
+
+        try {
+            $response = Http::timeout(60)->get($downloadUrl);
+        } catch (Throwable $e) {
+            throw NodeExecutionException::because("خطا در دانلود فایل از تلگرام: {$e->getMessage()}");
+        }
+
+        if ($response->failed()) {
+            throw NodeExecutionException::because("دانلود فایل از تلگرام با کد {$response->status()} ناموفق بود.");
+        }
+
+        $binary = $response->body();
+        $mimeType = $this->detectMimeType($filePath, (string) $response->header('Content-Type'));
+        $base64 = base64_encode($binary);
+
+        return $this->done([
+            'file_id'        => data_get($fileInfo, 'file_id', $fileId),
+            'file_unique_id' => data_get($fileInfo, 'file_unique_id'),
+            'file_path'      => $filePath,
+            'file_size'      => data_get($fileInfo, 'file_size', strlen($binary)),
+            'mime_type'      => $mimeType,
+            'data_url'       => "data:$mimeType;base64,$base64",
+            'base64'         => $base64,
+        ]);
+    }
+
+    private function detectMimeType(string $filePath, string $headerContentType): string
+    {
+        $ext = strtolower(pathinfo($filePath, PATHINFO_EXTENSION));
+
+        $byExt = match ($ext) {
+            'oga', 'ogg', 'opus' => 'audio/ogg',
+            'mp3'                => 'audio/mp3',
+            'm4a'                => 'audio/m4a',
+            'wav'                => 'audio/wav',
+            'aac'                => 'audio/aac',
+            'jpg', 'jpeg'        => 'image/jpeg',
+            'png'                => 'image/png',
+            'webp'               => 'image/webp',
+            'gif'                => 'image/gif',
+            'mp4'                => 'video/mp4',
+            'mov'                => 'video/quicktime',
+            'webm'               => 'video/webm',
+            'pdf'                => 'application/pdf',
+            default              => null,
+        };
+
+        if ($byExt !== null) {
+            return $byExt;
+        }
+
+        $cleanHeader = trim(explode(';', $headerContentType)[0] ?? '');
+
+        if ($cleanHeader !== '' && $cleanHeader !== 'application/octet-stream') {
+            return $cleanHeader;
+        }
+
+        return 'audio/ogg';
+    }
+
     private function handleEditMessage(NodeContext $context, string $botToken): NodeResult
     {
         [$chatId, $messageId] = $this->resolveChatAndMessageId($context);
@@ -413,6 +595,12 @@ class TelegramNode implements NodeContract
             'text'                     => $this->required($context, 'text', 'متن جدید پیام الزامی است.'),
             'disable_web_page_preview' => $this->flag($context, 'disable_preview'),
         ], $context), $context);
+
+        $replyMarkup = $this->buildReplyMarkup($context);
+
+        if ($replyMarkup !== null) {
+            $payload['reply_markup'] = $replyMarkup;
+        }
 
         $result = $this->request($botToken, 'editMessageText', $payload);
 

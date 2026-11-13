@@ -44,7 +44,7 @@ class TelegramTriggerNode implements NodeContract, WebhookTriggerContract
                     'type'     => 'multiselect',
                     'label'    => 'اجرا هنگام (Trigger On)',
                     'required' => true,
-                    'default'  => ['message'],
+                    'default'  => ['message', 'callback_query'],
                     'help'     => 'یک یا چند نوع رویداد را انتخاب کنید. برای اکانت‌های تلگرام بیزینس، گزینه «پیام اکانت بیزینس» را نیز انتخاب نمایید.',
                     'options'  => collect($catalog)
                         ->map(fn (array $item, string $key) => ['value' => $key, 'label' => $item[1]])
@@ -266,6 +266,8 @@ class TelegramTriggerNode implements NodeContract, WebhookTriggerContract
         $text = (string) ($text ?? '');
         $fromId = data_get($payload, 'from.id', data_get($payload, 'user.id'));
 
+        [$messageType, $fileId, $mimeType, $fileName, $duration] = $this->extractMediaInfo($type, $payload);
+
         $businessConnectionId = (string) (
             data_get($payload, 'business_connection_id')
             ?? data_get($payload, 'message.business_connection_id')
@@ -284,6 +286,7 @@ class TelegramTriggerNode implements NodeContract, WebhookTriggerContract
         return NodeResult::of([
             'update_id'              => data_get($update, 'update_id'),
             'update_type'            => $type,
+            'message_type'           => $messageType,
             'message_id'             => $messageId,
             'chat_id'                => $chatId,
             'from_id'                => $fromId,
@@ -293,12 +296,95 @@ class TelegramTriggerNode implements NodeContract, WebhookTriggerContract
             'sender_role'            => $isBusinessMessage ? ($isFromBusinessOwner ? 'owner' : 'customer') : 'user',
             'text'                   => $text,
             'chatInput'              => $text,
+            'file_id'                => $fileId,
+            'mime_type'              => $mimeType,
+            'file_name'              => $fileName,
+            'duration'               => $duration,
             'username'               => data_get($payload, 'from.username', data_get($payload, 'user.username', '')),
             'first_name'             => data_get($payload, 'from.first_name', data_get($payload, 'user.first_name', '')),
             'chat_type'              => data_get($payload, 'chat.type', data_get($payload, 'message.chat.type')),
             'callback_query_id'      => $type === 'callback_query' ? data_get($payload, 'id') : null,
+            'callback_data'          => $type === 'callback_query' ? $text : null,
+            'callback_message_text'  => $type === 'callback_query'
+                ? (string) data_get($payload, 'message.text', data_get($payload, 'message.caption', ''))
+                : null,
             'query_id'               => data_get($payload, 'id'),
             'raw'                    => $update,
         ]);
+    }
+
+    private function extractMediaInfo(string $updateType, array $payload): array
+    {
+        if ($updateType === 'callback_query') {
+            return ['callback_query', null, null, null, null];
+        }
+
+        if (isset($payload['voice']) && is_array($payload['voice'])) {
+            return [
+                'voice',
+                data_get($payload, 'voice.file_id'),
+                data_get($payload, 'voice.mime_type', 'audio/ogg'),
+                null,
+                data_get($payload, 'voice.duration'),
+            ];
+        }
+
+        if (isset($payload['audio']) && is_array($payload['audio'])) {
+            return [
+                'audio',
+                data_get($payload, 'audio.file_id'),
+                data_get($payload, 'audio.mime_type', 'audio/mpeg'),
+                data_get($payload, 'audio.file_name'),
+                data_get($payload, 'audio.duration'),
+            ];
+        }
+
+        if (isset($payload['video_note']) && is_array($payload['video_note'])) {
+            return [
+                'video_note',
+                data_get($payload, 'video_note.file_id'),
+                'video/mp4',
+                null,
+                data_get($payload, 'video_note.duration'),
+            ];
+        }
+
+        if (isset($payload['video']) && is_array($payload['video'])) {
+            return [
+                'video',
+                data_get($payload, 'video.file_id'),
+                data_get($payload, 'video.mime_type', 'video/mp4'),
+                data_get($payload, 'video.file_name'),
+                data_get($payload, 'video.duration'),
+            ];
+        }
+
+        if (isset($payload['document']) && is_array($payload['document'])) {
+            return [
+                'document',
+                data_get($payload, 'document.file_id'),
+                data_get($payload, 'document.mime_type', 'application/octet-stream'),
+                data_get($payload, 'document.file_name'),
+                null,
+            ];
+        }
+
+        if (isset($payload['photo']) && is_array($payload['photo']) && $payload['photo'] !== []) {
+            $largest = end($payload['photo']);
+
+            return [
+                'photo',
+                is_array($largest) ? ($largest['file_id'] ?? null) : null,
+                'image/jpeg',
+                null,
+                null,
+            ];
+        }
+
+        if (isset($payload['text'])) {
+            return ['text', null, null, null, null];
+        }
+
+        return [$updateType, null, null, null, null];
     }
 }

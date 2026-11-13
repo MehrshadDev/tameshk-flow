@@ -12,12 +12,18 @@ final class AudioOperation extends GeminiOperation
     public function handle(NodeContext $context, GeminiClient $client): NodeResult
     {
         $model = $this->model($context, 'model_multimodal');
-        $audio = $this->ensure($this->str($context, 'audio_input'), 'آدرس فایل صوتی (Audio input) الزامی است.');
-        $part = $client->resolveInputPart($audio, $this->str($context, 'audio_mime_type', 'audio/mp3'));
+        $audio = $this->ensure($this->str($context, 'audio_input'), 'آدرس یا داده فایل صوتی (Audio input) الزامی است.');
+        $part = $client->resolveInputPart($audio, $this->str($context, 'audio_mime_type', 'audio/ogg'));
+
+        $customPrompt = $this->str($context, 'prompt');
 
         $prompt = $this->str($context, 'operation_audio', 'analyze_audio') === 'transcribe_audio'
-            ? 'لطفاً تمام کلمات بیان‌شده در این فایل صوتی را با دقت بالا، بدون کم‌وکاست و به صورت رونوشت کلمه‌به‌کلمه پیاده‌سازی کن.'
-            : $this->str($context, 'prompt', 'محتوای این فایل صوتی را تحلیل و خلاصه‌سازی کن.');
+            ? ($customPrompt !== ''
+                ? $customPrompt
+                : 'لطفاً تمام کلمات بیان‌شده در این فایل صوتی را با دقت بالا، بدون کم‌وکاست و به صورت رونوشت کلمه‌به‌کلمه پیاده‌سازی کن.')
+            : ($customPrompt !== ''
+                ? $customPrompt
+                : 'محتوای این فایل صوتی را تحلیل و خلاصه‌سازی کن.');
 
         $context->log("پردازش فایل صوتی در Gemini ($model)");
 
