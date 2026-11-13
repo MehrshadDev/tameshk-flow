@@ -154,3 +154,9 @@ Route::post('/logout', function () {
     request()->session()->regenerateToken();
     return redirect('/');
 })->middleware('auth')->name('logout');
+
+if (app()->isLocal()) {
+    Route::get('/_errors/{code}', function (int $code) {
+        abort($code);
+    })->whereNumber('code');
+}
