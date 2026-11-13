@@ -14,10 +14,30 @@
     $user = auth()->user();
     $planCount = $plans->count();
     $isSinglePlan = $planCount === 1;
+    $showCycleToggle = $canSelectMonthly && ! ($currentPlan->slug === 'business' && ! $canRenewCurrent);
+
     $gridCols = match ($planCount) {
         1 => 'grid-cols-1',
         2 => 'grid-cols-1 lg:grid-cols-2',
         default => 'grid-cols-1 md:grid-cols-3',
+    };
+
+    $formatPrice = function (int $amount): array {
+        if ($amount <= 0) {
+            return ['value' => '0', 'unit' => 'تومان'];
+        }
+
+        if ($amount >= 1000000) {
+            $millions = round($amount / 1000000, 2);
+            $formatted = rtrim(rtrim(number_format($millions, 2, '.', ','), '0'), '.');
+
+            return ['value' => $formatted, 'unit' => 'میلیون تومان'];
+        }
+
+        return [
+            'value' => number_format((int) round($amount / 1000)),
+            'unit' => 'هزار تومان',
+        ];
     };
 @endphp
 
@@ -28,7 +48,13 @@
                 {{ $currentPlan->slug === 'business' && ! $canRenewCurrent ? 'وضعیت پلن اشتراک شما' : 'ارتقا و مدیریت پلن اشتراک' }}
             </h3>
             <p class="mt-1 text-xs text-content-muted">
-                @if (! $canSelectMonthly)
+                @if ($currentPlan->slug === 'business' && ! $canRenewCurrent)
+                    @if ($activeSubscription?->billing_cycle === 'yearly')
+                        شما در حال استفاده از بالاترین پلن و دوره سالانه تمشک فلو هستید.
+                    @else
+                        در صورت ارتقا به دوره سالانه، اعتبار روزهای استفاده‌نشده اشتراک فعلی شما به‌صورت روزشمار محاسبه و از مبلغ کسر می‌شود.
+                    @endif
+                @elseif (! $canSelectMonthly)
                     شما در حال استفاده از دوره سالانه هستید و در صورت ارتقا، اعتبار روزهای باقی‌مانده شما کسر می‌گردد.
                 @else
                     در صورت ارتقای پلن یا دوره، اعتبار روزهای استفاده‌نشده اشتراک فعلی شما به‌صورت روزشمار محاسبه و از مبلغ کسر می‌شود.
@@ -36,7 +62,7 @@
             </p>
         </div>
 
-        @if ($canSelectMonthly)
+        @if ($showCycleToggle)
             <div class="inline-flex self-start rounded-xl border border-line-border bg-surface-base p-1 sm:self-auto">
                 <button type="button"
                         wire:click="setBillingCycle('monthly')"
@@ -89,6 +115,11 @@
                         'is_prorated' => false,
                     ];
 
+                $baseFormatted = $formatPrice($quote['base_price']);
+                $payableFormatted = $formatPrice($quote['payable_amount']);
+                $creditFormatted = $formatPrice($quote['credit_amount']);
+                $regularFormatted = $formatPrice($plan->priceFor($billingCycle));
+
                 $isHighlighted = ($plan->slug === 'pro' && $currentPlan->slug === 'free')
                     || ($plan->slug === 'business' && $currentPlan->slug === 'pro');
                 $features = is_array($plan->features) ? $plan->features : [];
@@ -117,29 +148,31 @@
                                 {{ $plan->description }}
                             </p>
 
-                            <div class="mt-4 rounded-xl border border-line-border/70 bg-surface-card p-4">
+                            <div class="mt-5 border-y border-line-border/70 py-4">
                                 @if ($quote['is_prorated'])
                                     <div class="flex flex-wrap items-baseline gap-2">
-                                        <span class="font-mono text-sm font-semibold text-content-muted line-through">
-                                            {{ number_format($quote['base_price']) }}
+                                        <span dir="ltr" class="font-mono text-sm font-semibold tabular-nums text-content-muted line-through">
+                                            {{ $baseFormatted['value'] }}
                                         </span>
-                                        <span class="font-mono text-2xl font-extrabold tabular-nums text-emerald-500">
-                                            {{ number_format($quote['payable_amount']) }}
+                                        <span dir="ltr" class="font-mono text-3xl font-extrabold tracking-tight tabular-nums text-emerald-500">
+                                            {{ $payableFormatted['value'] }}
                                         </span>
-                                        <span class="text-xs font-semibold text-content-muted">
-                                            تومان / {{ $effectiveCardCycle === 'yearly' ? 'سالانه' : 'ماهانه' }}
+                                        <span class="text-sm font-bold text-content-main">{{ $payableFormatted['unit'] }}</span>
+                                        <span class="text-xs font-medium text-content-muted">
+                                            / {{ $effectiveCardCycle === 'yearly' ? 'سالانه' : 'ماهانه' }}
                                         </span>
                                     </div>
                                     <p class="mt-1.5 text-[11px] font-semibold text-emerald-600 dark:text-emerald-400">
-                                        با کسر {{ number_format($quote['credit_amount']) }} تومان بابت {{ $quote['unused_days'] }} روز باقی‌مانده از اشتراک فعلی
+                                        با کسر <span dir="ltr" class="font-mono">{{ $creditFormatted['value'] }}</span> {{ $creditFormatted['unit'] }} بابت {{ $quote['unused_days'] }} روز باقی‌مانده از اشتراک فعلی
                                     </p>
                                 @else
                                     <div class="flex items-baseline gap-1.5">
-                                        <span class="font-mono text-2xl font-extrabold tabular-nums text-content-main">
-                                            {{ number_format($plan->priceFor($effectiveCardCycle)) }}
+                                        <span dir="ltr" class="font-mono text-3xl font-extrabold tracking-tight tabular-nums text-content-main">
+                                            {{ $baseFormatted['value'] }}
                                         </span>
-                                        <span class="text-xs font-semibold text-content-muted">
-                                            تومان / {{ $effectiveCardCycle === 'yearly' ? 'سالانه' : 'ماهانه' }}
+                                        <span class="text-sm font-bold text-content-main">{{ $baseFormatted['unit'] }}</span>
+                                        <span class="text-xs font-medium text-content-muted">
+                                            / {{ $effectiveCardCycle === 'yearly' ? 'سالانه' : 'ماهانه' }}
                                         </span>
                                     </div>
                                 @endif
@@ -168,7 +201,7 @@
                                     <button type="submit"
                                             class="flex w-full items-center justify-center gap-2 rounded-xl border border-primary/40 bg-primary/10 px-4 py-2.5 text-xs font-bold text-primary transition hover:bg-primary hover:text-white active:scale-[0.99] cursor-pointer">
                                         <x-ui.icon name="sparkles" class="size-4"/>
-                                        <span>ارتقا به دوره سالانه — پرداخت {{ number_format($quote['payable_amount']) }} تومان</span>
+                                        <span>ارتقا به دوره سالانه — پرداخت <span dir="ltr" class="font-mono">{{ $payableFormatted['value'] }}</span> {{ $payableFormatted['unit'] }}</span>
                                     </button>
                                 </form>
                             @else
@@ -211,9 +244,11 @@
                             <p class="mb-3 text-xs font-bold text-content-main">امکانات و ظرفیت‌های پلن شما:</p>
                             <ul class="grid grid-cols-1 gap-2.5 sm:grid-cols-2">
                                 @foreach ($features as $feature)
-                                    <li class="flex items-start gap-2 text-xs text-content-muted">
-                                        <x-ui.icon name="check" class="mt-0.5 size-4 shrink-0 text-emerald-500"/>
-                                        <span class="leading-5">{{ $feature }}</span>
+                                    <li class="flex items-center gap-2.5 text-xs text-content-muted">
+                                        <span class="flex size-5 shrink-0 items-center justify-center rounded-full bg-emerald-500/15 text-emerald-500">
+                                            <x-ui.icon name="check" class="size-3"/>
+                                        </span>
+                                        <span class="leading-5 text-content-main/90">{{ $feature }}</span>
                                     </li>
                                 @endforeach
                             </ul>
@@ -222,19 +257,20 @@
                 </div>
             @else
                 <div @class([
-                    'relative flex flex-col justify-between rounded-2xl border p-5 transition-all',
-                    'border-primary bg-surface-raised ring-2 ring-primary/15 shadow-lg' => $isHighlighted,
-                    'border-line-border bg-surface-base/60' => ! $isHighlighted,
+                    'relative flex flex-col justify-between rounded-2xl border p-6 sm:p-7 transition-all duration-200',
+                    'border-primary/80 bg-surface-raised ring-1 ring-primary/20 shadow-xl shadow-primary/5' => $isHighlighted,
+                    'border-line-border bg-surface-base/60 hover:border-content-muted/30' => ! $isHighlighted,
                 ])>
                     @if ($isHighlighted)
-                        <span class="absolute -top-3 left-5 rounded-full bg-primary px-3 py-0.5 text-[11px] font-bold text-white shadow-xs">
+                        <div class="pointer-events-none absolute inset-x-8 top-0 h-px bg-linear-to-r from-transparent via-primary to-transparent"></div>
+                        <span class="absolute -top-3 left-1/2 -translate-x-1/2 whitespace-nowrap rounded-full bg-primary px-3.5 py-0.5 text-[11px] font-bold text-white shadow-sm shadow-primary/30">
                             پیشنهاد ارتقا
                         </span>
                     @endif
 
                     <div>
                         <div class="flex items-center justify-between gap-2">
-                            <h4 class="text-base font-extrabold text-content-main">پلن {{ $plan->name }}</h4>
+                            <h4 class="text-lg font-extrabold text-content-main">پلن {{ $plan->name }}</h4>
                             @if ($isCurrentPlan)
                                 <x-ui.badge variant="success" dot>
                                     پلن فعال شما ({{ $currentSubCycle === 'yearly' ? 'سالانه' : ($currentSubCycle === 'monthly' ? 'ماهانه' : 'پایه') }})
@@ -242,76 +278,59 @@
                             @endif
                         </div>
 
-                        <p class="mt-1.5 min-h-10 text-xs leading-5 text-content-muted">
+                        <p class="mt-2 min-h-12 text-xs leading-6 text-content-muted">
                             {{ $plan->description }}
                         </p>
 
-                        <div class="mt-4 border-y border-line-border/70 py-4">
+                        <div class="my-6 border-y border-line-border/70 py-5">
                             @if ($plan->isFree())
                                 <div class="flex items-baseline gap-1.5">
-                                    <span class="text-2xl font-extrabold text-content-main">رایگان</span>
-                                    <span class="text-xs text-content-muted">/ همیشگی</span>
+                                    <span dir="ltr" class="font-mono text-3xl font-extrabold tracking-tight tabular-nums text-content-main">0</span>
+                                    <span class="text-sm font-bold text-content-main">تومان</span>
+                                    <span class="text-xs font-medium text-content-muted">/ همیشگی</span>
                                 </div>
                             @elseif ($quote['is_prorated'])
                                 <div class="flex flex-wrap items-baseline gap-2">
-                                    <span class="font-mono text-sm font-semibold text-content-muted line-through">
-                                        {{ number_format($quote['base_price']) }}
+                                    <span dir="ltr" class="font-mono text-sm font-semibold tabular-nums text-content-muted line-through">
+                                        {{ $baseFormatted['value'] }}
                                     </span>
-                                    <span class="font-mono text-2xl font-extrabold tabular-nums text-emerald-500">
-                                        {{ number_format($quote['payable_amount']) }}
+                                    <span dir="ltr" class="font-mono text-3xl font-extrabold tracking-tight tabular-nums text-emerald-500">
+                                        {{ $payableFormatted['value'] }}
                                     </span>
-                                    <span class="text-xs font-semibold text-content-muted">
-                                        تومان / {{ $effectiveCardCycle === 'yearly' ? 'سالانه' : 'ماهانه' }}
+                                    <span class="text-sm font-bold text-content-main">{{ $payableFormatted['unit'] }}</span>
+                                    <span class="text-xs font-medium text-content-muted">
+                                        / {{ $effectiveCardCycle === 'yearly' ? 'سالانه' : 'ماهانه' }}
                                     </span>
                                 </div>
                                 <p class="mt-1.5 text-[11px] font-semibold text-emerald-600 dark:text-emerald-400">
-                                    با کسر {{ number_format($quote['credit_amount']) }} تومان بابت {{ $quote['unused_days'] }} روز باقی‌مانده از اشتراک فعلی
+                                    با کسر <span dir="ltr" class="font-mono">{{ $creditFormatted['value'] }}</span> {{ $creditFormatted['unit'] }} بابت {{ $quote['unused_days'] }} روز باقی‌مانده از اشتراک فعلی
                                 </p>
                             @else
                                 <div class="flex items-baseline gap-1.5">
-                                    <span class="font-mono text-2xl font-extrabold tabular-nums text-content-main">
-                                        {{ number_format($plan->priceFor($billingCycle)) }}
+                                    <span dir="ltr" class="font-mono text-3xl font-extrabold tracking-tight tabular-nums text-content-main">
+                                        {{ $regularFormatted['value'] }}
                                     </span>
-                                    <span class="text-xs font-semibold text-content-muted">
-                                        تومان / {{ $billingCycle === 'yearly' ? 'سالانه' : 'ماهانه' }}
+                                    <span class="text-sm font-bold text-content-main">{{ $regularFormatted['unit'] }}</span>
+                                    <span class="text-xs font-medium text-content-muted">
+                                        / {{ $billingCycle === 'yearly' ? 'سالانه' : 'ماهانه' }}
                                     </span>
                                 </div>
                             @endif
                         </div>
 
-                        <div class="mt-4 space-y-3">
-                            <div @class([
-                                'grid gap-2.5',
-                                'grid-cols-2' => $planCount === 2,
-                                'grid-cols-1' => $planCount !== 2,
-                            ])>
-                                <div class="flex items-center justify-between rounded-xl border border-line-border/60 bg-surface-card px-3 py-2 text-xs">
-                                    <span class="text-content-muted">اجرای ماهانه</span>
-                                    <span class="font-mono font-bold text-content-main">
-                                        {{ $plan->max_monthly_runs !== null ? number_format($plan->max_monthly_runs) : 'نامحدود' }}
+                        <ul class="space-y-3">
+                            @foreach ($features as $feature)
+                                <li class="flex items-center gap-2.5 text-xs text-content-muted">
+                                    <span class="flex size-5 shrink-0 items-center justify-center rounded-full bg-emerald-500/15 text-emerald-500">
+                                        <x-ui.icon name="check" class="size-3"/>
                                     </span>
-                                </div>
-
-                                <div class="flex items-center justify-between rounded-xl border border-line-border/60 bg-surface-card px-3 py-2 text-xs">
-                                    <span class="text-content-muted">ورک‌فلوی فعال</span>
-                                    <span class="font-mono font-bold text-content-main">
-                                        {{ $plan->max_active_workflows !== null ? $plan->max_active_workflows . ' عدد' : 'نامحدود' }}
-                                    </span>
-                                </div>
-                            </div>
-
-                            <ul class="space-y-2 pt-1">
-                                @foreach ($features as $feature)
-                                    <li class="flex items-start gap-2 text-xs text-content-muted">
-                                        <x-ui.icon name="check" class="mt-0.5 size-4 shrink-0 text-emerald-500"/>
-                                        <span class="leading-5">{{ $feature }}</span>
-                                    </li>
-                                @endforeach
-                            </ul>
-                        </div>
+                                    <span class="leading-5 text-content-main/90">{{ $feature }}</span>
+                                </li>
+                            @endforeach
+                        </ul>
                     </div>
 
-                    <div class="mt-6 pt-2">
+                    <div class="mt-8 pt-1">
                         @if ($plan->isFree())
                             <div class="flex w-full items-center justify-center gap-1.5 rounded-xl border border-line-border bg-surface-card py-2.5 text-xs font-bold text-content-muted select-none">
                                 <x-ui.icon name="check" class="size-4 text-emerald-500"/>
@@ -339,7 +358,7 @@
                                     <button type="submit"
                                             class="flex w-full items-center justify-center gap-2 rounded-xl border border-primary/40 bg-primary/10 px-4 py-2.5 text-xs font-bold text-primary transition hover:bg-primary hover:text-white active:scale-[0.99] cursor-pointer">
                                         <x-ui.icon name="sparkles" class="size-4"/>
-                                        <span>ارتقا به دوره سالانه — پرداخت {{ number_format($quote['payable_amount']) }} تومان</span>
+                                        <span>ارتقا به دوره سالانه — پرداخت <span dir="ltr" class="font-mono">{{ $payableFormatted['value'] }}</span> {{ $payableFormatted['unit'] }}</span>
                                     </button>
                                 </form>
                             @else
@@ -375,7 +394,7 @@
                                     <span>
                                         ارتقا به پلن {{ $plan->name }}
                                         @if ($quote['is_prorated'])
-                                            ({{ number_format($quote['payable_amount']) }} تومان)
+                                            (<span dir="ltr" class="font-mono">{{ $payableFormatted['value'] }}</span> {{ $payableFormatted['unit'] }})
                                         @endif
                                     </span>
                                 </button>

@@ -14,8 +14,12 @@ new class extends Component {
     {
         $summary = $subscriptions->usageSummary(auth()->user());
         $sub = $summary['subscription'];
+        $plan = $summary['plan'];
 
-        if ($sub && $sub->billing_cycle === 'yearly') {
+        if (
+            ($sub && $sub->billing_cycle === 'yearly')
+            || ($plan->slug === 'business' && ! $summary['can_renew_current'])
+        ) {
             $this->billingCycle = 'yearly';
         }
     }
@@ -42,13 +46,22 @@ new class extends Component {
     #[Computed]
     public function canSelectMonthly(): bool
     {
-        $sub = $this->summary['subscription'];
+        $summary = $this->summary;
+        $sub = $summary['subscription'];
 
-        if (! $sub || $sub->billing_cycle !== 'yearly') {
+        if (! $sub) {
             return true;
         }
 
-        return $sub->isWithinRenewalWindow();
+        if ($summary['plan']->slug === 'business' && ! $sub->isWithinRenewalWindow()) {
+            return false;
+        }
+
+        if ($sub->billing_cycle === 'yearly') {
+            return $sub->isWithinRenewalWindow();
+        }
+
+        return true;
     }
 
     #[Computed]
