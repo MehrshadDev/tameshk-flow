@@ -22,6 +22,27 @@ type ConfigFieldInputProps = {
     fullConfig?: Record<string, unknown>;
 };
 
+const MATH_FUNCTIONS = new Set(['sqrt', 'abs', 'round', 'floor', 'ceil', 'sin', 'cos', 'min', 'max']);
+
+const PERSIAN_DIGIT_MAP: Record<string, string> = {
+    '۰': '0', '۱': '1', '۲': '2', '۳': '3', '۴': '4',
+    '۵': '5', '۶': '6', '۷': '7', '۸': '8', '۹': '9',
+    '٠': '0', '١': '1', '٢': '2', '٣': '3', '٤': '4',
+    '٥': '5', '٦': '6', '٧': '7', '٨': '8', '٩': '9',
+};
+
+const normalizeDigits = (val: string): string =>
+    val.replace(/[۰-۹٠-٩]/g, (ch) => PERSIAN_DIGIT_MAP[ch] ?? ch);
+
+const toNumeric = (val: unknown): number | null => {
+    if (typeof val === 'number' && Number.isFinite(val)) return val;
+    if (typeof val !== 'string') return null;
+    const clean = normalizeDigits(val).replace(/[,٬\s]/g, '');
+    if (clean === '') return null;
+    const num = Number(clean);
+    return Number.isFinite(num) ? num : null;
+};
+
 const getByPath = (source: unknown, path: string): { found: boolean; value: unknown } => {
     if (!path) {
         return { found: source !== undefined, value: source };
@@ -39,6 +60,106 @@ const getByPath = (source: unknown, path: string): { found: boolean; value: unkn
     }
 
     return { found: true, value: current };
+};
+
+const resolveSingleToken = (
+    expr: string,
+    inputObj: unknown,
+    nodesMap: Record<string, unknown>,
+): { found: boolean; value: unknown } => {
+    const cleanExpr = expr.trim();
+
+    const nodeSelectorMatch = cleanExpr.match(/^\$\(['"](.+?)['"]\)(?:\.item)?(?:\.json)?(?:\.(.+))?$/);
+    if (nodeSelectorMatch) {
+        const nodeName = nodeSelectorMatch[1];
+        const propPath = nodeSelectorMatch[2] ?? '';
+        const targetNodeData = nodesMap[nodeName] ?? nodesMap[nodeName.replace(/\s+/g, '_')];
+
+        if (targetNodeData === undefined) {
+            return { found: false, value: undefined };
+        }
+
+        return getByPath(targetNodeData, propPath);
+    }
+
+    if (cleanExpr.startsWith('nodes.')) {
+        const rest = cleanExpr.slice('nodes.'.length);
+        const dotIndex = rest.indexOf('.');
+        const nodeKey = dotIndex === -1 ? rest : rest.slice(0, dotIndex);
+        const propPath = dotIndex === -1 ? '' : rest.slice(dotIndex + 1);
+        const targetNodeData = nodesMap[nodeKey];
+
+        return getByPath(targetNodeData, propPath);
+    }
+
+    const cleanInputPath =
+        cleanExpr === 'input'
+            ? ''
+            : cleanExpr.startsWith('input.')
+                ? cleanExpr.slice('input.'.length)
+                : cleanExpr;
+
+    const directRes = getByPath(inputObj, cleanInputPath);
+    if (directRes.found) {
+        return directRes;
+    }
+
+    for (const nodeOutput of Object.values(nodesMap)) {
+        const upRes = getByPath(nodeOutput, cleanInputPath);
+        if (upRes.found) {
+            return upRes;
+        }
+    }
+
+    return { found: false, value: undefined };
+};
+
+const validateMathExpression = (
+    expr: string,
+    inputObj: unknown,
+    nodesMap: Record<string, unknown>,
+): boolean => {
+    if (!/[+\-*/%^()]|\b(?:sqrt|abs|round|floor|ceil|sin|cos|min|max)\s*\(/i.test(expr)) {
+        return false;
+    }
+
+    let unresolved = false;
+
+    let replaced = expr.replace(
+        /\$\(['"][^'"]+['"]\)(?:\.item)?(?:\.json)?(?:\.[a-zA-Z0-9_.[\]]+)?/g,
+        (match) => {
+            const res = resolveSingleToken(match, inputObj, nodesMap);
+            const num = res.found ? toNumeric(res.value) : null;
+            if (num === null) {
+                unresolved = true;
+                return '';
+            }
+            return String(num);
+        },
+    );
+
+    if (unresolved) return false;
+
+    replaced = replaced.replace(
+        /\b([a-zA-Z_][a-zA-Z0-9_]*(?:\.[a-zA-Z0-9_]+|\[\d+])*)/g,
+        (match) => {
+            if (MATH_FUNCTIONS.has(match.toLowerCase())) {
+                return match.toLowerCase();
+            }
+            const res = resolveSingleToken(match, inputObj, nodesMap);
+            const num = res.found ? toNumeric(res.value) : null;
+            if (num === null) {
+                unresolved = true;
+                return '';
+            }
+            return String(num);
+        },
+    );
+
+    if (unresolved) return false;
+
+    const normalized = normalizeDigits(replaced).replace(/\*\*/g, '^').replace(/\s+/g, '');
+    return normalized !== '' && /^[0-9+\-*/^%().,a-z]+$/i.test(normalized);
 };
 
 const resolveExpression = (contextData: unknown, text: string): { found: boolean; value: unknown } => {
@@ -63,68 +184,18 @@ const resolveExpression = (contextData: unknown, text: string): { found: boolean
 
     for (const match of matches) {
         const expr = match[1].trim();
+        const direct = resolveSingleToken(expr, inputObj, nodesMap);
 
-        const nodeSelectorMatch = expr.match(/^\$\(['"](.+?)['"]\)(?:\.item)?(?:\.json)?(?:\.(.+))?$/);
-        if (nodeSelectorMatch) {
-            const nodeName = nodeSelectorMatch[1];
-            const propPath = nodeSelectorMatch[2] ?? '';
-            const targetNodeData = nodesMap[nodeName] ?? nodesMap[nodeName.replace(/\s+/g, '_')];
-
-            if (targetNodeData === undefined) {
-                allFound = false;
-                continue;
-            }
-
-            const res = getByPath(targetNodeData, propPath);
-            if (res.found) {
-                lastValue = res.value;
-            } else {
-                allFound = false;
-            }
+        if (direct.found) {
+            lastValue = direct.value;
             continue;
         }
 
-        if (expr.startsWith('nodes.')) {
-            const rest = expr.slice('nodes.'.length);
-            const dotIndex = rest.indexOf('.');
-            const nodeKey = dotIndex === -1 ? rest : rest.slice(0, dotIndex);
-            const propPath = dotIndex === -1 ? '' : rest.slice(dotIndex + 1);
-            const targetNodeData = nodesMap[nodeKey];
-
-            const res = getByPath(targetNodeData, propPath);
-            if (res.found) {
-                lastValue = res.value;
-            } else {
-                allFound = false;
-            }
+        if (validateMathExpression(expr, inputObj, nodesMap)) {
             continue;
         }
 
-        const cleanInputPath = expr === 'input'
-            ? ''
-            : expr.startsWith('input.')
-                ? expr.slice('input.'.length)
-                : expr;
-
-        const directRes = getByPath(inputObj, cleanInputPath);
-        if (directRes.found) {
-            lastValue = directRes.value;
-            continue;
-        }
-
-        let foundInUpstream = false;
-        for (const nodeOutput of Object.values(nodesMap)) {
-            const upRes = getByPath(nodeOutput, cleanInputPath);
-            if (upRes.found) {
-                lastValue = upRes.value;
-                foundInUpstream = true;
-                break;
-            }
-        }
-
-        if (!foundInUpstream) {
-            allFound = false;
-        }
+        allFound = false;
     }
 
     return { found: allFound, value: lastValue };

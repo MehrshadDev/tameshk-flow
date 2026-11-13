@@ -12,7 +12,15 @@ final class MathEvaluator
 
     public static function evaluate(string $expression): float|int
     {
-        $clean = preg_replace('/\s+/', '', strtolower($expression));
+        $normalized = strtr($expression, [
+            '۰' => '0', '۱' => '1', '۲' => '2', '۳' => '3', '۴' => '4',
+            '۵' => '5', '۶' => '6', '۷' => '7', '۸' => '8', '۹' => '9',
+            '٠' => '0', '١' => '1', '٢' => '2', '٣' => '3', '٤' => '4',
+            '٥' => '5', '٦' => '6', '٧' => '7', '٨' => '8', '٩' => '9',
+            '**' => '^',
+        ]);
+
+        $clean = preg_replace('/\s+/', '', strtolower($normalized));
 
         if ($clean === '' || ! preg_match('/^[0-9+\-*\/^%().,a-z]+$/', $clean)) {
             throw NodeExecutionException::because('عبارت ریاضی نامعتبر است.');
@@ -49,7 +57,7 @@ final class MathEvaluator
             if (in_array($ch, [...self::OPERATORS, ...self::DELIMITERS], true)) {
                 $previous = $tokens[count($tokens) - 1]['value'] ?? null;
 
-                if ($ch === '-' && ($previous === null || in_array($previous, [...self::OPERATORS, '('], true))) {
+                if ($ch === '-' && ($previous === null || in_array($previous, [...self::OPERATORS, '(', ','], true))) {
                     $tokens[] = ['type' => 'number', 'value' => 0];
                     $tokens[] = ['type' => 'op', 'value' => '-'];
                 } else {
@@ -156,19 +164,32 @@ final class MathEvaluator
                     default => throw NodeExecutionException::because('عملگر ناشناخته.'),
                 };
             } elseif ($token['type'] === 'func') {
+                $fn = $token['value'];
+
+                if (in_array($fn, ['min', 'max'], true)) {
+                    if (count($stack) < 2) {
+                        throw NodeExecutionException::because("ورودی تابع $fn ناقص است.");
+                    }
+                    $b = array_pop($stack);
+                    $a = array_pop($stack);
+                    $stack[] = $fn === 'min' ? min($a, $b) : max($a, $b);
+                    continue;
+                }
+
                 if (empty($stack)) {
                     throw NodeExecutionException::because('ورودی تابع ریاضی ناقص است.');
                 }
+
                 $arg = array_pop($stack);
-                $stack[] = match ($token['value']) {
-                    'sqrt' => sqrt($arg),
-                    'abs' => abs($arg),
+                $stack[] = match ($fn) {
+                    'sqrt'  => sqrt($arg),
+                    'abs'   => abs($arg),
                     'round' => round($arg),
                     'floor' => floor($arg),
-                    'ceil' => ceil($arg),
-                    'sin' => sin($arg),
-                    'cos' => cos($arg),
-                    default => throw NodeExecutionException::because("تابع ریاضی پشتیبانی نمی‌شود: {$token['value']}"),
+                    'ceil'  => ceil($arg),
+                    'sin'   => sin($arg),
+                    'cos'   => cos($arg),
+                    default => throw NodeExecutionException::because("تابع ریاضی پشتیبانی نمی‌شود: $fn"),
                 };
             }
         }
@@ -177,7 +198,7 @@ final class MathEvaluator
             throw NodeExecutionException::because('محاسبه عبارت ریاضی با خطا مواجه شد.');
         }
 
-        $res = $stack[0];
+        $res = round((float) $stack[0], 8);
 
         return floor($res) == $res ? (int) $res : $res;
     }
