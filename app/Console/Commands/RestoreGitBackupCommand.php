@@ -99,7 +99,8 @@ class RestoreGitBackupCommand extends Command
 
                 $files = File::files($folderPath);
                 $pk = (string) ($tableConfig['primary_key'] ?? 'id');
-                $hasUpdatedAt = Schema::hasColumn($table, 'updated_at');
+                $tableColumns = array_flip(Schema::getColumnListing($table));
+                $hasUpdatedAt = isset($tableColumns['updated_at']);
 
                 $this->info("📥 Restoring table [$table] (" . count($files) . ' records)...');
 
@@ -122,7 +123,12 @@ class RestoreGitBackupCommand extends Command
                             continue;
                         }
 
-                        $sanitized = $this->sanitizeRecord($table, $recordData, $hasUpdatedAt);
+                        $sanitized = $this->sanitizeRecord($table, $recordData, $hasUpdatedAt, $tableColumns);
+
+                        if ($sanitized === []) {
+                            continue;
+                        }
+
                         $matchKey = $sanitized[$pk] ?? $recordId;
 
                         DB::table($table)->updateOrInsert(
@@ -148,11 +154,15 @@ class RestoreGitBackupCommand extends Command
         return self::SUCCESS;
     }
 
-    private function sanitizeRecord(string $table, array $data, bool $hasUpdatedAt): array
+    private function sanitizeRecord(string $table, array $data, bool $hasUpdatedAt, array $tableColumns): array
     {
         $clean = [];
 
         foreach ($data as $key => $value) {
+            if (! isset($tableColumns[$key])) {
+                continue;
+            }
+
             if (is_array($value) || is_object($value)) {
                 $clean[$key] = json_encode($value, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
                 continue;
@@ -172,7 +182,7 @@ class RestoreGitBackupCommand extends Command
             $clean['updated_at'] = $clean['created_at'] ?? now()->format('Y-m-d H:i:s');
         }
 
-        if ($table === 'users' && ! array_key_exists('password', $clean)) {
+        if ($table === 'users' && isset($tableColumns['password']) && ! array_key_exists('password', $clean)) {
             $clean['password'] = bcrypt(Str::random(32));
         }
 

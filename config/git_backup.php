@@ -1,6 +1,7 @@
 <?php
 
 use App\Models\Credential;
+use App\Models\DiscountCode;
 use App\Models\Edge;
 use App\Models\Node;
 use App\Models\Payment;
@@ -65,7 +66,7 @@ return [
         ],
 
         'discount_codes' => [
-            'model' => \App\Models\DiscountCode::class,
+            'model' => DiscountCode::class,
             'mode' => 'immediate',
             'primary_key' => 'id',
             'excluded_columns' => [],
