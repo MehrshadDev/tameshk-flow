@@ -32,19 +32,13 @@ class RunGitBackupCommand extends Command
                 || Cache::get(GitBackupObserver::IMMEDIATE_DIRTY_KEY, false);
 
             $lastPeriodicScan = Cache::get('git_backup_last_full_scan_at');
-            $needsFullScan = $lastPeriodicScan === null || now()->diffInMinutes($lastPeriodicScan) >= 30;
+            $needsFullScan = ! is_int($lastPeriodicScan) || (time() - $lastPeriodicScan) >= 1800;
 
             if (! $isDirty && ! $needsFullScan) {
                 $this->line('No pending periodic changes to backup.');
 
                 return self::SUCCESS;
             }
-
-            Cache::put('git_backup_last_full_scan_at', now(), now()->addHours(2));
-            BackupUserDataToGitJob::dispatch();
-            $this->info('📦 Periodic Git backup job dispatched to queue.');
-
-            return self::SUCCESS;
         }
 
         if ($this->option('queue')) {
@@ -59,7 +53,7 @@ class RunGitBackupCommand extends Command
         try {
             $job = new BackupUserDataToGitJob();
             $job->handle($crypto);
-            Cache::put('git_backup_last_full_scan_at', now(), now()->addHours(2));
+            Cache::put('git_backup_last_full_scan_at', time(), now()->addHours(2));
 
             $this->info('✅ Git backup completed and pushed successfully!');
 

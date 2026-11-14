@@ -2,6 +2,7 @@
 
 namespace App\Workflow\Graph;
 
+use App\Backup\GitBackupObserver;
 use App\Models\Edge;
 use App\Models\Workflow;
 use Illuminate\Support\Facades\DB;
@@ -9,13 +10,9 @@ use Throwable;
 
 final class GraphSaver
 {
-    /**
-     * @return array<string, int>
-     * @throws Throwable
-     */
     public function save(Workflow $workflow, array $nodes, array $edges): array
     {
-        return DB::transaction(function () use ($workflow, $nodes, $edges): array {
+        $ids = DB::transaction(function () use ($workflow, $nodes, $edges): array {
             Workflow::query()->whereKey($workflow->id)->lockForUpdate()->firstOrFail();
 
             $existing = $workflow->nodes()->get()->keyBy('id');
@@ -52,6 +49,10 @@ final class GraphSaver
 
             return $ids;
         });
+
+        GitBackupObserver::markPeriodicDirty();
+
+        return $ids;
     }
 
     private function edgeRows(Workflow $workflow, array $edges, array $ids): array

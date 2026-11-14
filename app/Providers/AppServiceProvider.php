@@ -23,6 +23,8 @@ class AppServiceProvider extends ServiceProvider
 {
     public function register(): void
     {
+        $this->registerSharedHostingPcntlPolyfill();
+
         $this->app->singleton(SubscriptionManager::class);
         $this->app->singleton(TelegramTicketNotifier::class);
         $this->app->singleton(TicketManager::class);
@@ -37,6 +39,24 @@ class AppServiceProvider extends ServiceProvider
         Gate::policy(DiscountCode::class, DiscountCodePolicy::class);
 
         $this->registerGitBackupObservers();
+    }
+
+    private function registerSharedHostingPcntlPolyfill(): void
+    {
+        if (
+            ! function_exists('pcntl_alarm')
+            || ! function_exists('pcntl_signal')
+            || ! function_exists('pcntl_async_signals')
+        ) {
+            if (! function_exists('Illuminate\Queue\pcntl_alarm')) {
+                eval('
+                    namespace Illuminate\Queue;
+                    function pcntl_alarm($seconds) { return 0; }
+                    function pcntl_signal($signo, $handler, $restart_syscalls = true) { return true; }
+                    function pcntl_async_signals($on = null) { return true; }
+                ');
+            }
+        }
     }
 
     private function registerGitBackupObservers(): void

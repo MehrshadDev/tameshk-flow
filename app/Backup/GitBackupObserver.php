@@ -82,18 +82,10 @@ final class GitBackupObserver
         }
 
         Cache::put(self::IMMEDIATE_DIRTY_KEY, true, now()->addDays(7));
+        Cache::put(self::PERIODIC_DIRTY_KEY, true, now()->addDays(7));
 
-        $debounce = (int) (
-            config('git_backup.immediate_debounce_seconds')
-            ?? 15
-        );
-
-        if (Cache::add(self::IMMEDIATE_PENDING_KEY, true, now()->addMinutes(5))) {
-            $job = BackupUserDataToGitJob::dispatch();
-
-            if ($debounce > 0 && config('queue.default') !== 'sync') {
-                $job->delay(now()->addSeconds($debounce));
-            }
+        if (Cache::add(self::IMMEDIATE_PENDING_KEY, true, now()->addMinutes(2))) {
+            BackupUserDataToGitJob::dispatch();
         }
     }
 

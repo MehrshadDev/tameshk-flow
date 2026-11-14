@@ -10,7 +10,6 @@ use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
-use Illuminate\Queue\Middleware\WithoutOverlapping;
 use Illuminate\Queue\SerializesModels;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
@@ -32,15 +31,6 @@ class BackupUserDataToGitJob implements ShouldQueue
         $this->afterCommit();
     }
 
-    public function middleware(): array
-    {
-        return [
-            (new WithoutOverlapping('tameshk-git-backup-lock'))
-                ->expireAfter(240)
-                ->releaseAfter(30),
-        ];
-    }
-
     public function handle(GitBackupCipher $crypto, ?PureGitClient $gitClient = null): void
     {
         if (! config('git_backup.enabled', false)) {
@@ -60,8 +50,8 @@ class BackupUserDataToGitJob implements ShouldQueue
             return;
         }
 
-        Cache::forget(GitBackupObserver::IMMEDIATE_DIRTY_KEY);
-        Cache::forget(GitBackupObserver::PERIODIC_DIRTY_KEY);
+        $hadImmediateDirty = (bool) Cache::pull(GitBackupObserver::IMMEDIATE_DIRTY_KEY, false);
+        $hadPeriodicDirty = (bool) Cache::pull(GitBackupObserver::PERIODIC_DIRTY_KEY, false);
 
         try {
             $repoPath = (string) config('git_backup.local_repository_path', storage_path('app/git_backups_repo'));
@@ -196,7 +186,17 @@ class BackupUserDataToGitJob implements ShouldQueue
             if ($successfulRemotes === 0) {
                 throw new Exception('All configured Git remotes failed to accept push.');
             }
+
+            Cache::put('git_backup_last_full_scan_at', time(), now()->addHours(2));
         } catch (Throwable $e) {
+            if ($hadImmediateDirty) {
+                Cache::put(GitBackupObserver::IMMEDIATE_DIRTY_KEY, true, now()->addDays(7));
+            }
+
+            if ($hadPeriodicDirty || $hadImmediateDirty) {
+                Cache::put(GitBackupObserver::PERIODIC_DIRTY_KEY, true, now()->addDays(7));
+            }
+
             Log::error('BackupUserDataToGitJob Error: ' . $e->getMessage());
             throw $e;
         } finally {
@@ -212,6 +212,7 @@ class BackupUserDataToGitJob implements ShouldQueue
     public function failed(Throwable $exception): void
     {
         Cache::forget(GitBackupObserver::IMMEDIATE_PENDING_KEY);
+        Cache::put(GitBackupObserver::PERIODIC_DIRTY_KEY, true, now()->addDays(7));
         Log::error('Git Backup Completely Failed: ' . $exception->getMessage());
     }
 
