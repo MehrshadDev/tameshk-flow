@@ -23,6 +23,9 @@ use Illuminate\Validation\ValidationException;
 Route::get('/', [HomeController::class, 'index'])
     ->name('home');
 
+Route::view('/buy-n8n', 'pages.landing.buy-n8n')
+    ->name('landing.buy-n8n');
+
 Route::get('/oauth/google/callback', [GoogleOAuthController::class, 'callback'])
     ->name('oauth.google.callback');
 

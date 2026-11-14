@@ -21,7 +21,7 @@ class GenerateSitemapCommand extends Command
 
         $urls[] = [
             'loc' => $baseUrl . '/',
-            'lastmod' => $this-> resolveLastModified([
+            'lastmod' => $this->resolveLastModified([
                 'views/pages/home.blade.php',
                 'views/components/pages/home/hero.blade.php',
                 'views/components/pages/home/features.blade.php',
@@ -29,6 +29,19 @@ class GenerateSitemapCommand extends Command
             ]),
             'changefreq' => 'weekly',
             'priority' => '1.0',
+        ];
+
+        $urls[] = [
+            'loc' => $baseUrl . '/buy-n8n',
+            'lastmod' => $this->resolveLastModified([
+                'views/pages/landing/buy-n8n.blade.php',
+                'views/components/pages/buy-n8n/hero.blade.php',
+                'views/components/pages/buy-n8n/features.blade.php',
+                'views/components/pages/buy-n8n/comparison.blade.php',
+                'views/components/pages/buy-n8n/faq.blade.php',
+            ]),
+            'changefreq' => 'weekly',
+            'priority' => '0.9',
         ];
 
         foreach (DocumentationRepository::allArticles() as $index => $article) {
@@ -139,6 +152,7 @@ class GenerateSitemapCommand extends Command
         $lines = [
             'User-agent: *',
             'Allow: /',
+            'Allow: /buy-n8n',
             'Allow: /docs',
             'Allow: /docs/',
             'Allow: /terms',

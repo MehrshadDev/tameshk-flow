@@ -39,6 +39,7 @@
     $links = array_values(array_filter([
         ['label' => 'قابلیت‌ها', 'href' => route('home') . '#features', 'external' => false],
         $saasEnabled ? ['label' => 'تعرفه‌ها', 'href' => route('home') . '#pricing', 'external' => false] : null,
+        ['label' => 'مقایسه با n8n', 'href' => route('landing.buy-n8n'), 'external' => false],
         ['label' => 'مستندات', 'href' => route('docs.index'), 'external' => false],
         ['label' => 'قوانین و مقررات', 'href' => route('terms'), 'external' => false],
         ['label' => 'حریم خصوصی', 'href' => route('privacy'), 'external' => false],
