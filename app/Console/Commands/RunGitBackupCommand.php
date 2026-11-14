@@ -32,7 +32,7 @@ class RunGitBackupCommand extends Command
                 || Cache::get(GitBackupObserver::IMMEDIATE_DIRTY_KEY, false);
 
             $lastPeriodicScan = Cache::get('git_backup_last_full_scan_at');
-            $needsFullScan = ! is_int($lastPeriodicScan) || (time() - $lastPeriodicScan) >= 1800;
+            $needsFullScan = ! is_numeric($lastPeriodicScan) || (time() - (int) $lastPeriodicScan) >= 1800;
 
             if (! $isDirty && ! $needsFullScan) {
                 $this->line('No pending periodic changes to backup.');
