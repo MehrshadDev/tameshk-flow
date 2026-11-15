@@ -42,6 +42,11 @@ new class extends Component {
     public bool $firstPurchaseOnly = false;
     public bool $isActive = true;
 
+    public function boot(): void
+    {
+        abort_unless(auth()->check() && auth()->user()->isAdmin(), 403);
+    }
+
     public function mount(): void
     {
         $this->authorize('viewAny', DiscountCode::class);

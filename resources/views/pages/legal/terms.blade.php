@@ -22,7 +22,7 @@
     <section id="definitions" class="scroll-mt-24 space-y-3">
         <div class="flex items-center gap-2.5">
             <span class="flex size-8 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
-                <x-ui.icon name="hierarchy-2" class="size-4.5"/>
+                <x-ui.icon name="hierarchy" class="size-4.5"/>
             </span>
             <h2 class="text-lg font-extrabold text-content-main">۱. تعاریف و ماهیت خدمات</h2>
         </div>

@@ -18,12 +18,12 @@
     $isBusiness = $planSlug === 'business';
 @endphp
 
-<header class="relative z-30 flex h-16 shrink-0 items-center justify-between gap-3 border-b border-line-border bg-surface-raised/90 px-4 backdrop-blur-xl sm:px-6">
+<header class="relative z-30 flex h-16 shrink-0 items-center justify-between gap-3 border-b border-line-border bg-surface-raised/90 px-3.5 backdrop-blur-xl sm:px-6">
     <div class="flex min-w-0 items-center gap-2.5">
         <button type="button"
                 @click="sidebarOpen = true"
                 aria-label="منو"
-                class="flex size-9 items-center justify-center rounded-xl border border-line-border bg-surface-card text-content-muted transition hover:text-content-main lg:hidden">
+                class="flex size-9 shrink-0 items-center justify-center rounded-xl border border-line-border bg-surface-card text-content-muted transition hover:text-content-main lg:hidden">
             <x-ui.icon name="menu-2" class="size-5"/>
         </button>
 
@@ -39,7 +39,7 @@
 
         @if ($heading)
             <div class="min-w-0">
-                <h1 class="truncate text-sm font-bold text-content-main sm:text-base">{{ $heading }}</h1>
+                <h1 class="truncate text-xs font-extrabold text-content-main sm:text-base">{{ $heading }}</h1>
                 @if ($subheading)
                     <p class="hidden truncate text-[11px] text-content-muted sm:block">{{ $subheading }}</p>
                 @endif
@@ -59,7 +59,7 @@
                 x-data="{ dark: document.documentElement.classList.contains('dark') }"
                 @click="dark = !dark; document.documentElement.classList.toggle('dark', dark); localStorage.setItem('theme', dark ? 'dark' : 'light')"
                 aria-label="تغییر تم"
-                class="flex size-9 items-center justify-center rounded-xl border border-line-border bg-surface-card text-content-muted transition hover:border-content-muted/40 hover:text-content-main cursor-pointer">
+                class="flex size-9 shrink-0 items-center justify-center rounded-xl border border-line-border bg-surface-card text-content-muted transition hover:border-content-muted/40 hover:text-content-main cursor-pointer">
             <x-ui.icon name="moon" x-show="!dark" class="size-4.5"/>
             <x-ui.icon name="sun" x-show="dark" x-cloak class="size-4.5"/>
         </button>
@@ -70,7 +70,7 @@
                     <button type="button"
                             dir="ltr"
                         @class([
-                            'flex items-center gap-2 rounded-xl border p-1 pr-2.5 text-xs font-semibold text-content-main transition cursor-pointer',
+                            'flex h-9 items-center gap-1.5 sm:gap-2 rounded-xl border pl-1 pr-1.5 sm:pr-2.5 text-xs font-semibold text-content-main transition cursor-pointer',
                             'border-amber-500/40 bg-linear-to-r from-amber-500/10 to-surface-card hover:border-amber-500/60' => $isBusiness,
                             'border-primary/35 bg-linear-to-r from-primary/10 to-surface-card hover:border-primary/60' => $isPro,
                             'border-line-border bg-surface-card hover:border-content-muted/40' => ! $isPro && ! $isBusiness,
@@ -80,8 +80,8 @@
                                  alt="{{ $user->name }}"
                                 @class([
                                     'size-7 shrink-0 rounded-lg object-cover',
-                                    'ring-2 ring-amber-500' => $isBusiness,
-                                    'ring-2 ring-primary' => $isPro,
+                                    'ring-1 ring-amber-500' => $isBusiness,
+                                    'ring-1 ring-primary' => $isPro,
                                 ])>
                         @else
                             <span data-initial="{{ mb_substr($user->name, 0, 1) }}"
@@ -158,7 +158,13 @@
 
                 <div class="my-1 border-t border-line-border/60"></div>
 
-                <x-ui.dropdown-item :href="route('app.workflows.index')" icon="hierarchy-2">
+                @if ($user->isAdmin())
+                    <x-ui.dropdown-item :href="route('app.admin.index')" icon="chart-area-line">
+                        آمار و مدیریت سایت
+                    </x-ui.dropdown-item>
+                @endif
+
+                <x-ui.dropdown-item :href="route('app.workflows.index')" icon="hierarchy">
                     ورکفلوهای من
                 </x-ui.dropdown-item>
 

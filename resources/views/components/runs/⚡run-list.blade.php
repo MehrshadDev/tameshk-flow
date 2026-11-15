@@ -132,7 +132,7 @@ new class extends Component {
     public function workflowOptions(): array
     {
         $options = [
-            ['value' => 'all', 'label' => 'همه ورکفلوها', 'icon' => 'hierarchy-2'],
+            ['value' => 'all', 'label' => 'همه ورکفلوها', 'icon' => 'hierarchy'],
         ];
 
         $workflows = auth()->user()->workflows()->orderBy('name')->get(['id', 'name']);
@@ -141,7 +141,7 @@ new class extends Component {
             $options[] = [
                 'value' => (string) $wf->id,
                 'label' => $wf->name,
-                'icon' => 'hierarchy-2',
+                'icon' => 'hierarchy',
             ];
         }
 
@@ -344,7 +344,7 @@ new class extends Component {
                                       title="هنوز هیچ اجرایی ثبت نشده است"
                                       description="به محض اینکه یکی از ورکفلوهای خود را تست یا منتشر کنید، گزارش گام‌به‌گام اجرای آن در این صفحه قابل مشاهده خواهد بود.">
                         <x-ui.button :href="route('app.workflows.index')">
-                            <x-ui.icon name="hierarchy-2" class="size-4"/>
+                            <x-ui.icon name="hierarchy" class="size-4"/>
                             مشاهده ورکفلوها
                         </x-ui.button>
                     </x-ui.empty-state>

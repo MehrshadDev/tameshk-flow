@@ -194,7 +194,7 @@
             @else
                 <a href="{{ $resolvedPrimaryHref }}"
                    class="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-primary px-6 py-2.5 text-xs font-bold text-white shadow-lg shadow-primary/25 transition hover:bg-primary/90 active:scale-98 sm:w-auto sm:text-sm">
-                    <x-ui.icon :name="$isAuthenticated && $primaryAction === 'home' ? 'hierarchy-2' : 'sparkles'" class="size-4"/>
+                    <x-ui.icon :name="$isAuthenticated && $primaryAction === 'home' ? 'hierarchy' : 'sparkles'" class="size-4"/>
                     <span>{{ $resolvedPrimaryLabel }}</span>
                 </a>
             @endif

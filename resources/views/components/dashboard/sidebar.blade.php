@@ -94,7 +94,7 @@
 
     <nav class="custom-scrollbar flex-1 space-y-2 overflow-y-auto overflow-x-hidden p-3">
         <x-dashboard.sidebar-link
-            icon="hierarchy-2"
+            icon="hierarchy"
             :href="route('app.workflows.index')"
             :active="request()->routeIs('app.workflows.*')"
             :count="$totalWorkflows">
@@ -128,6 +128,14 @@
         @endif
 
         @if ($user?->isAdmin())
+            <x-dashboard.sidebar-link
+                icon="chart-area-line"
+                :href="route('app.admin.index')"
+                :active="request()->routeIs('app.admin.*')"
+                badge="ADMIN">
+                آمار و مدیریت سایت
+            </x-dashboard.sidebar-link>
+
             <x-dashboard.sidebar-link
                 icon="discount-2"
                 :href="route('app.discounts.index')"

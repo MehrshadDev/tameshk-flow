@@ -39,7 +39,7 @@ export const FOLDERS_CONFIG: Record<string, FolderItem> = {
         id: 'logic',
         title: 'جریان و مسیر',
         description: 'شاخه‌بندی، ایجاد شروط، مسیریابی چندگانه و وقفه در اجرا',
-        icon: 'hierarchy-2',
+        icon: 'hierarchy',
         iconClass: 'bg-amber-500/10 text-amber-500',
     },
     'ai/llm': {

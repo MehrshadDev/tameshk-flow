@@ -577,7 +577,7 @@ new class extends Component {
                         </x-ui.button>
                     </x-ui.empty-state>
                 @else
-                    <x-ui.empty-state icon="hierarchy-2"
+                    <x-ui.empty-state icon="hierarchy"
                                       title="هنوز ورکفلویی نساخته‌اید">
                         <x-ui.button type="button" wire:click="create" wire:loading.attr="disabled" wire:target="create" class="cursor-pointer">
                             <x-ui.icon name="plus" class="size-4"/>

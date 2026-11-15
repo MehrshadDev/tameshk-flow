@@ -54,7 +54,7 @@
     <div class="hidden w-32 shrink-0 md:block">
         @if ($workflowsCount > 0)
             <span class="inline-flex items-center gap-1.5 rounded-lg border border-line-border/80 bg-surface-raised px-2.5 py-1 text-xs font-semibold text-content-main">
-                <x-ui.icon name="hierarchy-2" class="size-3.5 text-primary"/>
+                <x-ui.icon name="hierarchy" class="size-3.5 text-primary"/>
                 <span>{{ $workflowsCount }} ورکفلو</span>
             </span>
         @else

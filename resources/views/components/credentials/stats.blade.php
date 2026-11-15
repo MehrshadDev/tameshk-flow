@@ -47,7 +47,7 @@
 
     <div class="flex items-center gap-3.5 rounded-2xl border border-line-border bg-surface-card p-4 shadow-2xs">
         <div class="flex size-11 shrink-0 items-center justify-center rounded-xl bg-sky-500/10 text-sky-500">
-            <x-ui.icon name="hierarchy-2" class="size-5.5"/>
+            <x-ui.icon name="hierarchy" class="size-5.5"/>
         </div>
         <div class="min-w-0">
             <p class="truncate text-xs font-medium text-content-muted">متصل به ورکفلوها</p>

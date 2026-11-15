@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\AdminDashboardController;
 use App\Http\Controllers\Auth\GoogleAuthController;
 use App\Http\Controllers\BillingController;
 use App\Http\Controllers\CredentialController;
@@ -15,6 +16,7 @@ use App\Http\Controllers\WorkflowExecutionController;
 use App\Http\Controllers\WorkflowGraphController;
 use App\Http\Controllers\WorkflowMemoryController;
 use App\Http\Controllers\WorkflowPublishController;
+use App\Http\Middleware\EnsureAdminAccess;
 use App\Http\Middleware\EnsureTerminalAccess;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
@@ -87,8 +89,13 @@ Route::middleware('auth')
         Route::post('/billing/checkout', [BillingController::class, 'checkout'])
             ->middleware('throttle:10,1')
             ->name('billing.checkout');
-        Route::get('/discounts', [DiscountCodeController::class, 'index'])
-            ->name('discounts.index');
+
+        Route::middleware([EnsureAdminAccess::class])->group(function () {
+            Route::get('/admin', [AdminDashboardController::class, 'index'])
+                ->name('admin.index');
+            Route::get('/discounts', [DiscountCodeController::class, 'index'])
+                ->name('discounts.index');
+        });
 
         Route::prefix('api')->name('api.')->group(function () {
             Route::get('ping', fn () => response()->json(['status' => 'ok']))->name('ping');

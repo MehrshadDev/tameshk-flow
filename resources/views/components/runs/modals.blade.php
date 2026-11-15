@@ -28,7 +28,7 @@
             <div class="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-line-border/80 bg-surface-card p-3.5">
                 <div class="flex min-w-0 items-center gap-3">
                     <div class="flex size-10 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
-                        <x-ui.icon name="hierarchy-2" class="size-5"/>
+                        <x-ui.icon name="hierarchy" class="size-5"/>
                     </div>
                     <div class="min-w-0 text-right">
                         <p dir="auto" class="truncate text-right text-xs font-bold text-content-main">

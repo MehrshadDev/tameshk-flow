@@ -56,7 +56,7 @@
         'bg-amber-500/10 text-amber-500 ring-1 ring-amber-500/20' => ! $workflow->is_active && $workflow->isPublished(),
         'bg-line-border/50 text-content-muted' => ! $workflow->isPublished(),
     ])>
-        <x-ui.icon name="hierarchy-2" class="size-5.5"/>
+        <x-ui.icon name="hierarchy" class="size-5.5"/>
     </div>
 
     <div class="min-w-0 flex-1">
