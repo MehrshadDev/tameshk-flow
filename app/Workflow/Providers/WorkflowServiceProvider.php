@@ -28,6 +28,7 @@ use App\Workflow\Nodes\Ai\AiAgentNode;
 use App\Workflow\Nodes\Ai\AnthropicChatModelNode;
 use App\Workflow\Nodes\Ai\CalculatorToolNode;
 use App\Workflow\Nodes\Ai\DataStoreToolNode;
+use App\Workflow\Nodes\Ai\DataTableToolNode;
 use App\Workflow\Nodes\Ai\DateTimeToolNode;
 use App\Workflow\Nodes\Ai\DeepSeekChatModelNode;
 use App\Workflow\Nodes\Ai\GeminiChatModelNode;
@@ -49,6 +50,7 @@ use App\Workflow\Nodes\Logic\StopAndErrorNode;
 use App\Workflow\Nodes\Logic\SwitchNode;
 use App\Workflow\Nodes\Transform\CryptoNode;
 use App\Workflow\Nodes\Transform\DataStoreNode;
+use App\Workflow\Nodes\Transform\DataTableNode;
 use App\Workflow\Nodes\Transform\DateTimeNode;
 use App\Workflow\Nodes\Transform\EditFieldsNode;
 use App\Workflow\Nodes\Transform\ItemListsNode;
@@ -66,12 +68,15 @@ use App\Workflow\Nodes\Triggers\WebhookTriggerNode;
 use App\Workflow\Nodes\Triggers\WooCommerceTriggerNode;
 use App\Workflow\Registry\NodeRegistry;
 use App\Workflow\Runner\WorkflowRunner;
+use App\Workflow\Support\DataTableManager;
 use Illuminate\Support\ServiceProvider;
 
 class WorkflowServiceProvider extends ServiceProvider
 {
     public function register(): void
     {
+        $this->app->singleton(DataTableManager::class);
+
         $this->app->singleton(NodeRegistry::class, function () {
             return new NodeRegistry([
                 ManualTriggerNode::class,
@@ -91,6 +96,7 @@ class WorkflowServiceProvider extends ServiceProvider
                 DateTimeNode::class,
                 CryptoNode::class,
                 DataStoreNode::class,
+                DataTableNode::class,
                 ConditionNode::class,
                 SwitchNode::class,
                 DelayNode::class,
@@ -115,6 +121,7 @@ class WorkflowServiceProvider extends ServiceProvider
                 TelegramToolNode::class,
                 WooCommerceToolNode::class,
                 MySqlToolNode::class,
+                DataTableToolNode::class,
                 DataStoreToolNode::class,
                 HttpToolNode::class,
                 WebScraperToolNode::class,

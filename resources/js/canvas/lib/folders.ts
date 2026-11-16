@@ -31,7 +31,7 @@ export const FOLDERS_CONFIG: Record<string, FolderItem> = {
     transform: {
         id: 'transform',
         title: 'تغییر و تبدیل داده',
-        description: 'ویرایش فیلدها، پردازش لیست‌ها، عملیات متنی و تبدیل JSON',
+        description: 'جدول داده‌ها (Data table)، ویرایش فیلدها، پردازش لیست‌ها و تبدیل JSON',
         icon: 'pencil',
         iconClass: 'bg-sky-500/10 text-sky-500',
     },
@@ -59,7 +59,7 @@ export const FOLDERS_CONFIG: Record<string, FolderItem> = {
     'ai/tools': {
         id: 'ai/tools',
         title: 'ابزارهای ایجنت',
-        description: 'ابزارهای عملکردی ایجنت مثل دیتابیس MySQL، گوگل شیت، ووکامرس، جیمیل و وب‌سرویس',
+        description: 'ابزارهای عملکردی ایجنت مثل جدول داده، دیتابیس MySQL، گوگل شیت، ووکامرس و جیمیل',
         icon: 'tools',
         iconClass: 'bg-amber-500/10 text-amber-500',
     },
@@ -104,6 +104,13 @@ export const FOLDERS_CONFIG: Record<string, FolderItem> = {
         description: 'انتخاب، درج، ویرایش، حذف ردیف‌ها و اجرای کوئری SQL در پایگاه داده MySQL',
         icon: 'brand:mysql',
         iconClass: 'bg-sky-500/10 text-sky-500',
+    },
+    'transform/data-table': {
+        id: 'transform/data-table',
+        title: 'Data table',
+        description: 'ساخت و مدیریت جداول داده داخلی، درج، جستجو، بروزرسانی و حذف ردیف‌ها',
+        icon: 'table',
+        iconClass: 'bg-teal-500/10 text-teal-500',
     },
 };
 

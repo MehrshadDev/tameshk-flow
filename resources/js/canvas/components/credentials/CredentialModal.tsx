@@ -5,6 +5,7 @@ import { Icon } from '@canvas/components/ui/Icon';
 import { Modal } from '@canvas/components/ui/Modal';
 import { PasswordField } from '@canvas/components/ui/PasswordField';
 import { Select } from '@canvas/components/ui/Select';
+import { textDir } from '@canvas/lib/fields';
 import { useWorkflowStore } from '@canvas/store/useWorkflowStore';
 import type { CredentialDefinition, CredentialItem } from '@canvas/api/credentials';
 import type { ConfigField } from '@canvas/types/graph';
@@ -32,6 +33,8 @@ const getDefaultName = (def: CredentialDefinition): string => {
             return 'Telegram account';
         case 'gemini':
             return 'Gemini account';
+        case 'mysql':
+            return 'MySQL account';
         case 'http_bearer':
             return 'Bearer token';
         case 'basic_auth':
@@ -180,6 +183,7 @@ export function CredentialModal({
         const inputName = `credential_${key}_field`;
         const label = field.label ?? key;
         const spanFull = isSingleField || field.type === 'textarea' || field.type === 'code';
+        const fieldDir = textDir(value, field.placeholder ?? '');
 
         const control = (() => {
             switch (field.type) {
@@ -214,11 +218,13 @@ export function CredentialModal({
                             name={inputName}
                             rows={3}
                             value={value}
-                            dir="auto"
+                            dir={field.type === 'code' ? 'ltr' : fieldDir}
                             maxLength={10000}
                             placeholder={field.placeholder}
                             onChange={(e) => updateField(key, e.target.value)}
-                            className={`${baseInputClass} resize-none ${field.type === 'code' ? 'font-mono' : ''}`}
+                            className={`${baseInputClass} resize-none ${
+                                field.type === 'code' || fieldDir === 'ltr' ? 'text-left font-mono' : 'text-right'
+                            }`}
                         />
                     );
 
@@ -235,7 +241,7 @@ export function CredentialModal({
                             maxLength={20}
                             placeholder={field.placeholder}
                             onChange={(e) => updateField(key, e.target.value)}
-                            className={baseInputClass}
+                            className={`${baseInputClass} text-left font-mono`}
                         />
                     );
 
@@ -245,14 +251,14 @@ export function CredentialModal({
                         <input
                             type="text"
                             name={inputName}
-                            dir="auto"
+                            dir={fieldDir}
                             autoComplete="off"
                             spellCheck={false}
                             value={value}
                             maxLength={2000}
                             placeholder={field.placeholder}
                             onChange={(e) => updateField(key, e.target.value)}
-                            className={baseInputClass}
+                            className={`${baseInputClass} ${fieldDir === 'ltr' ? 'text-left' : 'text-right'}`}
                         />
                     );
             }
@@ -270,6 +276,8 @@ export function CredentialModal({
             </div>
         );
     };
+
+    const nameDir = textDir(name, 'نام حساب');
 
     return (
         <>
@@ -333,14 +341,14 @@ export function CredentialModal({
                                 <input
                                     autoFocus
                                     type="text"
-                                    dir="auto"
+                                    dir={nameDir}
                                     name="credential_name_field"
                                     autoComplete="off"
                                     spellCheck={false}
                                     value={name}
                                     maxLength={100}
                                     onChange={(e) => setName(e.target.value)}
-                                    className={baseInputClass}
+                                    className={`${baseInputClass} ${nameDir === 'ltr' ? 'text-left' : 'text-right'}`}
                                 />
                             </div>
 
@@ -360,7 +368,7 @@ export function CredentialModal({
                                             dir="ltr"
                                             value={`${window.location.origin}/oauth/google/callback`}
                                             onFocus={(e) => e.currentTarget.select()}
-                                            className="w-full rounded-lg border border-line-border bg-field px-3.5 py-2.5 font-mono text-xs text-content-main select-all focus:outline-none"
+                                            className="w-full rounded-lg border border-line-border bg-field px-3.5 py-2.5 font-mono text-xs text-left text-content-main select-all focus:outline-none"
                                         />
                                         <button
                                             type="button"

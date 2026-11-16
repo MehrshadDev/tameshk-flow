@@ -3,6 +3,7 @@ import { request } from '@canvas/api/client';
 import { inputClass } from '@canvas/components/settings/fieldStyles';
 import { Icon } from '@canvas/components/ui/Icon';
 import { Select } from '@canvas/components/ui/Select';
+import { textDir } from '@canvas/lib/fields';
 import type { ConfigField } from '@canvas/types/graph';
 
 type DynamicSelectProps = {
@@ -120,6 +121,16 @@ export function DynamicSelect({ id, field, value, onChange, fullConfig }: Dynami
         );
     }
 
+    const resolvedPlaceholder =
+        field.placeholder ??
+        (field.source === 'google_sheets_documents'
+            ? 'https://docs.google.com/spreadsheets/d/...'
+            : isMysqlTables
+                ? 'users'
+                : 'Sheet1');
+
+    const inputDir = textDir(stringValue, resolvedPlaceholder);
+
     return (
         <div className="space-y-1.5">
             <div className="flex items-center justify-end">
@@ -153,20 +164,15 @@ export function DynamicSelect({ id, field, value, onChange, fullConfig }: Dynami
                 <input
                     id={id}
                     type="text"
-                    dir="ltr"
+                    dir={inputDir}
                     autoComplete="off"
                     spellCheck={false}
                     value={stringValue}
-                    placeholder={
-                        field.placeholder ??
-                        (field.source === 'google_sheets_documents'
-                            ? 'https://docs.google.com/spreadsheets/d/...'
-                            : isMysqlTables
-                                ? 'users'
-                                : 'Sheet1')
-                    }
+                    placeholder={resolvedPlaceholder}
                     onChange={(e) => onChange(e.target.value)}
-                    className={`${inputClass} font-mono text-xs text-left`}
+                    className={`${inputClass} text-xs ${
+                        inputDir === 'ltr' ? 'text-left font-mono' : 'text-right'
+                    }`}
                 />
             ) : (
                 <div className="flex items-center gap-2">

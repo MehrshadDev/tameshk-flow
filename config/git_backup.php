@@ -1,6 +1,8 @@
 <?php
 
 use App\Models\Credential;
+use App\Models\DataTable;
+use App\Models\DataTableRow;
 use App\Models\DiscountCode;
 use App\Models\Edge;
 use App\Models\Node;
@@ -141,6 +143,26 @@ return [
 
         'edges' => [
             'model' => Edge::class,
+            'mode' => 'periodic',
+            'primary_key' => 'id',
+            'excluded_columns' => [],
+            'ignored_trigger_columns' => [
+                'updated_at',
+            ],
+        ],
+
+        'data_tables' => [
+            'model' => DataTable::class,
+            'mode' => 'periodic',
+            'primary_key' => 'id',
+            'excluded_columns' => [],
+            'ignored_trigger_columns' => [
+                'updated_at',
+            ],
+        ],
+
+        'data_table_rows' => [
+            'model' => DataTableRow::class,
             'mode' => 'periodic',
             'primary_key' => 'id',
             'excluded_columns' => [],
