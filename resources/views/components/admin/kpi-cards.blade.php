@@ -132,73 +132,79 @@
     </div>
 
     <div class="grid grid-cols-1 gap-2.5 sm:grid-cols-2 lg:grid-cols-4 sm:gap-3.5">
-        <div class="flex items-center justify-between gap-3 rounded-2xl border border-line-border bg-surface-card p-3.5 sm:p-4 shadow-2xs">
-            <div class="flex min-w-0 items-center gap-3">
-                <div class="flex size-10 shrink-0 items-center justify-center rounded-xl bg-purple-500/10 text-purple-500">
-                    <x-ui.icon name="user-plus" class="size-5"/>
-                </div>
-                <div class="min-w-0">
-                    <p class="text-xs font-medium text-content-muted">اشتراک‌های فعال فعلی</p>
-                    <p class="mt-0.5 text-[11px] font-semibold text-emerald-500">
-                        نرخ تبدیل به خرید: %{{ $users['conversion_rate'] }}
-                    </p>
-                </div>
+        <div class="flex items-center gap-3 rounded-2xl border border-line-border bg-surface-card p-3.5 sm:p-4 shadow-2xs">
+            <div class="flex size-10 shrink-0 items-center justify-center rounded-xl bg-purple-500/10 text-purple-500">
+                <x-ui.icon name="user-plus" class="size-5"/>
             </div>
-            <span class="shrink-0 font-mono text-lg font-extrabold tabular-nums text-content-main">
-                {{ number_format($users['active_subscriptions']) }}
-            </span>
-        </div>
-
-        <div class="flex items-center justify-between gap-3 rounded-2xl border border-line-border bg-surface-card p-3.5 sm:p-4 shadow-2xs">
-            <div class="flex min-w-0 items-center gap-3">
-                <div class="flex size-10 shrink-0 items-center justify-center rounded-xl bg-emerald-500/10 text-emerald-500">
-                    <x-ui.icon name="receipt" class="size-5"/>
+            <div class="min-w-0 flex-1">
+                <p class="truncate text-xs font-medium text-content-muted">اشتراک‌های فعال فعلی</p>
+                <div class="mt-1.5 flex items-baseline justify-between gap-2">
+                    <div class="flex items-baseline gap-1">
+                        <span class="font-mono text-base font-extrabold tabular-nums text-content-main">
+                            {{ number_format($users['active_subscriptions']) }}
+                        </span>
+                        <span class="text-[10px] text-content-muted">اشتراک</span>
+                    </div>
+                    <span class="shrink-0 rounded-md bg-emerald-500/10 px-1.5 py-0.5 text-[10px] font-bold text-emerald-500">
+                        تبدیل: %{{ $users['conversion_rate'] }}
+                    </span>
                 </div>
-                <div class="min-w-0">
-                    <p class="text-xs font-medium text-content-muted">میانگین مبلغ هر خرید</p>
-                    <p class="mt-0.5 text-[11px] text-content-muted">بر اساس سفارش‌های موفق</p>
-                </div>
-            </div>
-            <div class="shrink-0 text-left">
-                <span class="font-mono text-base font-extrabold tabular-nums text-content-main">
-                    {{ number_format($revenue['aov']) }}
-                </span>
-                <span class="block text-[10px] text-content-muted">تومان</span>
             </div>
         </div>
 
-        <div class="flex items-center justify-between gap-3 rounded-2xl border border-line-border bg-surface-card p-3.5 sm:p-4 shadow-2xs">
-            <div class="flex min-w-0 items-center gap-3">
-                <div class="flex size-10 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
-                    <x-ui.icon name="hierarchy" class="size-5"/>
-                </div>
-                <div class="min-w-0">
-                    <p class="text-xs font-medium text-content-muted">ورکفلوهای سایت</p>
-                    <p class="mt-0.5 text-[11px] text-content-muted">منتشرشده فعال / کل</p>
-                </div>
+        <div class="flex items-center gap-3 rounded-2xl border border-line-border bg-surface-card p-3.5 sm:p-4 shadow-2xs">
+            <div class="flex size-10 shrink-0 items-center justify-center rounded-xl bg-emerald-500/10 text-emerald-500">
+                <x-ui.icon name="receipt" class="size-5"/>
             </div>
-            <div dir="ltr" class="shrink-0 font-mono text-base font-extrabold tabular-nums">
-                <span class="text-emerald-500">{{ number_format($platform['active_workflows']) }}</span>
-                <span class="text-content-muted">/</span>
-                <span class="text-content-main">{{ number_format($platform['total_workflows']) }}</span>
+            <div class="min-w-0 flex-1">
+                <p class="truncate text-xs font-medium text-content-muted">میانگین مبلغ هر خرید</p>
+                <div class="mt-1.5 flex items-baseline justify-between gap-2">
+                    <div class="flex items-baseline gap-1">
+                        <span class="font-mono text-base font-extrabold tabular-nums text-content-main">
+                            {{ number_format($revenue['aov']) }}
+                        </span>
+                        <span class="text-[10px] text-content-muted">تومان</span>
+                    </div>
+                    <span class="shrink-0 text-[10px] text-content-muted">سفارش موفق</span>
+                </div>
             </div>
         </div>
 
-        <div class="flex items-center justify-between gap-3 rounded-2xl border border-line-border bg-surface-card p-3.5 sm:p-4 shadow-2xs">
-            <div class="flex min-w-0 items-center gap-3">
-                <div class="flex size-10 shrink-0 items-center justify-center rounded-xl bg-amber-500/10 text-amber-500">
-                    <x-ui.icon name="bolt" class="size-5"/>
-                </div>
-                <div class="min-w-0">
-                    <p class="text-xs font-medium text-content-muted">کل اجراهای ورکفلو</p>
-                    <p class="mt-0.5 text-[11px] font-bold text-emerald-500">
-                        %{{ $platform['run_success_rate'] }} اجرای موفق
-                    </p>
+        <div class="flex items-center gap-3 rounded-2xl border border-line-border bg-surface-card p-3.5 sm:p-4 shadow-2xs">
+            <div class="flex size-10 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
+                <x-ui.icon name="hierarchy" class="size-5"/>
+            </div>
+            <div class="min-w-0 flex-1">
+                <p class="truncate text-xs font-medium text-content-muted">ورکفلوهای سایت</p>
+                <div class="mt-1.5 flex items-baseline justify-between gap-2">
+                    <div dir="ltr" class="font-mono text-base font-extrabold tabular-nums">
+                        <span class="text-emerald-500">{{ number_format($platform['active_workflows']) }}</span>
+                        <span class="text-content-muted">/</span>
+                        <span class="text-content-main">{{ number_format($platform['total_workflows']) }}</span>
+                    </div>
+                    <span class="shrink-0 text-[10px] text-content-muted">فعال / کل</span>
                 </div>
             </div>
-            <span class="shrink-0 font-mono text-lg font-extrabold tabular-nums text-content-main">
-                {{ number_format($platform['total_runs']) }}
-            </span>
+        </div>
+
+        <div class="flex items-center gap-3 rounded-2xl border border-line-border bg-surface-card p-3.5 sm:p-4 shadow-2xs">
+            <div class="flex size-10 shrink-0 items-center justify-center rounded-xl bg-amber-500/10 text-amber-500">
+                <x-ui.icon name="bolt" class="size-5"/>
+            </div>
+            <div class="min-w-0 flex-1">
+                <p class="truncate text-xs font-medium text-content-muted">کل اجراهای ورکفلو</p>
+                <div class="mt-1.5 flex items-baseline justify-between gap-2">
+                    <div class="flex items-baseline gap-1">
+                        <span class="font-mono text-base font-extrabold tabular-nums text-content-main">
+                            {{ number_format($platform['total_runs']) }}
+                        </span>
+                        <span class="text-[10px] text-content-muted">اجرا</span>
+                    </div>
+                    <span class="shrink-0 rounded-md bg-emerald-500/10 px-1.5 py-0.5 text-[10px] font-bold text-emerald-500">
+                        %{{ $platform['run_success_rate'] }} موفق
+                    </span>
+                </div>
+            </div>
         </div>
     </div>
 </div>

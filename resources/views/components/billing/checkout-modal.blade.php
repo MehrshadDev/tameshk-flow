@@ -17,20 +17,20 @@
 
         <div class="space-y-4">
             <div @class([
-                'flex items-center justify-between gap-3 rounded-2xl border p-4',
+                'flex items-center justify-between gap-3 rounded-2xl border p-3.5 sm:p-4',
                 'border-amber-500/35 bg-linear-to-l from-amber-500/10 to-surface-card' => $isBusiness,
                 'border-primary/30 bg-linear-to-l from-primary/8 to-surface-card' => ! $isBusiness,
             ])>
                 <div class="flex min-w-0 items-center gap-3">
                     <div @class([
-                        'flex size-11 shrink-0 items-center justify-center rounded-xl ring-1',
+                        'flex size-10 sm:size-11 shrink-0 items-center justify-center rounded-xl ring-1',
                         'bg-amber-500/15 text-amber-500 ring-amber-500/30' => $isBusiness,
                         'bg-primary/10 text-primary ring-primary/20' => ! $isBusiness,
                     ])>
-                        <x-ui.icon name="crown" class="size-5.5"/>
+                        <x-ui.icon name="crown" class="size-5 sm:size-5.5"/>
                     </div>
                     <div class="min-w-0">
-                        <div class="flex items-center gap-2">
+                        <div class="flex flex-wrap items-center gap-2">
                             <h3 class="text-sm font-extrabold text-content-main">پلن {{ $plan->name }}</h3>
                             <span class="rounded-lg border border-line-border/80 bg-surface-base px-2 py-0.5 text-[11px] font-bold text-content-main">
                                 {{ $cycle === 'yearly' ? 'سالانه (۳۶۵ روز)' : 'ماهانه (۳۰ روز)' }}
@@ -46,14 +46,15 @@
             </div>
 
             @if ($canSwitchCycle)
-                <div class="flex items-center justify-between gap-2 rounded-xl border border-line-border/80 bg-surface-base p-1.5 text-xs">
-                    <span class="ps-2 font-semibold text-content-muted">دوره پرداخت:</span>
+                <div class="flex flex-col gap-2 rounded-xl border border-line-border/80 bg-surface-base p-2 text-xs sm:flex-row sm:items-center sm:justify-between sm:p-1.5">
+                    <span class="ps-1 font-semibold text-content-muted sm:ps-2">دوره پرداخت:</span>
                     <x-ui.segmented
                         model="checkoutCycle"
                         action="setCheckoutCycle"
                         variant="card"
+                        cols="2"
                         size="sm"
-                        class="border-0! p-0! shadow-none!"
+                        class="w-full border-0! p-0! shadow-none! sm:w-auto"
                         :options="[
                             'monthly' => 'ماهانه',
                             'yearly' => [
@@ -122,47 +123,47 @@
                 @endif
             </div>
 
-            <div class="relative rounded-2xl border border-line-border bg-surface-base/70 p-4 space-y-2.5 text-xs">
+            <div class="relative rounded-2xl border border-line-border bg-surface-base/70 p-3.5 sm:p-4 space-y-2.5 text-xs">
                 <x-ui.loading-overlay
                     target="setCheckoutCycle, checkoutCycle, applyDiscountCode, removeDiscountCode"
                     label="در حال محاسبه صورتحساب..."
                 />
 
-                <div class="flex items-center justify-between text-content-muted">
+                <div class="flex items-center justify-between gap-2 text-content-muted">
                     <span>هزینه اشتراک {{ $plan->name }} ({{ $cycle === 'yearly' ? 'سالانه' : 'ماهانه' }})</span>
-                    <span class="font-mono font-bold tabular-nums text-content-main">
+                    <span class="shrink-0 font-mono font-bold tabular-nums text-content-main">
                         {{ number_format($quote['base_price']) }} <span class="font-sans text-[11px] font-normal text-content-muted">تومان</span>
                     </span>
                 </div>
 
                 @if ($quote['is_prorated'] && $quote['credit_amount'] > 0)
-                    <div class="flex items-center justify-between text-emerald-600 dark:text-emerald-400">
-                        <span>کسر اعتبار {{ $quote['unused_days'] }} روز باقی‌مانده اشتراک فعلی</span>
-                        <span class="font-mono font-bold tabular-nums">
+                    <div class="flex items-center justify-between gap-2 text-emerald-600 dark:text-emerald-400">
+                        <span>کسر اعتبار {{ $quote['unused_days'] }} روز باقی‌مانده</span>
+                        <span class="shrink-0 font-mono font-bold tabular-nums">
                             {{ number_format($quote['credit_amount']) }}- <span class="font-sans text-[11px] font-normal">تومان</span>
                         </span>
                     </div>
                 @endif
 
                 @if ($quote['discount_amount'] > 0)
-                    <div class="flex items-center justify-between text-emerald-600 dark:text-emerald-400">
+                    <div class="flex items-center justify-between gap-2 text-emerald-600 dark:text-emerald-400">
                         <span>کسر کد تخفیف ({{ $quote['discount_code'] }})</span>
-                        <span dir="ltr" class="font-mono font-bold tabular-nums">
+                        <span dir="ltr" class="shrink-0 font-mono font-bold tabular-nums">
                             -{{ number_format($quote['discount_amount']) }} <span class="font-sans text-[11px] font-normal">تومان</span>
                         </span>
                     </div>
                 @endif
 
-                <div class="border-t border-line-border/80 pt-3 flex items-center justify-between">
+                <div class="border-t border-line-border/80 pt-3 flex items-center justify-between gap-2">
                     <span class="font-extrabold text-content-main">مبلغ نهایی قابل پرداخت</span>
                     @if ($isFreeCheckout)
                         <span class="inline-flex items-center gap-1.5 font-extrabold text-emerald-500">
                             <span class="rounded-md bg-emerald-500/15 px-2 py-0.5 text-[11px]">۱۰۰٪ تخفیف</span>
-                            <span>رایگان (۰ تومان)</span>
+                            <span>رایگان</span>
                         </span>
                     @else
                         <div class="flex items-baseline gap-1">
-                            <span class="font-mono text-lg font-extrabold tabular-nums text-primary">
+                            <span class="font-mono text-base font-extrabold tabular-nums text-primary sm:text-lg">
                                 {{ number_format($quote['payable_amount']) }}
                             </span>
                             <span class="text-[11px] font-bold text-content-muted">تومان</span>
@@ -187,7 +188,10 @@
                         انصراف
                     </x-ui.button>
 
-                    <x-ui.button type="submit" class="cursor-pointer">
+                    <x-ui.button type="submit"
+                                 wire:loading.attr="disabled"
+                                 wire:target="setCheckoutCycle, checkoutCycle, applyDiscountCode, removeDiscountCode"
+                                 class="cursor-pointer">
                         @if ($isFreeCheckout)
                             <x-ui.icon name="sparkles" class="size-4"/>
                             <span>فعال‌سازی رایگان اشتراک</span>
