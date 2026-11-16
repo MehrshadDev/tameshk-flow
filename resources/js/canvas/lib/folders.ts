@@ -59,7 +59,7 @@ export const FOLDERS_CONFIG: Record<string, FolderItem> = {
     'ai/tools': {
         id: 'ai/tools',
         title: 'ابزارهای ایجنت',
-        description: 'ابزارهای عملکردی ایجنت مثل گوگل شیت، ووکامرس، جیمیل، وب‌سرویس و محاسبات',
+        description: 'ابزارهای عملکردی ایجنت مثل دیتابیس MySQL، گوگل شیت، ووکامرس، جیمیل و وب‌سرویس',
         icon: 'tools',
         iconClass: 'bg-amber-500/10 text-amber-500',
     },
@@ -97,6 +97,13 @@ export const FOLDERS_CONFIG: Record<string, FolderItem> = {
         description: 'مدیریت محصولات، سفارش‌ها، مشتریان و رویدادهای فروشگاه ووکامرس',
         icon: 'brand:woocommerce',
         iconClass: 'bg-purple-500/10 text-purple-500',
+    },
+    'action/mysql': {
+        id: 'action/mysql',
+        title: 'MySQL',
+        description: 'انتخاب، درج، ویرایش، حذف ردیف‌ها و اجرای کوئری SQL در پایگاه داده MySQL',
+        icon: 'brand:mysql',
+        iconClass: 'bg-sky-500/10 text-sky-500',
     },
 };
 

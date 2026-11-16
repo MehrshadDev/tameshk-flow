@@ -12,6 +12,7 @@ use App\Credentials\Types\GmailCredential;
 use App\Credentials\Types\GoogleCredential;
 use App\Credentials\Types\GroqCredential;
 use App\Credentials\Types\HttpBearerCredential;
+use App\Credentials\Types\MySqlCredential;
 use App\Credentials\Types\OpenAiCredential;
 use App\Credentials\Types\OpenRouterCredential;
 use App\Credentials\Types\TelegramCredential;
@@ -20,6 +21,7 @@ use App\Workflow\Nodes\Actions\GeminiNode;
 use App\Workflow\Nodes\Actions\GmailNode;
 use App\Workflow\Nodes\Actions\GoogleSheetsNode;
 use App\Workflow\Nodes\Actions\HttpRequestNode;
+use App\Workflow\Nodes\Actions\MySqlNode;
 use App\Workflow\Nodes\Actions\TelegramNode;
 use App\Workflow\Nodes\Actions\WooCommerceNode;
 use App\Workflow\Nodes\Ai\AiAgentNode;
@@ -33,6 +35,7 @@ use App\Workflow\Nodes\Ai\GmailToolNode;
 use App\Workflow\Nodes\Ai\GoogleSheetsToolNode;
 use App\Workflow\Nodes\Ai\GroqChatModelNode;
 use App\Workflow\Nodes\Ai\HttpToolNode;
+use App\Workflow\Nodes\Ai\MySqlToolNode;
 use App\Workflow\Nodes\Ai\OpenAiChatModelNode;
 use App\Workflow\Nodes\Ai\OpenRouterChatModelNode;
 use App\Workflow\Nodes\Ai\SimpleMemoryNode;
@@ -98,6 +101,7 @@ class WorkflowServiceProvider extends ServiceProvider
                 GmailNode::class,
                 GoogleSheetsNode::class,
                 WooCommerceNode::class,
+                MySqlNode::class,
                 AiAgentNode::class,
                 GeminiChatModelNode::class,
                 OpenAiChatModelNode::class,
@@ -110,6 +114,7 @@ class WorkflowServiceProvider extends ServiceProvider
                 GmailToolNode::class,
                 TelegramToolNode::class,
                 WooCommerceToolNode::class,
+                MySqlToolNode::class,
                 DataStoreToolNode::class,
                 HttpToolNode::class,
                 WebScraperToolNode::class,
@@ -135,6 +140,7 @@ class WorkflowServiceProvider extends ServiceProvider
                 GmailCredential::class,
                 GoogleCredential::class,
                 WooCommerceCredential::class,
+                MySqlCredential::class,
             ]);
         });
 

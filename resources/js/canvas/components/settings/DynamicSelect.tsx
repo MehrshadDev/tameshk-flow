@@ -36,6 +36,8 @@ export function DynamicSelect({ id, field, value, onChange, fullConfig }: Dynami
     const [error, setError] = useState<string | null>(null);
     const [reloadKey, setReloadKey] = useState(0);
 
+    const isMysqlTables = field.source === 'mysql_tables';
+
     useEffect(() => {
         setOptions([]);
         setError(null);
@@ -50,6 +52,8 @@ export function DynamicSelect({ id, field, value, onChange, fullConfig }: Dynami
             url = `/app/api/credentials/${credentialId}/google/spreadsheets`;
         } else if (field.source === 'google_sheets_sheets' && spreadsheet !== '' && !spreadsheet.includes('{{')) {
             url = `/app/api/credentials/${credentialId}/google/spreadsheets/${encodeURIComponent(spreadsheet)}/sheets`;
+        } else if (isMysqlTables) {
+            url = `/app/api/credentials/${credentialId}/mysql/tables`;
         }
 
         if (!url) {
@@ -67,7 +71,12 @@ export function DynamicSelect({ id, field, value, onChange, fullConfig }: Dynami
             })
             .catch((err: { message?: string }) => {
                 if (!cancelled) {
-                    setError(err?.message ?? 'دریافت لیست از گوگل ناموفق بود.');
+                    setError(
+                        err?.message ??
+                        (isMysqlTables
+                            ? 'دریافت لیست جداول از MySQL ناموفق بود.'
+                            : 'دریافت لیست از گوگل ناموفق بود.'),
+                    );
                 }
             })
             .finally(() => {
@@ -79,7 +88,7 @@ export function DynamicSelect({ id, field, value, onChange, fullConfig }: Dynami
         return () => {
             cancelled = true;
         };
-    }, [credentialId, field.source, spreadsheet, reloadKey]);
+    }, [credentialId, field.source, spreadsheet, reloadKey, isMysqlTables]);
 
     const optionsWithValue = useMemo(() => {
         if (stringValue !== '' && !options.some((option) => option.value === stringValue)) {
@@ -93,7 +102,11 @@ export function DynamicSelect({ id, field, value, onChange, fullConfig }: Dynami
         return (
             <div className="flex items-center gap-2 rounded-xl border border-dashed border-line-border bg-surface-card/50 px-3.5 py-2.5 text-xs text-content-muted">
                 <Icon name="key" className="size-4 shrink-0" />
-                <span>ابتدا اتصال حساب گوگل را انتخاب کنید.</span>
+                <span>
+                    {isMysqlTables
+                        ? 'ابتدا اعتبارنامه MySQL را انتخاب کنید.'
+                        : 'ابتدا اتصال حساب گوگل را انتخاب کنید.'}
+                </span>
             </div>
         );
     }
@@ -131,7 +144,7 @@ export function DynamicSelect({ id, field, value, onChange, fullConfig }: Dynami
                                 : 'text-content-muted hover:text-content-main'
                         }`}
                     >
-                        آدرس یا شناسه
+                        {isMysqlTables ? 'نام جدول' : 'آدرس یا شناسه'}
                     </button>
                 </div>
             </div>
@@ -148,7 +161,9 @@ export function DynamicSelect({ id, field, value, onChange, fullConfig }: Dynami
                         field.placeholder ??
                         (field.source === 'google_sheets_documents'
                             ? 'https://docs.google.com/spreadsheets/d/...'
-                            : 'Sheet1')
+                            : isMysqlTables
+                                ? 'users'
+                                : 'Sheet1')
                     }
                     onChange={(e) => onChange(e.target.value)}
                     className={`${inputClass} font-mono text-xs text-left`}
@@ -163,9 +178,13 @@ export function DynamicSelect({ id, field, value, onChange, fullConfig }: Dynami
                             searchable
                             placeholder={
                                 isLoading
-                                    ? 'در حال دریافت لیست از گوگل...'
+                                    ? isMysqlTables
+                                        ? 'در حال دریافت لیست جداول...'
+                                        : 'در حال دریافت لیست از گوگل...'
                                     : options.length === 0
-                                        ? 'موردی در حساب گوگل یافت نشد'
+                                        ? isMysqlTables
+                                            ? 'جدولی در پایگاه داده یافت نشد'
+                                            : 'موردی در حساب گوگل یافت نشد'
                                         : 'انتخاب کنید'
                             }
                             onChange={(event) => onChange(event.target.value)}

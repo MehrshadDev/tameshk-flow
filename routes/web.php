@@ -8,6 +8,7 @@ use App\Http\Controllers\DiscountCodeController;
 use App\Http\Controllers\DocsController;
 use App\Http\Controllers\GoogleSheetsOptionsController;
 use App\Http\Controllers\HomeController;
+use App\Http\Controllers\MySqlOptionsController;
 use App\Http\Controllers\OAuth\GoogleOAuthController;
 use App\Http\Controllers\TerminalController;
 use App\Http\Controllers\TicketController;
@@ -151,6 +152,10 @@ Route::middleware('auth')
             Route::get('credentials/{credential}/google/spreadsheets/{spreadsheet}/sheets', [GoogleSheetsOptionsController::class, 'sheets'])
                 ->middleware('throttle:60,1')
                 ->name('credentials.google.sheets');
+
+            Route::get('credentials/{credential}/mysql/tables', [MySqlOptionsController::class, 'tables'])
+                ->middleware('throttle:60,1')
+                ->name('credentials.mysql.tables');
 
             Route::apiResource('credentials', CredentialController::class);
             Route::get('credentials/{credential}/models', [CredentialController::class, 'models'])
