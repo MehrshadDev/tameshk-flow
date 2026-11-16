@@ -45,15 +45,15 @@ new class extends Component {
         $this->resetPage();
     }
 
+    public function updatedStatus(): void
+    {
+        $this->status = $this->normalizeStatus($this->status);
+        $this->resetPage();
+    }
+
     public function setStatus(string $status): void
     {
-        $status = $this->normalizeStatus($status);
-
-        if ($this->status === $status) {
-            return;
-        }
-
-        $this->status = $status;
+        $this->status = $this->normalizeStatus($status);
         $this->resetPage();
     }
 
@@ -297,19 +297,17 @@ new class extends Component {
             placeholder="همه ورکفلوها"
         />
 
-        <div class="flex shrink-0 items-center gap-1 rounded-xl border border-line-border bg-surface-base p-1">
-            @foreach (['all' => 'همه', 'success' => 'موفق', 'failed' => 'ناموفق', 'canceled' => 'لغو شده'] as $key => $label)
-                <button type="button"
-                        @if ($status !== $key) wire:click="setStatus('{{ $key }}')" @endif
-                    @class([
-                        'flex-1 rounded-lg px-3 py-1.5 text-xs whitespace-nowrap transition sm:flex-none',
-                        'cursor-default bg-primary text-white font-bold shadow-2xs' => $status === $key,
-                        'cursor-pointer font-medium text-content-muted hover:text-content-main' => $status !== $key,
-                    ])>
-                    {{ $label }}
-                </button>
-            @endforeach
-        </div>
+        <x-ui.segmented
+            model="status"
+            action="setStatus"
+            cols="4"
+            :options="[
+                'all' => 'همه',
+                'success' => 'موفق',
+                'failed' => 'ناموفق',
+                'canceled' => 'لغو شده',
+            ]"
+        />
 
         @if ($statData['total'] > 0)
             <button type="button"
@@ -322,38 +320,45 @@ new class extends Component {
         @endif
     </div>
 
-    <div class="space-y-2.5">
-        @forelse ($this->runs as $run)
-            <x-runs.row
-                :run="$run"
-                :definitions="$this->definitions"
-                wire:key="run-{{ $run->id }}"
-            />
-        @empty
-            <x-ui.card :padding="false">
-                @if ($this->hasFilters)
-                    <x-ui.empty-state icon="search"
-                                      title="اجرایی با این مشخصات یافت نشد"
-                                      description="هیچ گزارش اجرایی متناسب با فیلترهای انتخابی شما وجود ندارد.">
-                        <x-ui.button type="button" variant="secondary" wire:click="clearFilters" class="cursor-pointer">
-                            پاک کردن فیلترها
-                        </x-ui.button>
-                    </x-ui.empty-state>
-                @else
-                    <x-ui.empty-state icon="history"
-                                      title="هنوز هیچ اجرایی ثبت نشده است"
-                                      description="به محض اینکه یکی از ورکفلوهای خود را تست یا منتشر کنید، گزارش گام‌به‌گام اجرای آن در این صفحه قابل مشاهده خواهد بود.">
-                        <x-ui.button :href="route('app.workflows.index')">
-                            <x-ui.icon name="hierarchy" class="size-4"/>
-                            مشاهده ورکفلوها
-                        </x-ui.button>
-                    </x-ui.empty-state>
-                @endif
-            </x-ui.card>
-        @endforelse
-    </div>
+    <div class="relative min-h-40 space-y-4">
+        <x-ui.loading-overlay
+            target="setStatus, status, workflowFilter, search, clearFilters, previousPage, nextPage, gotoPage"
+            label="در حال بارگذاری گزارش اجراها..."
+        />
 
-    <x-ui.pagination :paginator="$this->runs" />
+        <div class="space-y-2.5">
+            @forelse ($this->runs as $run)
+                <x-runs.row
+                    :run="$run"
+                    :definitions="$this->definitions"
+                    wire:key="run-{{ $run->id }}"
+                />
+            @empty
+                <x-ui.card :padding="false">
+                    @if ($this->hasFilters)
+                        <x-ui.empty-state icon="search"
+                                          title="اجرایی با این مشخصات یافت نشد"
+                                          description="هیچ گزارش اجرایی متناسب با فیلترهای انتخابی شما وجود ندارد.">
+                            <x-ui.button type="button" variant="secondary" wire:click="clearFilters" class="cursor-pointer">
+                                پاک کردن فیلترها
+                            </x-ui.button>
+                        </x-ui.empty-state>
+                    @else
+                        <x-ui.empty-state icon="history"
+                                          title="هنوز هیچ اجرایی ثبت نشده است"
+                                          description="به محض اینکه یکی از ورکفلوهای خود را تست یا منتشر کنید، گزارش گام‌به‌گام اجرای آن در این صفحه قابل مشاهده خواهد بود.">
+                            <x-ui.button :href="route('app.workflows.index')">
+                                <x-ui.icon name="hierarchy" class="size-4"/>
+                                مشاهده ورکفلوها
+                            </x-ui.button>
+                        </x-ui.empty-state>
+                    @endif
+                </x-ui.card>
+            @endforelse
+        </div>
+
+        <x-ui.pagination :paginator="$this->runs" />
+    </div>
 
     <x-runs.modals
         :inspecting-run="$this->inspectingRun"

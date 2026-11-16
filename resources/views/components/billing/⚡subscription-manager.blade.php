@@ -16,7 +16,6 @@ new class extends Component {
     #[Locked]
     public ?string $checkoutPlanSlug = null;
 
-    #[Locked]
     public string $checkoutCycle = 'monthly';
 
     public string $discountInput = '';
@@ -49,6 +48,8 @@ new class extends Component {
         }
 
         if ($cycle === 'monthly' && ! $this->canSelectMonthly) {
+            $this->billingCycle = 'yearly';
+
             return;
         }
 
@@ -276,7 +277,7 @@ new class extends Component {
 };
 ?>
 
-<div class="mx-auto max-w-6xl space-y-6 p-4 sm:p-6">
+<div class="mx-auto max-w-6xl space-y-5 p-3.5 sm:space-y-6 sm:p-6">
     @php
         $paymentResult = session('payment_result');
         $summary = $this->summary;

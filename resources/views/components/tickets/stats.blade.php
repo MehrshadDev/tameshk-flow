@@ -13,7 +13,7 @@
         </div>
         <div class="min-w-0">
             <p class="truncate text-xs font-medium text-content-muted">
-                {{ $isAdmin ? 'کل تیکت‌های سیستم' : 'کل تیکت‌های من' }}
+                کل تیکت‌ها
             </p>
             <div class="mt-1 flex items-baseline gap-1.5">
                 <span class="font-mono text-lg font-extrabold tabular-nums text-content-main">{{ number_format($total) }}</span>

@@ -8,7 +8,7 @@
     use App\Workflow\Support\DateTimeHelper;
 @endphp
 
-<div x-data="{ localStatus: @entangle('paymentStatus') }" class="space-y-4">
+<div class="space-y-4">
     <div class="flex flex-col gap-2.5 rounded-2xl border border-line-border bg-surface-card p-3 shadow-2xs sm:flex-row sm:items-center sm:justify-between">
         <div class="relative flex-1">
             <x-ui.icon name="search"
@@ -27,29 +27,25 @@
             @endif
         </div>
 
-        <div class="grid grid-cols-4 gap-1 rounded-xl border border-line-border bg-surface-base p-1 sm:flex sm:shrink-0">
-            @foreach (['all' => 'همه', 'paid' => 'موفق', 'pending' => 'در انتظار', 'failed' => 'ناموفق'] as $key => $label)
-                <button type="button"
-                        @click="if (localStatus !== '{{ $key }}') { localStatus = '{{ $key }}'; $wire.setPaymentStatus('{{ $key }}'); }"
-                        :class="localStatus === '{{ $key }}'
-                            ? 'cursor-default bg-primary text-white font-bold shadow-2xs'
-                            : 'cursor-pointer font-medium text-content-muted hover:text-content-main'"
-                        class="rounded-lg px-2.5 py-1.5 text-center text-xs whitespace-nowrap transition">
-                    {{ $label }}
-                </button>
-            @endforeach
-        </div>
+        <x-ui.segmented
+            model="paymentStatus"
+            action="setPaymentStatus"
+            cols="4"
+            size="sm"
+            :options="[
+                'all' => 'همه',
+                'paid' => 'موفق',
+                'pending' => 'در انتظار',
+                'failed' => 'ناموفق',
+            ]"
+        />
     </div>
 
     <div class="relative min-h-40">
-        <div wire:loading.flex
-             wire:target="setPaymentStatus, paymentSearch, previousPage, nextPage, gotoPage"
-             class="absolute inset-0 z-20 hidden items-center justify-center rounded-2xl bg-surface-base/65 backdrop-blur-[2px] transition-opacity">
-            <div class="inline-flex items-center gap-2.5 rounded-2xl border border-line-border bg-surface-raised px-4 py-2.5 text-xs font-bold text-content-main shadow-xl">
-                <x-ui.icon name="loader" class="size-4 animate-spin text-primary"/>
-                <span>در حال بارگذاری تراکنش‌ها...</span>
-            </div>
-        </div>
+        <x-ui.loading-overlay
+            target="setPaymentStatus, paymentStatus, paymentSearch, previousPage, nextPage, gotoPage"
+            label="در حال بارگذاری تراکنش‌ها..."
+        />
 
         @if ($payments->isEmpty())
             <x-ui.card :padding="false">

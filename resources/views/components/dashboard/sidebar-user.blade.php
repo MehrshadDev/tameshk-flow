@@ -7,15 +7,15 @@
     @php
         $avatarUrl = $user->avatarUrl();
     @endphp
-    <div class="flex items-center justify-between gap-2.5 rounded-xl bg-surface-card/60 p-2"
-         :class="collapsed && 'lg:justify-center lg:bg-transparent lg:p-0'">
+    <div class="flex items-center justify-between gap-2.5 rounded-2xl border border-line-border/70 bg-surface-card p-2.5 shadow-2xs"
+         :class="collapsed && 'lg:justify-center lg:border-0 lg:bg-transparent lg:p-0 lg:shadow-none'">
 
         <button type="button"
                 :class="collapsed && 'lg:hidden'"
                 @click="$dispatch('open-modal', 'confirm-logout')"
                 title="خروج از حساب"
                 aria-label="خروج از حساب"
-                class="flex size-8 shrink-0 items-center justify-center rounded-lg text-content-muted transition hover:bg-primary/10 hover:text-primary cursor-pointer">
+                class="flex size-8 shrink-0 items-center justify-center rounded-xl text-content-muted transition hover:bg-primary/10 hover:text-primary cursor-pointer">
             <x-ui.icon name="logout" class="size-4"/>
         </button>
 

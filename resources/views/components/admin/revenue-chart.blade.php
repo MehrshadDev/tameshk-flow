@@ -54,7 +54,7 @@
             $baselineY = $padTop + $usableH;
             $segments = array_map(fn ($c) => "{$c['x']},{$c['y']}", $coords);
             $linePath = 'M ' . implode(' L ', $segments);
-            $areaPath = $linePath . " L {$last['x']},{$baselineY} L {$first['x']},{$baselineY} Z";
+            $areaPath = $linePath . " L {$last['x']},$baselineY L {$first['x']},$baselineY Z";
         }
 
         $prepared[$rKey] = [
@@ -111,18 +111,18 @@
             </div>
         </div>
 
-        <div class="grid w-full grid-cols-3 gap-1 rounded-xl border border-line-border bg-surface-base p-1 text-xs sm:flex sm:w-auto">
-            @foreach (['7d' => '۷ روز', '30d' => '۳۰ روز', '12m' => '۱۲ ماه شمسی'] as $key => $label)
-                <button type="button"
-                        @click="if (chartRange !== '{{ $key }}') { chartRange = '{{ $key }}'; activeIdx = null; }"
-                        :class="chartRange === '{{ $key }}'
-                            ? 'cursor-default bg-primary text-white font-bold shadow-2xs'
-                            : 'cursor-pointer font-medium text-content-muted hover:text-content-main'"
-                        class="rounded-lg px-2.5 py-1.5 text-center text-[11px] whitespace-nowrap transition">
-                    {{ $label }}
-                </button>
-            @endforeach
-        </div>
+        <x-ui.segmented
+            alpine="chartRange"
+            @click="activeIdx = null"
+            cols="3"
+            size="sm"
+            class="w-full sm:w-auto"
+            :options="[
+                '7d' => '۷ روز',
+                '30d' => '۳۰ روز',
+                '12m' => '۱۲ ماه شمسی',
+            ]"
+        />
     </div>
 
     <div class="mt-3 flex h-8 items-center justify-between rounded-xl border border-line-border/60 bg-surface-base/70 px-3 text-[11px]">

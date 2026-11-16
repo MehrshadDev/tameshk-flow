@@ -48,31 +48,20 @@
             @if ($canSwitchCycle)
                 <div class="flex items-center justify-between gap-2 rounded-xl border border-line-border/80 bg-surface-base p-1.5 text-xs">
                     <span class="ps-2 font-semibold text-content-muted">دوره پرداخت:</span>
-                    <div class="flex items-center gap-1">
-                        <button type="button"
-                                wire:click="setCheckoutCycle('monthly')"
-                            @class([
-                                'rounded-lg px-3 py-1.5 text-xs transition cursor-pointer',
-                                'bg-primary text-white font-bold shadow-2xs' => $cycle === 'monthly',
-                                'font-medium text-content-muted hover:text-content-main' => $cycle !== 'monthly',
-                            ])>
-                            ماهانه
-                        </button>
-                        <button type="button"
-                                wire:click="setCheckoutCycle('yearly')"
-                            @class([
-                                'inline-flex items-center gap-1 rounded-lg px-3 py-1.5 text-xs transition cursor-pointer',
-                                'bg-primary text-white font-bold shadow-2xs' => $cycle === 'yearly',
-                                'font-medium text-content-muted hover:text-content-main' => $cycle !== 'yearly',
-                            ])>
-                            <span>سالانه</span>
-                            <span @class([
-                                'rounded px-1 py-0.5 text-[10px] font-bold',
-                                'bg-white/20 text-white' => $cycle === 'yearly',
-                                'bg-emerald-500/15 text-emerald-500' => $cycle !== 'yearly',
-                            ])>۲ ماه رایگان</span>
-                        </button>
-                    </div>
+                    <x-ui.segmented
+                        model="checkoutCycle"
+                        action="setCheckoutCycle"
+                        variant="card"
+                        size="sm"
+                        class="border-0! p-0! shadow-none!"
+                        :options="[
+                            'monthly' => 'ماهانه',
+                            'yearly' => [
+                                'label' => 'سالانه',
+                                'badge' => '۲ ماه رایگان',
+                            ],
+                        ]"
+                    />
                 </div>
             @endif
 
@@ -133,7 +122,12 @@
                 @endif
             </div>
 
-            <div class="rounded-2xl border border-line-border bg-surface-base/70 p-4 space-y-2.5 text-xs">
+            <div class="relative rounded-2xl border border-line-border bg-surface-base/70 p-4 space-y-2.5 text-xs">
+                <x-ui.loading-overlay
+                    target="setCheckoutCycle, checkoutCycle, applyDiscountCode, removeDiscountCode"
+                    label="در حال محاسبه صورتحساب..."
+                />
+
                 <div class="flex items-center justify-between text-content-muted">
                     <span>هزینه اشتراک {{ $plan->name }} ({{ $cycle === 'yearly' ? 'سالانه' : 'ماهانه' }})</span>
                     <span class="font-mono font-bold tabular-nums text-content-main">

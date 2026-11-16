@@ -37,14 +37,14 @@
     ]));
 
     $inputClass = 'h-9.5 w-full rounded-xl border border-line-border bg-surface-base px-3.5 text-xs font-medium text-content-main transition placeholder:text-content-muted/60 focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/30';
-    $labelClass = 'mb-1.5 flex h-5 items-center justify-between text-xs font-bold text-content-main';
+    $labelClass = 'mb-1.5 flex min-h-5 flex-wrap items-center justify-between gap-1 text-xs font-bold text-content-main';
 @endphp
 
 <x-ui.modal name="discount-form-modal"
             :title="$editingId ? 'ویرایش کد تخفیف' : 'ایجاد کد تخفیف جدید'"
             icon="discount-2"
             maxWidth="2xl">
-    <form id="discount- code-form" wire:submit="saveDiscount" class="space-y-4">
+    <form id="discount-code-form" wire:submit="saveDiscount" class="space-y-4">
         <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <div>
                 <div class="{{ $labelClass }}">
@@ -251,18 +251,18 @@
         <div class="grid grid-cols-1 gap-3 pt-1 sm:grid-cols-2">
             <div wire:click="$toggle('firstPurchaseOnly')"
                  class="flex cursor-pointer items-center justify-between gap-3 rounded-xl border border-line-border bg-surface-base p-3.5 transition hover:border-primary/40 select-none">
-                <div>
+                <div class="min-w-0 flex-1">
                     <p class="text-xs font-bold text-content-main">فقط مخصوص اولین خرید</p>
-                    <p class="mt-0.5 text-[11px] text-content-muted">کاربرانی که قبلاً خرید داشته‌اند نتوانند استفاده کنند</p>
+                    <p class="mt-0.5 text-[11px] leading-5 text-content-muted">کاربرانی که قبلاً خرید داشته‌اند نتوانند استفاده کنند</p>
                 </div>
                 <x-ui.switch :checked="$firstPurchaseOnly" label="فقط اولین خرید"/>
             </div>
 
             <div wire:click="$toggle('isActive')"
                  class="flex cursor-pointer items-center justify-between gap-3 rounded-xl border border-line-border bg-surface-base p-3.5 transition hover:border-primary/40 select-none">
-                <div>
+                <div class="min-w-0 flex-1">
                     <p class="text-xs font-bold text-content-main">وضعیت فعال بودن کد</p>
-                    <p class="mt-0.5 text-[11px] text-content-muted">امکان استفاده از این کد در بخش پرداخت</p>
+                    <p class="mt-0.5 text-[11px] leading-5 text-content-muted">امکان استفاده از این کد در بخش پرداخت</p>
                 </div>
                 <x-ui.switch :checked="$isActive" label="وضعیت فعال بودن"/>
             </div>

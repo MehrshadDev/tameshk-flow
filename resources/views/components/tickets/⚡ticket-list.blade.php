@@ -56,6 +56,12 @@ new class extends Component {
         $this->resetPage();
     }
 
+    public function updatedStatus(): void
+    {
+        $this->status = $this->normalizeStatus($this->status);
+        $this->resetPage();
+    }
+
     public function updatedAttachments(): void
     {
         if (count($this->attachments) > 3) {
@@ -74,13 +80,7 @@ new class extends Component {
 
     public function setStatus(string $status): void
     {
-        $status = $this->normalizeStatus($status);
-
-        if ($this->status === $status) {
-            return;
-        }
-
-        $this->status = $status;
+        $this->status = $this->normalizeStatus($status);
         $this->resetPage();
     }
 
@@ -359,19 +359,17 @@ new class extends Component {
             :searchable="false"
         />
 
-        <div class="flex shrink-0 items-center gap-1 rounded-xl border border-line-border bg-surface-base p-1">
-            @foreach (['all' => 'همه', 'open' => 'در انتظار پاسخ', 'answered' => 'پاسخ داده شده', 'closed' => 'بسته شده'] as $key => $label)
-                <button type="button"
-                        @if ($status !== $key) wire:click="setStatus('{{ $key }}')" @endif
-                    @class([
-                        'flex-1 rounded-lg px-3 py-1.5 text-xs whitespace-nowrap transition sm:flex-none',
-                        'cursor-default bg-primary text-white font-bold shadow-2xs' => $status === $key,
-                        'cursor-pointer font-medium text-content-muted hover:text-content-main' => $status !== $key,
-                    ])>
-                    {{ $label }}
-                </button>
-            @endforeach
-        </div>
+        <x-ui.segmented
+            model="status"
+            action="setStatus"
+            cols="2"
+            :options="[
+                'all' => 'همه',
+                'open' => 'در انتظار پاسخ',
+                'answered' => 'پاسخ داده شده',
+                'closed' => 'بسته شده',
+            ]"
+        />
 
         @if (! $this->isAdmin)
             <x-ui.button type="button" wire:click="openCreate" class="h-9.5 shrink-0 cursor-pointer">
@@ -381,42 +379,49 @@ new class extends Component {
         @endif
     </div>
 
-    <div class="space-y-2.5">
-        @forelse ($this->tickets as $ticket)
-            <x-tickets.row
-                :ticket="$ticket"
-                :is-admin="$this->isAdmin"
-                wire:key="ticket-{{ $ticket->id }}"
-            />
-        @empty
-            <x-ui.card :padding="false">
-                @if ($this->hasFilters)
-                    <x-ui.empty-state icon="search"
-                                      title="تیکتی با این مشخصات یافت نشد"
-                                      description="هیچ تیکتی متناسب با فیلترهای انتخابی شما وجود ندارد.">
-                        <x-ui.button type="button" variant="secondary" wire:click="clearFilters" class="cursor-pointer">
-                            پاک کردن فیلترها
-                        </x-ui.button>
-                    </x-ui.empty-state>
-                @elseif ($this->isAdmin)
-                    <x-ui.empty-state icon="ticket"
-                                      title="هنوز تیکتی در سیستم ثبت نشده است"
-                                      description="به محض اینکه کاربران تیکت پشتیبانی جدیدی ثبت کنند، در این بخش نمایش داده خواهد شد."/>
-                @else
-                    <x-ui.empty-state icon="ticket"
-                                      title="هنوز تیکتی ثبت نکرده‌اید"
-                                      description="هر سوال فنی، پیشنهاد یا ابهامی در مورد ساخت ورکفلوها یا اشتراک دارید، همین حالا تیکت بزنید تا تیم تمشک بررسی کند.">
-                        <x-ui.button type="button" wire:click="openCreate" class="cursor-pointer">
-                            <x-ui.icon name="plus" class="size-4"/>
-                            <span>ارسال اولین تیکت</span>
-                        </x-ui.button>
-                    </x-ui.empty-state>
-                @endif
-            </x-ui.card>
-        @endforelse
-    </div>
+    <div class="relative min-h-40 space-y-4">
+        <x-ui.loading-overlay
+            target="setStatus, status, department, search, clearFilters, previousPage, nextPage, gotoPage"
+            label="در حال بارگذاری تیکت‌ها..."
+        />
 
-    <x-ui.pagination :paginator="$this->tickets" />
+        <div class="space-y-2.5">
+            @forelse ($this->tickets as $ticket)
+                <x-tickets.row
+                    :ticket="$ticket"
+                    :is-admin="$this->isAdmin"
+                    wire:key="ticket-{{ $ticket->id }}"
+                />
+            @empty
+                <x-ui.card :padding="false">
+                    @if ($this->hasFilters)
+                        <x-ui.empty-state icon="search"
+                                          title="تیکتی با این مشخصات یافت نشد"
+                                          description="هیچ تیکتی متناسب با فیلترهای انتخابی شما وجود ندارد.">
+                            <x-ui.button type="button" variant="secondary" wire:click="clearFilters" class="cursor-pointer">
+                                پاک کردن فیلترها
+                            </x-ui.button>
+                        </x-ui.empty-state>
+                    @elseif ($this->isAdmin)
+                        <x-ui.empty-state icon="ticket"
+                                          title="هنوز تیکتی در سیستم ثبت نشده است"
+                                          description="به محض اینکه کاربران تیکت پشتیبانی جدیدی ثبت کنند، در این بخش نمایش داده خواهد شد."/>
+                    @else
+                        <x-ui.empty-state icon="ticket"
+                                          title="هنوز تیکتی ثبت نکرده‌اید"
+                                          description="هر سوال فنی، پیشنهاد یا ابهامی در مورد ساخت ورکفلوها یا اشتراک دارید، همین حالا تیکت بزنید تا تیم تمشک بررسی کند.">
+                            <x-ui.button type="button" wire:click="openCreate" class="cursor-pointer">
+                                <x-ui.icon name="plus" class="size-4"/>
+                                <span>ارسال اولین تیکت</span>
+                            </x-ui.button>
+                        </x-ui.empty-state>
+                    @endif
+                </x-ui.card>
+            @endforelse
+        </div>
+
+        <x-ui.pagination :paginator="$this->tickets" />
+    </div>
 
     @if (! $this->isAdmin)
         <x-tickets.create-modal

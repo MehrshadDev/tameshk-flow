@@ -24,19 +24,18 @@
             @endif
         </div>
 
-        <div class="flex h-10 items-center gap-1 rounded-xl border border-line-border bg-surface-card p-1 shadow-2xs">
-            @foreach (['all' => 'همه', 'active' => 'فعال', 'inactive' => 'غیرفعال'] as $key => $label)
-                <button type="button"
-                        @if ($status !== $key) wire:click="setStatus('{{ $key }}')" @endif
-                    @class([
-                        'flex-1 h-full rounded-lg px-3.5 text-xs transition sm:flex-none',
-                        'cursor-default bg-primary text-white font-bold shadow-2xs' => $status === $key,
-                        'cursor-pointer font-medium text-content-muted hover:text-content-main' => $status !== $key,
-                    ])>
-                    {{ $label }}
-                </button>
-            @endforeach
-        </div>
+        <x-ui.segmented
+            model="status"
+            action="setStatus"
+            variant="card"
+            cols="3"
+            class="h-10"
+            :options="[
+                'all' => 'همه',
+                'active' => 'فعال',
+                'inactive' => 'غیرفعال',
+            ]"
+        />
     </div>
 
     <x-ui.button type="button"

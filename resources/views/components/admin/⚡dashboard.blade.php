@@ -223,27 +223,25 @@ new class extends Component {
 
     <div class="space-y-4 pt-2">
         <div class="flex items-center justify-between border-b border-line-border pb-3">
-            <div class="grid w-full grid-cols-2 gap-1 rounded-xl border border-line-border bg-surface-card p-1 sm:inline-flex sm:w-auto">
-                <button type="button"
-                        @click="if (activeTab !== 'payments') activeTab = 'payments'"
-                        :class="activeTab === 'payments'
-                            ? 'cursor-default bg-primary text-white font-bold shadow-2xs'
-                            : 'cursor-pointer font-medium text-content-muted hover:text-content-main'"
-                        class="inline-flex items-center justify-center gap-2 rounded-lg px-3.5 py-2 text-xs whitespace-nowrap transition">
-                    <x-ui.icon name="receipt" class="size-4 shrink-0"/>
-                    <span>تراکنش‌ها و خریدها ({{ number_format($overview['revenue']['total_count']) }})</span>
-                </button>
-
-                <button type="button"
-                        @click="if (activeTab !== 'users') activeTab = 'users'"
-                        :class="activeTab === 'users'
-                            ? 'cursor-default bg-primary text-white font-bold shadow-2xs'
-                            : 'cursor-pointer font-medium text-content-muted hover:text-content-main'"
-                        class="inline-flex items-center justify-center gap-2 rounded-lg px-3.5 py-2 text-xs whitespace-nowrap transition">
-                    <x-ui.icon name="users" class="size-4 shrink-0"/>
-                    <span>لیست کاربران ({{ number_format($overview['users']['total']) }})</span>
-                </button>
-            </div>
+            <x-ui.segmented
+                alpine="activeTab"
+                variant="card"
+                size="lg"
+                cols="2"
+                class="w-full sm:w-auto"
+                :options="[
+                    'payments' => [
+                        'label' => 'تراکنش‌ها و خریدها',
+                        'icon' => 'receipt',
+                        'count' => $overview['revenue']['total_count'],
+                    ],
+                    'users' => [
+                        'label' => 'لیست کاربران',
+                        'icon' => 'users',
+                        'count' => $overview['users']['total'],
+                    ],
+                ]"
+            />
         </div>
 
         <div x-show="activeTab === 'payments'">

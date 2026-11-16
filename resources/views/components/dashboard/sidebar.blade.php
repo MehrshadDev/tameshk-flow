@@ -45,7 +45,7 @@
            sidebarOpen ? 'translate-x-0' : 'translate-x-full',
            collapsed ? 'lg:w-20' : 'lg:w-68'
        ]"
-       class="fixed inset-y-0 right-0 z-40 flex w-68 shrink-0 flex-col border-l border-line-border bg-surface-raised/95 backdrop-blur-xl transition-[transform,width] duration-200 lg:static lg:translate-x-0">
+       class="fixed inset-y-0 right-0 z-40 flex w-72 max-w-[85vw] shrink-0 flex-col border-l border-line-border bg-surface-raised/95 shadow-2xl backdrop-blur-xl transition-[transform,width] duration-200 lg:static lg:max-w-none lg:translate-x-0 lg:shadow-none">
 
     <div @pointerdown.prevent="startResize($event)"
          @dblclick="toggleSidebar()"
@@ -61,15 +61,13 @@
     <div class="flex h-16 shrink-0 items-center justify-between border-b border-line-border/70 px-4"
          :class="collapsed && 'lg:justify-center lg:px-0'">
         <div class="flex items-center gap-2" :class="collapsed && 'lg:hidden'">
-            <x-layouts.logo :href="route('app.workflows.index')" logoClasses="h-10 w-auto"/>
+            <x-layouts.logo :href="route('app.workflows.index')" logoClasses="h-9 w-auto sm:h-10"/>
             @if ($isBusiness)
-                <span
-                    class="rounded-lg border border-amber-500/30 bg-amber-500/15 px-2 py-0.5 font-mono text-[10px] font-extrabold text-amber-500">
+                <span class="rounded-lg border border-amber-500/30 bg-amber-500/15 px-2 py-0.5 font-mono text-[10px] font-extrabold text-amber-500">
                     BUSINESS
                 </span>
             @elseif ($isPro)
-                <span
-                    class="rounded-lg border border-primary/30 bg-primary/15 px-2 py-0.5 font-mono text-[10px] font-extrabold text-primary">
+                <span class="rounded-lg border border-primary/30 bg-primary/15 px-2 py-0.5 font-mono text-[10px] font-extrabold text-primary">
                     PRO
                 </span>
             @endif
@@ -87,12 +85,12 @@
         <button type="button"
                 @click="sidebarOpen = false"
                 aria-label="بستن منو"
-                class="flex size-8 items-center justify-center rounded-xl text-content-muted transition hover:bg-line-border/60 hover:text-content-main lg:hidden">
+                class="flex size-8.5 items-center justify-center rounded-xl border border-line-border/80 bg-surface-card text-content-muted transition hover:text-content-main lg:hidden cursor-pointer">
             <x-ui.icon name="x" class="size-4.5"/>
         </button>
     </div>
 
-    <nav class="custom-scrollbar flex-1 space-y-2 overflow-y-auto overflow-x-hidden p-3">
+    <nav class="custom-scrollbar flex-1 space-y-1.5 overflow-y-auto overflow-x-hidden p-3">
         <x-dashboard.sidebar-link
             icon="hierarchy"
             :href="route('app.workflows.index')"
@@ -131,8 +129,7 @@
             <x-dashboard.sidebar-link
                 icon="chart-area-line"
                 :href="route('app.admin.index')"
-                :active="request()->routeIs('app.admin.*')"
-                badge="ADMIN">
+                :active="request()->routeIs('app.admin.*')">
                 آمار و مدیریت سایت
             </x-dashboard.sidebar-link>
 
@@ -171,7 +168,7 @@
         @endif
     </nav>
 
-    <div class="shrink-0 space-y-3 border-t border-line-border/70 p-3">
+    <div class="shrink-0 space-y-2.5 border-t border-line-border/70 p-3">
         <x-dashboard.sidebar-plan
             :saas-enabled="$saasEnabled"
             :summary="$summary"

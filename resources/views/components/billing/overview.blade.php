@@ -18,25 +18,25 @@
     $isPro = $plan->slug === 'pro';
 @endphp
 
-<div class="grid grid-cols-1 gap-4 lg:grid-cols-3">
+<div class="grid grid-cols-1 gap-3.5 sm:gap-4 lg:grid-cols-3">
     <div @class([
-        'flex flex-col justify-between rounded-2xl border p-5 shadow-2xs',
+        'flex flex-col justify-between rounded-2xl border p-4 sm:p-5 shadow-2xs',
         'border-amber-500/35 bg-linear-to-b from-amber-500/8 to-surface-card' => $isBusiness,
         'border-primary/30 bg-linear-to-b from-primary/6 to-surface-card' => $isPro,
         'border-line-border bg-surface-card' => ! $isPro && ! $isBusiness,
     ])>
         <div class="flex items-start justify-between gap-3">
-            <div class="flex items-center gap-3.5">
+            <div class="flex items-center gap-3">
                 <div @class([
-                    'flex size-12 shrink-0 items-center justify-center rounded-2xl ring-1',
+                    'flex size-11 sm:size-12 shrink-0 items-center justify-center rounded-2xl ring-1',
                     'bg-amber-500/15 text-amber-500 ring-amber-500/30' => $isBusiness,
                     'bg-primary/10 text-primary ring-primary/20' => ! $isBusiness,
                 ])>
-                    <x-ui.icon name="crown" class="size-6"/>
+                    <x-ui.icon name="crown" class="size-5.5 sm:size-6"/>
                 </div>
                 <div>
                     <p class="text-xs font-medium text-content-muted">پلن فعلی شما</p>
-                    <h2 class="mt-0.5 text-lg font-extrabold text-content-main">پلن {{ $plan->name }}</h2>
+                    <h2 class="mt-0.5 text-base font-extrabold text-content-main sm:text-lg">پلن {{ $plan->name }}</h2>
                 </div>
             </div>
 
@@ -51,9 +51,9 @@
             @endif
         </div>
 
-        <div class="mt-5 flex items-center justify-between border-t border-line-border/60 pt-3.5 text-xs">
+        <div class="mt-4 flex items-center justify-between border-t border-line-border/60 pt-3 text-xs sm:mt-5 sm:pt-3.5">
             @if ($inGracePeriod)
-                <span class="text-amber-500 font-medium">مهلت تمدید بدون توقف:</span>
+                <span class="font-medium text-amber-500">مهلت تمدید بدون توقف:</span>
                 <span class="font-mono font-bold text-amber-500">{{ $graceRemainingDays }} روز</span>
             @elseif ($subscription && $remainingDays !== null)
                 <span class="text-content-muted">اعتبار باقی‌مانده اشتراک:</span>
@@ -65,7 +65,7 @@
         </div>
     </div>
 
-    <div class="flex flex-col justify-between rounded-2xl border border-line-border bg-surface-card p-5 shadow-2xs">
+    <div class="flex flex-col justify-between rounded-2xl border border-line-border bg-surface-card p-4 shadow-2xs sm:p-5">
         <div>
             <div class="flex items-center justify-between gap-2">
                 <div class="flex items-center gap-2.5">
@@ -85,7 +85,7 @@
             </div>
 
             @if ($maxRuns !== null)
-                <div class="mt-4 h-2 w-full overflow-hidden rounded-full bg-line-border/70">
+                <div class="mt-3.5 h-2 w-full overflow-hidden rounded-full bg-line-border/70 sm:mt-4">
                     <div @class([
                             'h-full rounded-full transition-all duration-300',
                             'bg-primary' => $runsPercent >= 90,
@@ -102,7 +102,7 @@
             @endif
         </div>
 
-        <div class="mt-4 flex items-center justify-between border-t border-line-border/60 pt-3.5 text-[11px] text-content-muted">
+        <div class="mt-4 flex items-center justify-between border-t border-line-border/60 pt-3 text-[11px] text-content-muted sm:pt-3.5">
             <span>بازنشانی شمارنده ماهانه:</span>
             <span class="font-medium text-content-main">
                 {{ $summary['runs_reset_at'] ? $summary['runs_reset_at']->diffForHumans() : '۳۰ روز دیگر' }}
@@ -110,7 +110,7 @@
         </div>
     </div>
 
-    <div class="flex flex-col justify-between rounded-2xl border border-line-border bg-surface-card p-5 shadow-2xs">
+    <div class="flex flex-col justify-between rounded-2xl border border-line-border bg-surface-card p-4 shadow-2xs sm:p-5">
         <div>
             <div class="flex items-center justify-between gap-2">
                 <div class="flex items-center gap-2.5">
@@ -130,7 +130,7 @@
             </div>
 
             @if ($maxActiveWorkflows !== null)
-                <div class="mt-4 h-2 w-full overflow-hidden rounded-full bg-line-border/70">
+                <div class="mt-3.5 h-2 w-full overflow-hidden rounded-full bg-line-border/70 sm:mt-4">
                     <div @class([
                             'h-full rounded-full transition-all duration-300',
                             'bg-primary' => $activePercent >= 100,
@@ -147,7 +147,7 @@
             @endif
         </div>
 
-        <div class="mt-4 flex items-center justify-between border-t border-line-border/60 pt-3.5 text-[11px] text-content-muted">
+        <div class="mt-4 flex items-center justify-between border-t border-line-border/60 pt-3 text-[11px] text-content-muted sm:pt-3.5">
             <span>سقف مجاز پلن {{ $plan->name }}:</span>
             <span class="font-bold text-content-main">
                 {{ $maxActiveWorkflows !== null ? $maxActiveWorkflows . ' ورک‌فلو فعال' : 'نامحدود' }}

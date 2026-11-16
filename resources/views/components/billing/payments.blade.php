@@ -54,7 +54,7 @@
                         @if ($payment->discount_amount > 0)
                             <div class="flex items-center justify-between rounded-lg border border-emerald-500/25 bg-emerald-500/10 px-2.5 py-1 text-[11px] text-emerald-600 dark:text-emerald-400">
                                 <span>کد تخفیف {{ $payment->discountCode ? "({$payment->discountCode->code})" : '' }}:</span>
-                                <span dir="ltr" class="font-mono font-bold">-{{ number_format($payment->discount_amount) }} تومان</span>
+                                <span class="font-mono font-bold">-{{ number_format($payment->discount_amount) }} تومان</span>
                             </div>
                         @endif
 

@@ -51,13 +51,7 @@ new class extends Component {
 
     public function setStatus(string $status): void
     {
-        $status = $this->normalizeStatus($status);
-
-        if ($this->status === $status) {
-            return;
-        }
-
-        $this->status = $status;
+        $this->status = $this->normalizeStatus($status);
         $this->resetPage();
     }
 
@@ -506,91 +500,98 @@ new class extends Component {
         :at-limit="$this->atLimit"
     />
 
-    <div x-data="{
-             draggingId: null,
-             dragOverId: null,
-             isDragging: false,
-             startDrag(event, id) {
-                 this.draggingId = id;
-                 this.isDragging = true;
-                 event.dataTransfer.effectAllowed = 'move';
-                 event.dataTransfer.setData('text/plain', String(id));
-             },
-             dragOver(event, targetId) {
-                 if (this.draggingId === null || this.draggingId === targetId) return;
-                 this.dragOverId = targetId;
-             },
-             drop(event, targetId) {
-                 if (this.draggingId === null || this.draggingId === targetId) {
-                     this.endDrag();
-                     return;
-                 }
+    <div class="relative min-h-40 space-y-4">
+        <x-ui.loading-overlay
+            target="setStatus, status, search, clearFilters, previousPage, nextPage, gotoPage"
+            label="در حال بارگذاری ورکفلوها..."
+        />
 
-                 const container = this.$refs.listContainer;
-                 const rows = Array.from(container.querySelectorAll('[data-workflow-id]'));
-                 const ids = rows.map(el => Number(el.dataset.workflowId));
-
-                 const fromIndex = ids.indexOf(this.draggingId);
-                 const toIndex = ids.indexOf(targetId);
-
-                 if (fromIndex !== -1 && toIndex !== -1) {
-                     const movedEl = rows[fromIndex];
-                     const targetEl = rows[toIndex];
-
-                     if (fromIndex < toIndex) {
-                         targetEl.after(movedEl);
-                     } else {
-                         targetEl.before(movedEl);
+        <div x-data="{
+                 draggingId: null,
+                 dragOverId: null,
+                 isDragging: false,
+                 startDrag(event, id) {
+                     this.draggingId = id;
+                     this.isDragging = true;
+                     event.dataTransfer.effectAllowed = 'move';
+                     event.dataTransfer.setData('text/plain', String(id));
+                 },
+                 dragOver(event, targetId) {
+                     if (this.draggingId === null || this.draggingId === targetId) return;
+                     this.dragOverId = targetId;
+                 },
+                 drop(event, targetId) {
+                     if (this.draggingId === null || this.draggingId === targetId) {
+                         this.endDrag();
+                         return;
                      }
 
-                     const updatedIds = Array.from(container.querySelectorAll('[data-workflow-id]'))
-                         .map(el => Number(el.dataset.workflowId));
+                     const container = this.$refs.listContainer;
+                     const rows = Array.from(container.querySelectorAll('[data-workflow-id]'));
+                     const ids = rows.map(el => Number(el.dataset.workflowId));
 
-                     $wire.reorder(updatedIds);
+                     const fromIndex = ids.indexOf(this.draggingId);
+                     const toIndex = ids.indexOf(targetId);
+
+                     if (fromIndex !== -1 && toIndex !== -1) {
+                         const movedEl = rows[fromIndex];
+                         const targetEl = rows[toIndex];
+
+                         if (fromIndex < toIndex) {
+                             targetEl.after(movedEl);
+                         } else {
+                             targetEl.before(movedEl);
+                         }
+
+                         const updatedIds = Array.from(container.querySelectorAll('[data-workflow-id]'))
+                             .map(el => Number(el.dataset.workflowId));
+
+                         $wire.reorder(updatedIds);
+                     }
+
+                     this.endDrag();
+                 },
+                 endDrag() {
+                     this.draggingId = null;
+                     this.dragOverId = null;
+                     setTimeout(() => { this.isDragging = false; }, 80);
                  }
+             }"
+             x-ref="listContainer"
+             class="space-y-2.5">
+            @forelse ($this->workflows as $workflow)
+                <x-workflows.row
+                    :workflow="$workflow"
+                    :definitions="$this->definitions"
+                    :sortable="! $this->hasFilters && $this->workflows->count() > 1"
+                    wire:key="workflow-{{ $workflow->id }}"
+                />
+            @empty
+                <x-ui.card :padding="false">
+                    @if ($this->hasFilters)
+                        <x-ui.empty-state icon="search"
+                                          title="نتیجه‌ای پیدا نشد"
+                                          description="ورکفلویی با این عبارت جستجو یا فیلتر وضعیت پیدا نشد.">
+                            <x-ui.button type="button" variant="secondary" wire:click="clearFilters" class="cursor-pointer">
+                                پاک کردن فیلترها
+                            </x-ui.button>
+                        </x-ui.empty-state>
+                    @else
+                        <x-ui.empty-state icon="hierarchy"
+                                          title="هنوز ورکفلویی نساخته‌اید">
+                            <x-ui.button type="button" wire:click="create" wire:loading.attr="disabled" wire:target="create" class="cursor-pointer">
+                                <x-ui.icon name="plus" class="size-4"/>
+                                <span wire:loading.remove wire:target="create">ساخت اولین ورکفلو</span>
+                                <span wire:loading wire:target="create">در حال ساخت...</span>
+                            </x-ui.button>
+                        </x-ui.empty-state>
+                    @endif
+                </x-ui.card>
+            @endforelse
+        </div>
 
-                 this.endDrag();
-             },
-             endDrag() {
-                 this.draggingId = null;
-                 this.dragOverId = null;
-                 setTimeout(() => { this.isDragging = false; }, 80);
-             }
-         }"
-         x-ref="listContainer"
-         class="space-y-2.5">
-        @forelse ($this->workflows as $workflow)
-            <x-workflows.row
-                :workflow="$workflow"
-                :definitions="$this->definitions"
-                :sortable="! $this->hasFilters && $this->workflows->count() > 1"
-                wire:key="workflow-{{ $workflow->id }}"
-            />
-        @empty
-            <x-ui.card :padding="false">
-                @if ($this->hasFilters)
-                    <x-ui.empty-state icon="search"
-                                      title="نتیجه‌ای پیدا نشد"
-                                      description="ورکفلویی با این عبارت جستجو یا فیلتر وضعیت پیدا نشد.">
-                        <x-ui.button type="button" variant="secondary" wire:click="clearFilters" class="cursor-pointer">
-                            پاک کردن فیلترها
-                        </x-ui.button>
-                    </x-ui.empty-state>
-                @else
-                    <x-ui.empty-state icon="hierarchy"
-                                      title="هنوز ورکفلویی نساخته‌اید">
-                        <x-ui.button type="button" wire:click="create" wire:loading.attr="disabled" wire:target="create" class="cursor-pointer">
-                            <x-ui.icon name="plus" class="size-4"/>
-                            <span wire:loading.remove wire:target="create">ساخت اولین ورکفلو</span>
-                            <span wire:loading wire:target="create">در حال ساخت...</span>
-                        </x-ui.button>
-                    </x-ui.empty-state>
-                @endif
-            </x-ui.card>
-        @endforelse
+        <x-ui.pagination :paginator="$this->workflows" />
     </div>
-
-    <x-ui.pagination :paginator="$this->workflows" />
 
     <x-workflows.modals :deleting-name="$this->deleting?->name"/>
 </div>

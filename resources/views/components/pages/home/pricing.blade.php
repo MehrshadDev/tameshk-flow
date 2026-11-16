@@ -35,27 +35,18 @@
                     با پلن رایگان شروع کنید و هر زمان که کسب‌وکارتان رشد کرد، ظرفیت اجرا و ورک‌فلوهای خود را ارتقا دهید.
                 </p>
 
-                <div class="mt-7 inline-flex items-center rounded-xl border border-line-border bg-surface-card p-1 shadow-2xs">
-                    <button type="button"
-                            @click="cycle = 'monthly'"
-                            :class="cycle === 'monthly'
-                                ? 'bg-primary text-white font-bold shadow-2xs'
-                                : 'text-content-muted hover:text-content-main font-medium'"
-                            class="rounded-lg px-4 py-1.5 text-xs transition cursor-pointer">
-                        پرداخت ماهانه
-                    </button>
-                    <button type="button"
-                            @click="cycle = 'yearly'"
-                            :class="cycle === 'yearly'
-                                ? 'bg-primary text-white font-bold shadow-2xs'
-                                : 'text-content-muted hover:text-content-main font-medium'"
-                            class="inline-flex items-center gap-1.5 rounded-lg px-4 py-1.5 text-xs transition cursor-pointer">
-                        <span>پرداخت سالانه</span>
-                        <span class="rounded-md bg-emerald-500/15 px-1.5 py-0.5 text-[10px] font-bold text-emerald-500"
-                              :class="cycle === 'yearly' && 'bg-white/20 text-white'">
-                            ۲ ماه رایگان
-                        </span>
-                    </button>
+                <div class="mt-7 flex justify-center">
+                    <x-ui.segmented
+                        alpine="cycle"
+                        variant="card"
+                        :options="[
+                            'monthly' => 'پرداخت ماهانه',
+                            'yearly' => [
+                                'label' => 'پرداخت سالانه',
+                                'badge' => '۲ ماه رایگان',
+                            ],
+                        ]"
+                    />
                 </div>
             </div>
 
@@ -69,22 +60,23 @@
                     @endphp
 
                     <div @class([
-                        'relative flex flex-col justify-between rounded-2xl border p-6 sm:p-7 transition-all duration-200',
-                        'border-primary/80 bg-surface-card ring-1 ring-primary/20 shadow-xl shadow-primary/5' => $isPopular,
+                        'relative flex flex-col justify-between rounded-2xl border p-5 sm:p-7 transition-all duration-200',
+                        'mt-2 md:mt-0 border-primary/80 bg-surface-card ring-1 ring-primary/20 shadow-xl shadow-primary/5' => $isPopular,
                         'border-line-border bg-surface-card/90 shadow-2xs hover:border-content-muted/30' => ! $isPopular,
                     ])>
                         @if ($isPopular)
                             <div class="pointer-events-none absolute inset-x-8 top-0 h-px bg-linear-to-r from-transparent via-primary to-transparent"></div>
-                            <span class="absolute -top-3 left-1/2 -translate-x-1/2 whitespace-nowrap rounded-full bg-primary px-3.5 py-0.5 text-[11px] font-bold text-white shadow-sm shadow-primary/30">
-                                محبوب‌ترین
+                            <span class="absolute -top-3 right-5 inline-flex items-center gap-1 whitespace-nowrap rounded-full bg-primary px-3 py-0.5 text-[11px] font-bold text-white shadow-sm shadow-primary/30">
+                                <x-ui.icon name="sparkles" class="size-3"/>
+                                <span>محبوب‌ترین</span>
                             </span>
                         @endif
 
                         <div>
                             <h3 class="text-lg font-extrabold text-content-main">{{ $plan->name }}</h3>
-                            <p class="mt-2 min-h-12 text-xs leading-6 text-content-muted">{{ $plan->description }}</p>
+                            <p class="mt-2 text-xs leading-6 text-content-muted md:min-h-12">{{ $plan->description }}</p>
 
-                            <div class="my-6 border-y border-line-border/70 py-5">
+                            <div class="my-5 border-y border-line-border/70 py-4 sm:my-6 sm:py-5">
                                 @if ($plan->isFree())
                                     <div class="flex items-baseline gap-1.5">
                                         <span dir="ltr" class="font-mono text-3xl font-extrabold tracking-tight tabular-nums text-content-main">

@@ -75,7 +75,7 @@
                       dir="auto"
                       style="unicode-bidi: plaintext;"
                       wire:model="body"
-                      placeholder="جزئیات سوال، نام ورکفلو یا خطایی که دریافت کرده‌اید را بنویسید..."
+                      placeholder="جزئیات سوال، نام ورکفلو یا خطایی که دریافت کرده‌اید را بنویسید"
                       class="w-full resize-none rounded-xl border border-line-border bg-surface-base px-4 py-2.5 text-start text-xs leading-6 text-content-main transition placeholder:text-right placeholder:text-content-muted/60 focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/40 sm:text-sm"></textarea>
             @error('body')
             <p class="mt-1.5 text-xs text-primary">{{ $message }}</p>

@@ -60,9 +60,18 @@ new class extends Component {
         $this->resetPage();
     }
 
+    public function updatedStatus(): void
+    {
+        if (! in_array($this->status, ['all', 'active', 'inactive'], true)) {
+            $this->status = 'all';
+        }
+
+        $this->resetPage();
+    }
+
     public function setStatus(string $status): void
     {
-        if (! in_array($status, ['all', 'active', 'inactive'], true) || $this->status === $status) {
+        if (! in_array($status, ['all', 'active', 'inactive'], true)) {
             return;
         }
 
@@ -370,7 +379,7 @@ new class extends Component {
 };
 ?>
 
-<div class="mx-auto max-w-6xl space-y-6 p-4 sm:p-6">
+<div class="mx-auto max-w-6xl space-y-5 p-3.5 sm:space-y-6 sm:p-6">
     @php
         $statData = $this->stats;
     @endphp
@@ -382,7 +391,7 @@ new class extends Component {
         :total-discounted-amount="$statData['total_discounted_amount']"
     />
 
-    <div class="flex flex-col gap-3 rounded-2xl border border-line-border bg-surface-card p-3 shadow-2xs sm:flex-row sm:items-center sm:justify-between">
+    <div class="flex flex-col gap-2.5 rounded-2xl border border-line-border bg-surface-card p-3 shadow-2xs sm:flex-row sm:items-center sm:justify-between">
         <div class="flex flex-1 flex-col gap-2.5 sm:flex-row sm:items-center">
             <div class="relative flex-1">
                 <x-ui.icon name="search"
@@ -402,58 +411,63 @@ new class extends Component {
                 @endif
             </div>
 
-            <div class="flex shrink-0 items-center gap-1 rounded-xl border border-line-border bg-surface-base p-1">
-                @foreach (['all' => 'همه', 'active' => 'فعال', 'inactive' => 'غیرفعال'] as $key => $label)
-                    <button type="button"
-                            @if ($status !== $key) wire:click="setStatus('{{ $key }}')" @endif
-                        @class([
-                            'flex-1 rounded-lg px-3.5 py-1.5 text-xs whitespace-nowrap transition sm:flex-none',
-                            'cursor-default bg-primary text-white font-bold shadow-2xs' => $status === $key,
-                            'cursor-pointer font-medium text-content-muted hover:text-content-main' => $status !== $key,
-                        ])>
-                        {{ $label }}
-                    </button>
-                @endforeach
-            </div>
+            <x-ui.segmented
+                model="status"
+                action="setStatus"
+                cols="3"
+                class="w-full sm:w-auto"
+                :options="[
+                    'all' => 'همه',
+                    'active' => 'فعال',
+                    'inactive' => 'غیرفعال',
+                ]"
+            />
         </div>
 
-        <x-ui.button type="button" wire:click="openCreate" class="h-9.5 shrink-0 cursor-pointer">
+        <x-ui.button type="button" wire:click="openCreate" class="h-9.5 w-full shrink-0 cursor-pointer sm:w-auto">
             <x-ui.icon name="plus" class="size-4"/>
             <span>ایجاد کد تخفیف</span>
         </x-ui.button>
     </div>
 
-    <div class="space-y-2.5">
-        @forelse ($this->discounts as $discount)
-            <x-discounts.row
-                :discount="$discount"
-                wire:key="discount-{{ $discount->id }}"
-            />
-        @empty
-            <x-ui.card :padding="false">
-                @if ($this->hasFilters)
-                    <x-ui.empty-state icon="search"
-                                      title="کد تخفیفی یافت نشد"
-                                      description="هیچ کد تخفیفی با این عبارت جستجو یا فیلتر پیدا نشد.">
-                        <x-ui.button type="button" variant="secondary" wire:click="clearFilters" class="cursor-pointer">
-                            پاک کردن فیلترها
-                        </x-ui.button>
-                    </x-ui.empty-state>
-                @else
-                    <x-ui.empty-state icon="discount-2"
-                                      title="هنوز کد تخفیفی ایجاد نکرده‌اید"
-                                      description="اولین کد تخفیف خود را با تنظیمات دلخواه (درصدی، مبلغ ثابت، محدود به پلن یا دوره) بسازید.">
-                        <x-ui.button type="button" wire:click="openCreate" class="cursor-pointer">
-                            <x-ui.icon name="plus" class="size-4"/>
-                            <span>ساخت اولین کد تخفیف</span>
-                        </x-ui.button>
-                    </x-ui.empty-state>
-                @endif
-            </x-ui.card>
-        @endforelse
-    </div>
+    <div class="relative min-h-40 space-y-4">
+        <x-ui.loading-overlay
+            target="setStatus, status, search, clearFilters, previousPage, nextPage, gotoPage"
+            label="در حال بارگذاری کدهای تخفیف..."
+        />
 
-    <x-ui.pagination :paginator="$this->discounts" />
+        <div class="space-y-2.5">
+            @forelse ($this->discounts as $discount)
+                <x-discounts.row
+                    :discount="$discount"
+                    wire:key="discount-{{ $discount->id }}"
+                />
+            @empty
+                <x-ui.card :padding="false">
+                    @if ($this->hasFilters)
+                        <x-ui.empty-state icon="search"
+                                          title="کد تخفیفی یافت نشد"
+                                          description="هیچ کد تخفیفی با این عبارت جستجو یا فیلتر پیدا نشد.">
+                            <x-ui.button type="button" variant="secondary" wire:click="clearFilters" class="cursor-pointer">
+                                پاک کردن فیلترها
+                            </x-ui.button>
+                        </x-ui.empty-state>
+                    @else
+                        <x-ui.empty-state icon="discount-2"
+                                          title="هنوز کد تخفیفی ایجاد نکرده‌اید"
+                                          description="اولین کد تخفیف خود را با تنظیمات دلخواه (درصدی، مبلغ ثابت، محدود به پلن یا دوره) بسازید.">
+                            <x-ui.button type="button" wire:click="openCreate" class="cursor-pointer">
+                                <x-ui.icon name="plus" class="size-4"/>
+                                <span>ساخت اولین کد تخفیف</span>
+                            </x-ui.button>
+                        </x-ui.empty-state>
+                    @endif
+                </x-ui.card>
+            @endforelse
+        </div>
+
+        <x-ui.pagination :paginator="$this->discounts" />
+    </div>
 
     <x-discounts.modals
         :editing-id="$editingId"
