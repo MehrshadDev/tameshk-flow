@@ -1,11 +1,13 @@
 <section id="telegram-trigger" class="scroll-mt-24 space-y-3">
     <h2 class="text-lg font-extrabold text-content-main">شروع‌کننده ربات تلگرام (Telegram Trigger)</h2>
     <p class="text-content-muted">
-        با استفاده از این نود، هر زمان کاربری به ربات تلگرام شما پیام بفرستد یا روی دکمه‌های شیشه‌ای (Inline Buttons) کلیک کند، ورکفلو به صورت آنی اجرا می‌شود.
+        با استفاده از این نود در
+        <a href="{{ route('landing.bot-builder') }}" class="font-bold text-primary underline decoration-primary/40 underline-offset-4 transition hover:decoration-primary">ربات‌ساز ابری و بدون کد تلگرام</a>،
+        هر زمان کاربری به ربات تلگرام یا اکانت بیزینس شما پیام بفرستد و یا روی دکمه‌های شیشه‌ای (Inline Buttons) کلیک کند، ورکفلو به صورت آنی اجرا می‌شود.
     </p>
     <ul class="list-disc space-y-2 pr-5 text-content-muted">
-        <li><strong class="text-content-main">ثبت خودکار Webhook تلگرام:</strong> نیازی به تنظیم دستی وب‌هوک در تلگرام ندارید؛ به محض انتشار ورکفلو، تمشک به صورت خودکار وب‌هوک امن را روی ربات شما ثبت می‌کند.</li>
-        <li><strong class="text-content-main">فیلتر نوع رویداد (Trigger On):</strong> می‌توانید مشخص کنید ورکفلو فقط با پیام جدید (<code>message</code>)، کلیک روی دکمه (<code>callback_query</code>)، پست کانال (<code>channel_post</code>) یا سایر رویدادها فعال شود.</li>
+        <li><strong class="text-content-main">ثبت خودکار Webhook تلگرام:</strong> نیازی به خرید سرور مجازی یا تنظیم دستی وب‌هوک در تلگرام ندارید؛ به محض انتشار ورکفلو، تمشک به صورت خودکار وب‌هوک امن را روی ربات شما ثبت می‌کند.</li>
+        <li><strong class="text-content-main">فیلتر نوع رویداد (Trigger On):</strong> می‌توانید مشخص کنید ورکفلو با پیام جدید (<code>message</code>)، پیام اکانت بیزینس (<code>business_message</code>)، کلیک روی دکمه (<code>callback_query</code>)، پست کانال (<code>channel_post</code>) یا سایر رویدادها فعال شود.</li>
     </ul>
 
     <x-docs.vars

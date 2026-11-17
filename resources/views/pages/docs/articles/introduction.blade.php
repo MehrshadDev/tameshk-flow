@@ -1,7 +1,14 @@
 <section id="what-is-tameshk" class="scroll-mt-24 space-y-3">
     <h2 class="text-lg font-extrabold text-content-main">تمشک فلو چیست؟</h2>
     <p class="text-content-muted">
-        <strong class="text-content-main">تمشک فلو (Tameshk Flow)</strong> یک پلتفرم بصری برای اتوماسیون گردش‌کار و ساخت ایجنت‌های هوشمند است. با تمشک فلو می‌توانید بدون درگیری با کدنویسی‌های پیچیده، سرویس‌های مختلف مثل <strong class="text-content-main">تلگرام، جیمیل، گوگل شیت، وب‌سرویس‌ها (HTTP) و مدل‌های هوش مصنوعی</strong> (OpenAI، Gemini، Claude، DeepSeek، Groq و OpenRouter) را به یکدیگر متصل کنید.
+        <strong class="text-content-main">تمشک فلو (Tameshk Flow)</strong> یک پلتفرم بصری برای اتوماسیون گردش‌کار و ساخت ایجنت‌های هوشمند است که به عنوان یک
+        <a href="{{ route('landing.buy-n8n') }}" class="font-bold text-primary underline decoration-primary/40 underline-offset-4 transition hover:decoration-primary">جایگزین ابری و ایرانی n8n</a>
+        طراحی شده است. با تمشک فلو می‌توانید بدون نیاز به سرور شخصی و کدنویسی، سرویس‌های مختلف مثل <strong class="text-content-main">تلگرام، جیمیل، گوگل شیت، ووکامرس، وب‌سرویس‌ها (HTTP) و مدل‌های هوش مصنوعی</strong> (OpenAI، Gemini، Claude، DeepSeek، Groq و OpenRouter) را به یکدیگر متصل کنید.
+    </p>
+    <p class="text-content-muted">
+        اگر هم می‌خواهید ربات تلگرام طراحی کنید، با زیرساخت ابری تمشک فلو امکان
+        <a href="{{ route('landing.bot-builder') }}" class="font-bold text-primary underline decoration-primary/40 underline-offset-4 transition hover:decoration-primary">ساخت ربات تلگرام بدون کدنویسی</a>
+        را در چند دقیقه دارید؛ آن هم با پشتیبانی کامل از تلگرام بیزینس، حافظه گفتگو و درک ویس.
     </p>
 </section>
 

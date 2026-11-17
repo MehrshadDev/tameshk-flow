@@ -120,7 +120,7 @@ final class DocumentationRepository
                     [
                         'slug'        => 'google-gemini-node',
                         'title'       => 'نود چندوجهی Google Gemini',
-                        'description' => 'تولید متن، ساخت تصویر با Imagen 3، تحلیل صوت و رونوشت، بررسی PDF، ویدیو و مخزن جستجوی فایل.',
+                        'description' => 'تولید متن، ساخت تصویر، تحلیل صوت و رونوشت، بررسی PDF، ویدیو و مخزن جستجوی فایل.',
                         'readingTime' => '۶ دقیقه',
                         'view'        => 'pages.docs.articles.google-gemini-node',
                         'toc'         => [

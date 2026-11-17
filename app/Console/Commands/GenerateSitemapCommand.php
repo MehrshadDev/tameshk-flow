@@ -44,6 +44,19 @@ class GenerateSitemapCommand extends Command
             'priority' => '0.9',
         ];
 
+        $urls[] = [
+            'loc' => $baseUrl . '/bot-builder',
+            'lastmod' => $this->resolveLastModified([
+                'views/pages/landing/bot-builder.blade.php',
+                'views/components/pages/bot-builder/hero.blade.php',
+                'views/components/pages/bot-builder/features.blade.php',
+                'views/components/pages/bot-builder/comparison.blade.php',
+                'views/components/pages/bot-builder/faq.blade.php',
+            ]),
+            'changefreq' => 'weekly',
+            'priority' => '0.9',
+        ];
+
         foreach (DocumentationRepository::allArticles() as $index => $article) {
             $viewRelativePath = 'views/' . str_replace('.', '/', $article['view']) . '.blade.php';
 
@@ -153,6 +166,7 @@ class GenerateSitemapCommand extends Command
             'User-agent: *',
             'Allow: /',
             'Allow: /buy-n8n',
+            'Allow: /bot-builder',
             'Allow: /docs',
             'Allow: /docs/',
             'Allow: /terms',

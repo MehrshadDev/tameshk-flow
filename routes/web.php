@@ -28,6 +28,8 @@ Route::get('/', [HomeController::class, 'index'])
 
 Route::view('/buy-n8n', 'pages.landing.buy-n8n')
     ->name('landing.buy-n8n');
+Route::view('/bot-builder', 'pages.landing.bot-builder')
+    ->name('landing.bot-builder');
 
 Route::get('/oauth/google/callback', [GoogleOAuthController::class, 'callback'])
     ->name('oauth.google.callback');

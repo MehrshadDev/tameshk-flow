@@ -29,7 +29,7 @@
         <div class="mx-auto max-w-5xl px-4 sm:px-6">
             <div class="mx-auto max-w-2xl text-center">
                 <h2 class="text-2xl font-extrabold tracking-tight text-content-main sm:text-3xl">
-                    پلن‌های اشتراک شفاف و منعطف
+                    پلن‌های اشتراک
                 </h2>
                 <p class="mt-3 text-sm leading-7 text-content-muted">
                     با پلن رایگان شروع کنید و هر زمان که کسب‌وکارتان رشد کرد، ظرفیت اجرا و ورک‌فلوهای خود را ارتقا دهید.

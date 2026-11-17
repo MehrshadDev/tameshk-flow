@@ -22,7 +22,7 @@ final class ImageOperation extends GeminiOperation
     {
         $prompt = $this->ensure($this->str($context, 'prompt'), 'پرامپت برای تولید تصویر الزامی است.');
 
-        $context->log("تولید تصویر با Imagen 3: $prompt");
+        $context->log("تولید تصویر: $prompt");
 
         $options = [
             'aspect_ratio'     => $this->str($context, 'aspect_ratio', '1:1'),

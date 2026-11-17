@@ -1,7 +1,9 @@
 <section id="how-agent-works" class="scroll-mt-24 space-y-3">
     <h2 class="text-lg font-extrabold text-content-main">ایجنت هوش مصنوعی چگونه کار می‌کند؟</h2>
     <p class="text-content-muted">
-        برخلاف یک درخواست ساده به مدل زبانی، نود <strong class="text-purple-500">AI Agent</strong> یک موجودیت خودمختار است که می‌تواند فکر کند، تاریخچه مکالمه را بخواند، در صورت نیاز از ابزارهای متصل‌شده (مثل جستجو در گوگل شیت، خواندن سایت یا ارسال ایمیل) تا ۸ مرحله متوالی استفاده کند و در نهایت پاسخ دقیق را برگرداند.
+        برخلاف یک درخواست ساده به مدل زبانی، نود <strong class="text-purple-500">AI Agent</strong> یک موجودیت خودمختار است که دقیقاً مشابه معماری ایجنت‌ها در
+        <a href="{{ route('landing.buy-n8n') }}" class="font-bold text-primary underline decoration-primary/40 underline-offset-4 transition hover:decoration-primary">پلتفرم اتوماسیون n8n</a>
+        می‌تواند فکر کند، تاریخچه مکالمه را بخواند، در صورت نیاز از ابزارهای متصل‌شده (مثل جستجو در گوگل شیت، استعلام از دیتابیس، خواندن سایت یا ارسال ایمیل) تا ۸ مرحله متوالی استفاده کند و در نهایت پاسخ دقیق را برگرداند.
     </p>
 </section>
 
@@ -12,7 +14,7 @@
             <strong class="text-content-main">پرامپت کاربر (Prompt):</strong> پیامی است که در هر بار اجرا به ایجنت داده می‌شود. به صورت پیش‌فرض روی متغیر پیام ورودی قرار دارد که با تمام شروع‌کننده‌های چت، تلگرام، جیمیل و وب‌هوک سازگار است.
         </li>
         <li>
-            <strong class="text-content-main">دستورالعمل‌های سیستمی (System Instructions):</strong> شخصیت، قوانین، لحن پاسخ‌گویی و وظایف ایجنت را در این بخش تعریف کنید (مثلا: «تو کارشناس فروش فروشگاه تمشک هستی، همیشه به زبان فارسی و محترمانه پاسخ بده و قبل از اعلام قیمت، لیست محصولات را با ابزار گوگل شیت بررسی کن»).
+            <strong class="text-content-main">دستورالعمل‌های سیستمی (System Instructions):</strong> شخصیت، قوانین، لحن پاسخ‌گویی و وظایف ایجنت را در این بخش تعریف کنید (مثلا: «تو کارشناس فروش فروشگاه تمشک هستی، همیشه به زبان فارسی و محترمانه پاسخ بده و قبل از اعلام قیمت، لیست محصولات را با ابزار متصل بررسی کن»).
         </li>
     </ul>
 </section>
@@ -54,7 +56,9 @@
 <section id="simple-memory" class="scroll-mt-24 space-y-3 pt-4">
     <h2 class="text-lg font-extrabold text-content-main">حافظه گفتگو (Simple Memory)</h2>
     <p class="text-content-muted">
-        با اتصال نود <strong>Simple Memory</strong> به درگاه <code>Memory</code> ایجنت، تاریخچه پیام‌های قبلی کاربر ذخیره می‌شود.
+        با اتصال نود <strong>Simple Memory</strong> به درگاه <code>Memory</code> ایجنت، تاریخچه پیام‌های قبلی کاربر ذخیره می‌شود که این قابلیت در
+        <a href="{{ route('landing.bot-builder') }}" class="font-bold text-primary underline decoration-primary/40 underline-offset-4 transition hover:decoration-primary">ساخت چت‌بات و ربات هوشمند تلگرام</a>
+        اهمیت کلیدی دارد.
     </p>
     <ul class="list-disc space-y-2 pr-5 text-content-muted">
         <li><strong class="text-content-main">تعداد پیام‌های ذخیره‌شده:</strong> مشخص می‌کند چند نوبت از مکالمات اخیر در حافظه بماند (از ۱ تا ۵۰ نوبت).</li>

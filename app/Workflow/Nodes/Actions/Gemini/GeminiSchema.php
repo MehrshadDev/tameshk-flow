@@ -55,7 +55,7 @@ final class GeminiSchema
                     'label' => 'عملیات تصویر',
                     'options' => [
                         ['value' => 'analyze_image', 'label' => 'Analyze an Image (تحلیل و پرسش از تصویر)'],
-                        ['value' => 'generate_image', 'label' => 'Generate an Image (تولید تصویر با Imagen 3)'],
+                        ['value' => 'generate_image', 'label' => 'Generate an Image (تولید تصویر)'],
                         ['value' => 'edit_image', 'label' => 'Edit an Image (ویرایش و تغییر تصویر)'],
                     ],
                     'default' => 'analyze_image',
@@ -326,7 +326,7 @@ final class GeminiSchema
                 [
                     'key' => 'generate_image',
                     'name' => 'Generate an image',
-                    'description' => 'تولید تصویر با کیفیت بالا از طریق پرامپت با مدل Imagen 3.',
+                    'description' => 'تولید تصویر با کیفیت بالا از طریق پرامپت.',
                     'config' => ['resource' => 'image', 'operation_image' => 'generate_image'],
                 ],
                 [
