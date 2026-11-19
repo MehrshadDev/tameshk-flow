@@ -76,7 +76,7 @@ new class extends Component {
         session()->regenerate();
         session()->regenerateToken();
 
-        $this->redirect(route('app.workflows.index'), navigate: true);
+        $this->redirectIntended(default: route('app.workflows.index'));
     }
 };
 ?>
