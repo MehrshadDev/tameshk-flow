@@ -16,13 +16,17 @@ final class WorkflowAutoLayout
     private const STANDARD_HEIGHT = 72;
     private const AGENT_WIDTH = 288;
     private const AGENT_HEIGHT = 72;
-    private const SUPPLY_OFFSET_Y = 176;
+    private const SUPPLY_OFFSET_Y = 160;
+    private const SUPPLY_CHAT_OFFSET_X = 16;
+    private const SUPPLY_MEMORY_OFFSET_X = 112;
+    private const SUPPLY_TOOL_OFFSET_X = 208;
     private const SUPPLY_GAP_X = 112;
     private const SUPPLY_FOOTPRINT_HEIGHT = 128;
-    private const COLUMN_GAP = 176;
-    private const BRANCH_COLUMN_GAP = 224;
+    private const COLUMN_GAP = 112;
+    private const BRANCH_COLUMN_GAP = 160;
     private const ROW_GAP = 48;
     private const LABEL_CLEARANCE_Y = 64;
+    private const BRANCH_SPREAD_Y = 144;
     private const NOTE_WIDTH = 256;
     private const NOTE_OFFSET_Y = 208;
 
@@ -97,15 +101,17 @@ final class WorkflowAutoLayout
             }
 
             if (isset($flowSet[$src]) && isset($flowSet[$tgt]) && ! HandleType::isSpecial($srcHandle) && ! HandleType::isSpecial($tgtHandle)) {
+                $order = $this->handleOrder($nodesByKey[$src], $srcHandle, $definitions);
+
                 $flowOut[$src][] = [
                     'target' => $tgt,
                     'handle' => $srcHandle,
-                    'order' => $this->handleOrder($nodesByKey[$src], $srcHandle, $definitions),
+                    'order' => $order,
                 ];
                 $flowIn[$tgt][] = [
                     'source' => $src,
                     'handle' => $srcHandle,
-                    'order' => $this->handleOrder($nodesByKey[$src], $srcHandle, $definitions),
+                    'order' => $order,
                 ];
             }
         }
@@ -125,76 +131,84 @@ final class WorkflowAutoLayout
         $maxBottomY = self::CENTER_Y + self::STANDARD_HEIGHT + self::LABEL_CLEARANCE_Y;
 
         foreach ($columns as $layer => $keys) {
-            if ($layer === 0) {
-                usort($keys, function (string $a, string $b) use ($nodesByKey, $indexByKey): int {
-                    $aTrig = str_starts_with((string) ($nodesByKey[$a]['type'] ?? ''), 'trigger.') ? 0 : 1;
-                    $bTrig = str_starts_with((string) ($nodesByKey[$b]['type'] ?? ''), 'trigger.') ? 0 : 1;
-
-                    return $aTrig !== $bTrig ? $aTrig <=> $bTrig : ($indexByKey[$a] <=> $indexByKey[$b]);
-                });
-            } else {
-                usort($keys, function (string $a, string $b) use ($flowIn, $positions, $indexByKey): int {
-                    $scoreA = $this->barycenterScore($a, $flowIn[$a] ?? [], $positions);
-                    $scoreB = $this->barycenterScore($b, $flowIn[$b] ?? [], $positions);
-
-                    if ($scoreA['y'] !== $scoreB['y']) {
-                        return $scoreA['y'] <=> $scoreB['y'];
-                    }
-
-                    if ($scoreA['order'] !== $scoreB['order']) {
-                        return $scoreA['order'] <=> $scoreB['order'];
-                    }
-
-                    return $indexByKey[$a] <=> $indexByKey[$b];
-                });
-            }
-
+            $desiredMap = [];
+            $orderMap = [];
             $heights = [];
-            $totalStackHeight = 0;
+            $boxHeights = [];
 
             foreach ($keys as $key) {
-                $h = $this->nodeFootprintHeight($nodesByKey[$key], $suppliesByHost[$key] ?? [], $definitions);
-                $heights[$key] = $h;
-                $totalStackHeight += $h;
-            }
+                $heights[$key] = $this->nodeFootprintHeight($nodesByKey[$key], $suppliesByHost[$key] ?? [], $definitions);
+                $boxHeights[$key] = $this->nodeBoxHeight($nodesByKey[$key], $definitions);
 
-            $totalStackHeight += max(0, count($keys) - 1) * self::ROW_GAP;
-
-            $anchorCenterY = self::CENTER_Y + (int) (self::STANDARD_HEIGHT / 2);
-
-            if ($layer > 0) {
-                $parentYs = [];
-
-                foreach ($keys as $key) {
-                    foreach ($flowIn[$key] ?? [] as $inEdge) {
-                        if (isset($positions[$inEdge['source']])) {
-                            $parentYs[] = $positions[$inEdge['source']]['y'] + (int) ($this->nodeBoxHeight($nodesByKey[$inEdge['source']], $definitions) / 2);
-                        }
-                    }
-                }
-
-                if ($parentYs !== []) {
-                    $anchorCenterY = (int) round(array_sum($parentYs) / count($parentYs));
+                if ($layer === 0) {
+                    $desiredMap[$key] = self::CENTER_Y;
+                    $orderMap[$key] = str_starts_with((string) ($nodesByKey[$key]['type'] ?? ''), 'trigger.') ? 0 : 1;
+                } else {
+                    $target = $this->desiredPosition($key, $flowIn[$key] ?? [], $flowOut, $positions, $nodesByKey, $definitions);
+                    $desiredMap[$key] = $target['y'];
+                    $orderMap[$key] = $target['order'];
                 }
             }
+
+            usort($keys, function (string $a, string $b) use ($desiredMap, $orderMap, $indexByKey): int {
+                if ($desiredMap[$a] !== $desiredMap[$b]) {
+                    return $desiredMap[$a] <=> $desiredMap[$b];
+                }
+
+                if ($orderMap[$a] !== $orderMap[$b]) {
+                    return $orderMap[$a] <=> $orderMap[$b];
+                }
+
+                return $indexByKey[$a] <=> $indexByKey[$b];
+            });
+
+            $placedY = [];
 
             if (count($keys) === 1) {
                 $onlyKey = $keys[0];
-                $boxH = $this->nodeBoxHeight($nodesByKey[$onlyKey], $definitions);
-                $y = $this->snap($anchorCenterY - ($boxH / 2));
-                $positions[$onlyKey] = ['x' => $this->snap($columnX), 'y' => $y];
-                $minY = min($minY, $y);
-                $maxBottomY = max($maxBottomY, $y + $heights[$onlyKey]);
+                $placedY[$onlyKey] = $this->snap($desiredMap[$onlyKey]);
             } else {
-                $cursorY = $anchorCenterY - ($totalStackHeight / 2);
+                $cursorY = null;
 
                 foreach ($keys as $key) {
-                    $y = $this->snap($cursorY);
-                    $positions[$key] = ['x' => $this->snap($columnX), 'y' => $y];
-                    $minY = min($minY, $y);
-                    $maxBottomY = max($maxBottomY, $y + $heights[$key]);
+                    $y = $desiredMap[$key];
+
+                    if ($cursorY !== null && $y < $cursorY) {
+                        $y = $cursorY;
+                    }
+
+                    $placedY[$key] = $y;
                     $cursorY = $y + $heights[$key] + self::ROW_GAP;
                 }
+
+                $avgDesired = array_sum(array_map(fn ($k) => $desiredMap[$k] + ($boxHeights[$k] / 2), $keys)) / count($keys);
+                $firstKey = $keys[0];
+                $lastKey = $keys[count($keys) - 1];
+                $actualSpanCenter = (($placedY[$firstKey] + ($boxHeights[$firstKey] / 2)) + ($placedY[$lastKey] + ($boxHeights[$lastKey] / 2))) / 2;
+                $shift = $avgDesired - $actualSpanCenter;
+
+                foreach ($keys as $key) {
+                    $placedY[$key] = $this->snap($placedY[$key] + $shift);
+                }
+
+                $guardBottom = null;
+
+                foreach ($keys as $key) {
+                    if ($guardBottom !== null && $placedY[$key] < $guardBottom) {
+                        $placedY[$key] = $this->snap($guardBottom);
+                    }
+
+                    $guardBottom = $placedY[$key] + $heights[$key] + self::ROW_GAP;
+                }
+            }
+
+            $snappedX = $this->snap($columnX);
+
+            foreach ($keys as $key) {
+                $y = $placedY[$key];
+                $positions[$key] = ['x' => $snappedX, 'y' => $y];
+                $minY = min($minY, $y);
+                $maxBottomY = max($maxBottomY, $y + $heights[$key]);
             }
 
             $maxColumnWidth = self::STANDARD_WIDTH;
@@ -211,7 +225,7 @@ final class WorkflowAutoLayout
             }
 
             $gap = $hasBranchingNode ? self::BRANCH_COLUMN_GAP : self::COLUMN_GAP;
-            $columnX = $this->snap($columnX + $maxColumnWidth + $gap);
+            $columnX = $this->snap($snappedX + $maxColumnWidth + $gap);
         }
 
         foreach ($suppliesByHost as $hostKey => $slots) {
@@ -225,7 +239,7 @@ final class WorkflowAutoLayout
 
             foreach ($slots[HandleType::ChatModel->value] ?? [] as $idx => $sKey) {
                 $positions[$sKey] = [
-                    'x' => $this->snap($hostX + ($idx * self::SUPPLY_GAP_X)),
+                    'x' => $this->snap($hostX + self::SUPPLY_CHAT_OFFSET_X + ($idx * self::SUPPLY_GAP_X)),
                     'y' => $supplyY,
                 ];
                 $maxBottomY = max($maxBottomY, $supplyY + self::SUPPLY_FOOTPRINT_HEIGHT);
@@ -233,7 +247,7 @@ final class WorkflowAutoLayout
 
             foreach ($slots[HandleType::Memory->value] ?? [] as $idx => $sKey) {
                 $positions[$sKey] = [
-                    'x' => $this->snap($hostX + self::SUPPLY_GAP_X + ($idx * self::SUPPLY_GAP_X)),
+                    'x' => $this->snap($hostX + self::SUPPLY_MEMORY_OFFSET_X + ($idx * self::SUPPLY_GAP_X)),
                     'y' => $supplyY,
                 ];
                 $maxBottomY = max($maxBottomY, $supplyY + self::SUPPLY_FOOTPRINT_HEIGHT);
@@ -241,7 +255,7 @@ final class WorkflowAutoLayout
 
             foreach ($slots[HandleType::Tool->value] ?? [] as $idx => $sKey) {
                 $positions[$sKey] = [
-                    'x' => $this->snap($hostX + (self::SUPPLY_GAP_X * 2) + ($idx * self::SUPPLY_GAP_X)),
+                    'x' => $this->snap($hostX + self::SUPPLY_TOOL_OFFSET_X + ($idx * self::SUPPLY_GAP_X)),
                     'y' => $supplyY,
                 ];
                 $maxBottomY = max($maxBottomY, $supplyY + self::SUPPLY_FOOTPRINT_HEIGHT);
@@ -279,6 +293,55 @@ final class WorkflowAutoLayout
 
             return $node;
         }, $nodes);
+    }
+
+    private function desiredPosition(
+        string $key,
+        array $inEdges,
+        array $flowOut,
+        array $positions,
+        array $nodesByKey,
+        array $definitions,
+    ): array {
+        $targetCenters = [];
+        $minOrder = 999;
+
+        foreach ($inEdges as $edge) {
+            $src = $edge['source'];
+
+            if (! isset($positions[$src])) {
+                continue;
+            }
+
+            $srcCenterY = $positions[$src]['y'] + ($this->nodeBoxHeight($nodesByKey[$src], $definitions) / 2);
+            $siblings = $flowOut[$src] ?? [];
+            $siblingCount = count($siblings);
+            $order = (int) $edge['order'];
+            $minOrder = min($minOrder, $order);
+
+            if ($siblingCount > 1) {
+                $sortedOrders = array_values(array_unique(array_map(fn ($e) => (int) $e['order'], $siblings)));
+                sort($sortedOrders);
+                $rank = array_search($order, $sortedOrders, true);
+                $rank = $rank !== false ? (int) $rank : 0;
+                $offset = ($rank - ((count($sortedOrders) - 1) / 2)) * self::BRANCH_SPREAD_Y;
+                $targetCenters[] = $srcCenterY + $offset;
+            } else {
+                $targetCenters[] = $srcCenterY;
+            }
+        }
+
+        if ($targetCenters === []) {
+            return ['y' => self::CENTER_Y, 'order' => $minOrder];
+        }
+
+        $avgCenterY = array_sum($targetCenters) / count($targetCenters);
+        $ownBoxH = $this->nodeBoxHeight($nodesByKey[$key], $definitions);
+
+        return [
+            'y' => (int) round($avgCenterY - ($ownBoxH / 2)),
+            'order' => $minOrder,
+        ];
     }
 
     private function assignLayers(array $flowKeys, array $flowOut, array $flowIn, array $nodesByKey): array
@@ -392,30 +455,6 @@ final class WorkflowAutoLayout
         return $backEdges;
     }
 
-    private function barycenterScore(string $key, array $inEdges, array $positions): array
-    {
-        $ys = [];
-        $minOrder = 999;
-
-        foreach ($inEdges as $edge) {
-            $src = $edge['source'];
-
-            if (isset($positions[$src])) {
-                $ys[] = $positions[$src]['y'];
-                $minOrder = min($minOrder, (int) $edge['order']);
-            }
-        }
-
-        if ($ys === []) {
-            return ['y' => self::CENTER_Y, 'order' => $minOrder];
-        }
-
-        return [
-            'y' => (int) round(array_sum($ys) / count($ys)),
-            'order' => $minOrder,
-        ];
-    }
-
     private function handleOrder(array $node, string $handle, array $definitions): int
     {
         $type = (string) ($node['type'] ?? '');
@@ -525,7 +564,7 @@ final class WorkflowAutoLayout
             return self::AGENT_WIDTH;
         }
 
-        $rightmostToolRight = (self::SUPPLY_GAP_X * 2) + (($toolCount - 1) * self::SUPPLY_GAP_X) + 96;
+        $rightmostToolRight = self::SUPPLY_TOOL_OFFSET_X + (($toolCount - 1) * self::SUPPLY_GAP_X) + 80;
 
         return max(self::AGENT_WIDTH, $rightmostToolRight);
     }

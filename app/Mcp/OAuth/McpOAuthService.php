@@ -58,10 +58,11 @@ final class McpOAuthService
     public function authorizationServerMetadata(): array
     {
         $issuer = $this->issuer();
+        $appBase = rtrim((string) config('app.url', ''), '/') ?: $issuer;
 
         return [
             'issuer' => $issuer,
-            'authorization_endpoint' => $issuer . '/oauth/mcp/authorize',
+            'authorization_endpoint' => $appBase . '/oauth/mcp/authorize',
             'token_endpoint' => $issuer . '/oauth/mcp/token',
             'registration_endpoint' => $issuer . '/oauth/mcp/register',
             'revocation_endpoint' => $issuer . '/oauth/mcp/revoke',

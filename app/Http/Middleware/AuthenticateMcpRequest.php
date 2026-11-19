@@ -6,6 +6,7 @@ use App\Mcp\OAuth\McpOAuthService;
 use Closure;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\URL;
 use Symfony\Component\HttpFoundation\Response;
 
 class AuthenticateMcpRequest
@@ -41,7 +42,19 @@ class AuthenticateMcpRequest
         $request->setUserResolver(fn () => $token->user);
         $request->attributes->set('mcp_token', $token);
 
-        $response = $next($request);
+        $appUrl = rtrim((string) config('app.url', ''), '/');
+
+        if ($appUrl !== '') {
+            URL::forceRootUrl($appUrl);
+        }
+
+        try {
+            $response = $next($request);
+        } finally {
+            if ($appUrl !== '') {
+                URL::forceRootUrl(null);
+            }
+        }
 
         foreach ($this->oauth->corsHeaders() as $key => $value) {
             $response->headers->set($key, $value);
