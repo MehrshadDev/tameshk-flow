@@ -3,6 +3,8 @@
 return [
     'enabled' => (bool) env('MCP_ENABLED', true),
 
+    'base_url' => env('MCP_BASE_URL'),
+
     'server_name' => (string) env('MCP_SERVER_NAME', 'Tameshk Flow'),
 
     'server_version' => (string) env('MCP_SERVER_VERSION', '1.0.0'),

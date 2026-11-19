@@ -19,6 +19,22 @@ final class McpOAuthService
 {
     public function issuer(): string
     {
+        $configured = trim((string) config('mcp.base_url', ''));
+
+        if ($configured !== '') {
+            return rtrim($configured, '/');
+        }
+
+        if (! app()->runningInConsole()) {
+            $httpHost = trim((string) request()->getHttpHost());
+
+            if ($httpHost !== '') {
+                $scheme = app()->isLocal() ? request()->getScheme() : 'https';
+
+                return rtrim("$scheme://$httpHost", '/');
+            }
+        }
+
         return rtrim((string) config('app.url', 'http://localhost'), '/');
     }
 
@@ -178,10 +194,15 @@ final class McpOAuthService
         }
 
         $normalized = rtrim($clean, '/');
-        $allowed = [
+        $path = ltrim((string) config('mcp.path', 'mcp'), '/');
+        $appBase = rtrim((string) config('app.url', ''), '/');
+
+        $allowed = array_filter([
             rtrim($this->resourceUrl(), '/'),
             rtrim($this->issuer(), '/'),
-        ];
+            $appBase !== '' ? "$appBase/$path" : null,
+            $appBase !== '' ? $appBase : null,
+        ]);
 
         if (! in_array($normalized, $allowed, true)) {
             throw McpOAuthException::make('invalid_target', 'The requested resource parameter is invalid.');
