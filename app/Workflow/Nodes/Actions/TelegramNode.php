@@ -205,7 +205,7 @@ class TelegramNode implements NodeContract
                 [
                     'key'         => 'send_message',
                     'name'        => 'Send a text message',
-                    'description' => 'ارسال پیام متنی (به همراه دکمه‌های شیشه‌ای اختیاری) به کاربر، گروه یا کانال.',
+                    'description' => 'ارسال پیام متنی به کاربر، گروه یا کانال.',
                     'config'      => ['operation' => 'send_message'],
                 ],
                 [
