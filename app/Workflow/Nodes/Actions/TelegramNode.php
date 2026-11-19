@@ -9,6 +9,7 @@ use App\Workflow\DTOs\NodeResult;
 use App\Workflow\Enums\NodeCategory;
 use App\Workflow\Exceptions\NodeExecutionException;
 use App\Workflow\Support\TelegramApi;
+use App\Workflow\Support\TelegramFormatter;
 use Illuminate\Support\Facades\Http;
 use Throwable;
 
@@ -316,17 +317,6 @@ class TelegramNode implements NodeContract
         return NodeResult::of(['success' => true, ...$extra]);
     }
 
-    private function withParseMode(array $payload, NodeContext $context): array
-    {
-        $parseMode = $this->value($context, 'parse_mode');
-
-        if ($parseMode !== '' && $parseMode !== 'None') {
-            $payload['parse_mode'] = $parseMode;
-        }
-
-        return $payload;
-    }
-
     private function withBusinessConnection(array $payload, NodeContext $context): array
     {
         $explicit = $this->value($context, 'business_connection_id');
@@ -444,25 +434,6 @@ class TelegramNode implements NodeContract
         return $keyboard !== [] ? ['inline_keyboard' => $keyboard] : null;
     }
 
-    private function applyMessageOptions(array $payload, NodeContext $context): array
-    {
-        $payload = $this->withParseMode($payload, $context);
-        $payload = $this->withBusinessConnection($payload, $context);
-        $replyTo = $this->value($context, 'reply_to_message_id');
-
-        if ($replyTo !== '') {
-            $payload['reply_to_message_id'] = $replyTo;
-        }
-
-        $replyMarkup = $this->buildReplyMarkup($context);
-
-        if ($replyMarkup !== null) {
-            $payload['reply_markup'] = $replyMarkup;
-        }
-
-        return $payload;
-    }
-
     private function resolveChatAndMessageId(NodeContext $context): array
     {
         $message = 'شناسه چت و شناسه پیام الزامی هستند.';
@@ -475,34 +446,86 @@ class TelegramNode implements NodeContract
 
     private function handleSendMessage(NodeContext $context, string $botToken): NodeResult
     {
-        $payload = $this->applyMessageOptions([
-            'chat_id'                  => $this->required($context, 'chat_id', 'شناسه چت مقصد (Chat ID) الزامی است.'),
-            'text'                     => $this->required($context, 'text', 'متن پیام الزامی است.'),
-            'disable_web_page_preview' => $this->flag($context, 'disable_preview'),
-            'disable_notification'     => $this->flag($context, 'disable_notification'),
-        ], $context);
+        $chatId = $this->required($context, 'chat_id', 'شناسه چت مقصد (Chat ID) الزامی است.');
+        $rawText = $this->required($context, 'text', 'متن پیام الزامی است.');
+        $parseMode = $this->value($context, 'parse_mode');
+        $disablePreview = $this->flag($context, 'disable_preview');
+        $disableNotification = $this->flag($context, 'disable_notification');
+        $replyTo = $this->value($context, 'reply_to_message_id');
+        $replyMarkup = $this->buildReplyMarkup($context);
 
-        $result = $this->request($botToken, 'sendMessage', $payload);
+        $chunks = TelegramFormatter::split($rawText);
+        $totalChunks = count($chunks);
+        $lastResult = [];
+        $messageIds = [];
+
+        foreach ($chunks as $index => $chunk) {
+            $prepared = TelegramFormatter::prepare($chunk, $parseMode);
+
+            $payload = $this->withBusinessConnection([
+                'chat_id'                  => $chatId,
+                'text'                     => $prepared['text'],
+                'disable_web_page_preview' => $disablePreview,
+                'disable_notification'     => $disableNotification,
+            ], $context);
+
+            if ($prepared['parse_mode'] !== null) {
+                $payload['parse_mode'] = $prepared['parse_mode'];
+            }
+
+            if ($index === 0 && $replyTo !== '') {
+                $payload['reply_to_message_id'] = $replyTo;
+            }
+
+            if ($index === $totalChunks - 1 && $replyMarkup !== null) {
+                $payload['reply_markup'] = $replyMarkup;
+            }
+
+            $lastResult = $this->requestWithFallback($botToken, 'sendMessage', $payload, 'text', $chunk);
+
+            if (($mid = data_get($lastResult, 'message_id')) !== null) {
+                $messageIds[] = $mid;
+            }
+        }
 
         return $this->done([
-            'message_id' => data_get($result, 'message_id'),
-            'chat'       => data_get($result, 'chat'),
-            'date'       => data_get($result, 'date'),
-            'text'       => data_get($result, 'text'),
-            'raw'        => $result,
+            'message_id'  => data_get($lastResult, 'message_id'),
+            'message_ids' => $messageIds,
+            'chat'        => data_get($lastResult, 'chat'),
+            'date'        => data_get($lastResult, 'date'),
+            'text'        => data_get($lastResult, 'text'),
+            'raw'         => $lastResult,
         ]);
     }
 
     private function handleSendMedia(NodeContext $context, string $botToken, string $method, string $field, string $missing): NodeResult
     {
-        $payload = $this->applyMessageOptions([
+        $rawCaption = (string) ($context->config['caption'] ?? '');
+        $safeCaption = TelegramFormatter::truncate($rawCaption, TelegramFormatter::MAX_CAPTION_LENGTH);
+        $prepared = TelegramFormatter::prepare($safeCaption, $this->value($context, 'parse_mode'));
+
+        $payload = $this->withBusinessConnection([
             'chat_id'              => $this->required($context, 'chat_id', 'شناسه چت مقصد الزامی است.'),
             $field                 => $this->required($context, $field, $missing),
-            'caption'              => (string) ($context->config['caption'] ?? ''),
+            'caption'              => $prepared['text'],
             'disable_notification' => $this->flag($context, 'disable_notification'),
         ], $context);
 
-        $result = $this->request($botToken, $method, $payload);
+        if ($safeCaption !== '' && $prepared['parse_mode'] !== null) {
+            $payload['parse_mode'] = $prepared['parse_mode'];
+        }
+
+        $replyTo = $this->value($context, 'reply_to_message_id');
+        if ($replyTo !== '') {
+            $payload['reply_to_message_id'] = $replyTo;
+        }
+
+        $replyMarkup = $this->buildReplyMarkup($context);
+        if ($replyMarkup !== null) {
+            $payload['reply_markup'] = $replyMarkup;
+        }
+
+        $result = $this->requestWithFallback($botToken, $method, $payload, 'caption', $safeCaption);
 
         return $this->done([
             'message_id' => data_get($result, 'message_id'),
@@ -588,13 +611,20 @@ class TelegramNode implements NodeContract
     private function handleEditMessage(NodeContext $context, string $botToken): NodeResult
     {
         [$chatId, $messageId] = $this->resolveChatAndMessageId($context);
+        $rawText = $this->required($context, 'text', 'متن جدید پیام الزامی است.');
+        $safeText = TelegramFormatter::truncate($rawText, TelegramFormatter::MAX_EDIT_LENGTH);
+        $prepared = TelegramFormatter::prepare($safeText, $this->value($context, 'parse_mode'));
 
-        $payload = $this->withBusinessConnection($this->withParseMode([
+        $payload = $this->withBusinessConnection([
             'chat_id'                  => $chatId,
             'message_id'               => $messageId,
-            'text'                     => $this->required($context, 'text', 'متن جدید پیام الزامی است.'),
+            'text'                     => $prepared['text'],
             'disable_web_page_preview' => $this->flag($context, 'disable_preview'),
-        ], $context), $context);
+        ], $context);
+
+        if ($prepared['parse_mode'] !== null) {
+            $payload['parse_mode'] = $prepared['parse_mode'];
+        }
 
         $replyMarkup = $this->buildReplyMarkup($context);
 
@@ -602,7 +632,7 @@ class TelegramNode implements NodeContract
             $payload['reply_markup'] = $replyMarkup;
         }
 
-        $result = $this->request($botToken, 'editMessageText', $payload);
+        $result = $this->requestWithFallback($botToken, 'editMessageText', $payload, 'text', $safeText);
 
         return $this->done([
             'message_id' => data_get($result, 'message_id'),
@@ -658,6 +688,27 @@ class TelegramNode implements NodeContract
         $this->request($botToken, 'pinChatMessage', $payload);
 
         return $this->done(['chat_id' => $chatId, 'message_id' => $messageId]);
+    }
+
+    private function requestWithFallback(
+        string $botToken,
+        string $method,
+        array $payload,
+        string $textField,
+        string $plainText,
+    ): array {
+        try {
+            return $this->request($botToken, $method, $payload);
+        } catch (NodeExecutionException $e) {
+            if (! isset($payload['parse_mode']) || ! TelegramFormatter::isParseEntityError($e->getMessage())) {
+                throw $e;
+            }
+
+            unset($payload['parse_mode']);
+            $payload[$textField] = $plainText;
+
+            return $this->request($botToken, $method, $payload);
+        }
     }
 
     private function request(string $botToken, string $method, array $payload): array

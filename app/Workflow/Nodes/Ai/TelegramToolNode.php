@@ -11,6 +11,7 @@ use App\Workflow\Enums\HandleType;
 use App\Workflow\Enums\NodeCategory;
 use App\Workflow\Exceptions\NodeExecutionException;
 use App\Workflow\Support\TelegramApi;
+use App\Workflow\Support\TelegramFormatter;
 use Illuminate\Support\Facades\Http;
 use Throwable;
 
@@ -193,7 +194,7 @@ class TelegramToolNode implements NodeContract, ToolContract
         }
 
         $parseMode = trim((string) ($context->config['parse_mode'] ?? 'None'));
-        $extra = ($parseMode !== '' && $parseMode !== 'None') ? ['parse_mode' => $parseMode] : [];
+        $extra = [];
 
         $triggerData = $context->run->trigger_data ?? [];
         $triggerBusinessId = trim((string) (
@@ -213,23 +214,33 @@ class TelegramToolNode implements NodeContract, ToolContract
         }
 
         return match ($action) {
-            'send_message' => $this->send($botToken, 'sendMessage', [
-                'chat_id' => $chatId,
-                'text'    => $this->requireArg($arguments, 'text', 'متن پیام (text) الزامی است.'),
-                ...$extra,
-            ]),
-            'send_photo' => $this->send($botToken, 'sendPhoto', [
-                'chat_id' => $chatId,
-                'photo'   => $this->requireArg($arguments, 'media_url', 'آدرس تصویر (media_url) الزامی است.'),
-                'caption' => (string) ($arguments['caption'] ?? ''),
-                ...$extra,
-            ]),
-            'send_document' => $this->send($botToken, 'sendDocument', [
-                'chat_id'  => $chatId,
-                'document' => $this->requireArg($arguments, 'media_url', 'آدرس فایل (media_url) الزامی است.'),
-                'caption'  => (string) ($arguments['caption'] ?? ''),
-                ...$extra,
-            ]),
+            'send_message' => $this->sendTextChunks(
+                $botToken,
+                $chatId,
+                $this->requireArg($arguments, 'text', 'متن پیام (text) الزامی است.'),
+                $parseMode,
+                $extra,
+            ),
+            'send_photo' => $this->sendMedia(
+                $botToken,
+                'sendPhoto',
+                'photo',
+                $chatId,
+                $this->requireArg($arguments, 'media_url', 'آدرس تصویر (media_url) الزامی است.'),
+                (string) ($arguments['caption'] ?? ''),
+                $parseMode,
+                $extra,
+            ),
+            'send_document' => $this->sendMedia(
+                $botToken,
+                'sendDocument',
+                'document',
+                $chatId,
+                $this->requireArg($arguments, 'media_url', 'آدرس فایل (media_url) الزامی است.'),
+                (string) ($arguments['caption'] ?? ''),
+                $parseMode,
+                $extra,
+            ),
             'pin_message' => $this->send($botToken, 'pinChatMessage', [
                 'chat_id'    => $chatId,
                 'message_id' => (int) $this->requireArg($arguments, 'message_id', 'شناسه پیام (message_id) الزامی است.'),
@@ -241,6 +252,82 @@ class TelegramToolNode implements NodeContract, ToolContract
             ]),
             default => ['error' => "عملیات ناشناخته تلگرام: $action"],
         };
+    }
+
+    private function sendTextChunks(
+        string $botToken,
+        string $chatId,
+        string $rawText,
+        string $parseMode,
+        array $extra,
+    ): array {
+        $chunks = TelegramFormatter::split($rawText);
+        $lastResponse = [];
+
+        foreach ($chunks as $chunk) {
+            $prepared = TelegramFormatter::prepare($chunk, $parseMode);
+            $payload = [
+                'chat_id' => $chatId,
+                'text'    => $prepared['text'],
+                ...$extra,
+            ];
+
+            if ($prepared['parse_mode'] !== null) {
+                $payload['parse_mode'] = $prepared['parse_mode'];
+            }
+
+            $lastResponse = $this->sendWithFallback($botToken, 'sendMessage', $payload, 'text', $chunk);
+        }
+
+        return $lastResponse;
+    }
+
+    private function sendMedia(
+        string $botToken,
+        string $method,
+        string $field,
+        string $chatId,
+        string $mediaUrl,
+        string $rawCaption,
+        string $parseMode,
+        array $extra,
+    ): array {
+        $safeCaption = TelegramFormatter::truncate($rawCaption, TelegramFormatter::MAX_CAPTION_LENGTH);
+        $prepared = TelegramFormatter::prepare($safeCaption, $parseMode);
+
+        $payload = [
+            'chat_id' => $chatId,
+            $field    => $mediaUrl,
+            'caption' => $prepared['text'],
+            ...$extra,
+        ];
+
+        if ($safeCaption !== '' && $prepared['parse_mode'] !== null) {
+            $payload['parse_mode'] = $prepared['parse_mode'];
+        }
+
+        return $this->sendWithFallback($botToken, $method, $payload, 'caption', $safeCaption);
+    }
+
+    private function sendWithFallback(
+        string $botToken,
+        string $method,
+        array $payload,
+        string $textField,
+        string $plainText,
+    ): array {
+        try {
+            return $this->send($botToken, $method, $payload);
+        } catch (NodeExecutionException $e) {
+            if (! isset($payload['parse_mode']) || ! TelegramFormatter::isParseEntityError($e->getMessage())) {
+                throw $e;
+            }
+
+            unset($payload['parse_mode']);
+            $payload[$textField] = $plainText;
+
+            return $this->send($botToken, $method, $payload);
+        }
     }
 
     private function requireArg(array $arguments, string $key, string $message): string

@@ -494,11 +494,13 @@ new class extends Component {
         :success-rate="$this->successRate"
     />
 
-    <x-workflows.toolbar
-        :search="$search"
-        :status="$status"
-        :at-limit="$this->atLimit"
-    />
+    @if ($this->total > 0 || $this->hasFilters)
+        <x-workflows.toolbar
+            :search="$search"
+            :status="$status"
+            :at-limit="$this->atLimit"
+        />
+    @endif
 
     <div class="relative min-h-40 space-y-4">
         <x-ui.loading-overlay
