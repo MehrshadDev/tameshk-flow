@@ -5,7 +5,7 @@ import { nodeAppearance } from '@canvas/lib/nodeStyles';
 import { useWorkflowStore } from '@canvas/store/useWorkflowStore';
 import type { NodeDefinition, NodePreset } from '@canvas/types/graph';
 import { Handle, SPECIAL_HANDLES, isFlowHandle, isSpecialHandle } from '@canvas/lib/handles';
-import { getFolderMeta } from '@canvas/lib/folders';
+import { getFolderMeta, type FolderItem } from '@canvas/lib/folders';
 import { useResizablePanel } from '@canvas/lib/useResizablePanel';
 
 const GRID = 16;
@@ -50,6 +50,52 @@ const toEntries = (definitions: NodeDefinition[]): Entry[] =>
             }))
             : [{ key: definition.type, definition }],
     );
+
+function FolderCard({
+                        meta,
+                        onClick,
+                        showBadge = false,
+                    }: {
+    meta: FolderItem;
+    onClick: () => void;
+    showBadge?: boolean;
+}) {
+    return (
+        <button
+            type="button"
+            onClick={onClick}
+            className="group flex w-full items-center justify-between gap-3.5 rounded-2xl border border-line-border/60 bg-surface-card p-3.5 text-start transition duration-150 shadow-xs hover:border-line-border hover:bg-surface-raised hover:shadow-md active:scale-[0.99]"
+        >
+            <div className="flex min-w-0 items-center gap-3.5">
+                <div
+                    className={`flex size-10 shrink-0 items-center justify-center rounded-xl transition-transform group-hover:scale-105 ${meta.iconClass}`}
+                >
+                    <Icon name={meta.icon} className="size-5" />
+                </div>
+                <div className="min-w-0">
+                    <div className="flex items-center gap-1.5">
+                        <span className="block truncate text-xs font-bold text-content-main transition-colors group-hover:text-primary">
+                            {meta.title}
+                        </span>
+                        {showBadge && (
+                            <span className="shrink-0 rounded-md bg-line-border/70 px-1.5 py-0.5 text-[9px] font-bold text-content-muted">
+                                پوشه
+                            </span>
+                        )}
+                    </div>
+                    <p className="mt-0.5 truncate text-[11px] leading-4 text-content-muted">
+                        {meta.description}
+                    </p>
+                </div>
+            </div>
+
+            <Icon
+                name="chevron-left"
+                className="size-4 shrink-0 text-content-muted transition-transform group-hover:-translate-x-0.5 group-hover:text-primary"
+            />
+        </button>
+    );
+}
 
 function NodeCard({ entry, onSelect }: { entry: Entry; onSelect: (entry: Entry) => void }) {
     const { definition, preset } = entry;
@@ -150,7 +196,59 @@ function PickerPanel() {
         });
     }, [definitions, hasTrigger, targetHandle, sourceHandle]);
 
+    const searchableFolders = useMemo(() => {
+        if (isSlotMode) return [];
+
+        const map = new Map<string, { path: string[]; meta: FolderItem; isSubfolder: boolean }>();
+
+        availableDefinitions.forEach((def) => {
+            const cat = browseCategory(def);
+            if (!map.has(cat)) {
+                map.set(cat, {
+                    path: [cat],
+                    meta: getFolderMeta(cat, cat),
+                    isSubfolder: false,
+                });
+            }
+
+            const grp = def.group?.trim();
+            if (!grp) return;
+
+            const parts = grp.split('/').filter(Boolean);
+            const acc = [cat];
+
+            for (const part of parts) {
+                acc.push(part);
+                const key = acc.join('/');
+                if (!map.has(key)) {
+                    map.set(key, {
+                        path: [...acc],
+                        meta: getFolderMeta(key, part),
+                        isSubfolder: true,
+                    });
+                }
+            }
+        });
+
+        return Array.from(map.values()).sort((a, b) => Number(b.isSubfolder) - Number(a.isSubfolder));
+    }, [availableDefinitions, isSlotMode]);
+
     const isSearching = query.trim().length > 0;
+
+    const folderResults = useMemo(() => {
+        if (!isSearching || isSlotMode) return [];
+        const term = query.trim().toLowerCase();
+
+        return searchableFolders.filter(({ path, meta }) => {
+            const key = path.join('/').toLowerCase();
+
+            return (
+                meta.title.toLowerCase().includes(term) ||
+                meta.description.toLowerCase().includes(term) ||
+                key.includes(term)
+            );
+        });
+    }, [searchableFolders, query, isSearching, isSlotMode]);
 
     const searchResults = useMemo(() => {
         if (!isSearching) return [];
@@ -159,8 +257,15 @@ function PickerPanel() {
         return toEntries(availableDefinitions).filter((entry) => {
             const name = entry.preset?.name ?? entry.definition.name;
             const description = entry.preset?.description ?? entry.definition.description;
+            const defName = entry.definition.name;
+            const defGroup = entry.definition.group ?? '';
 
-            return name.toLowerCase().includes(term) || description.toLowerCase().includes(term);
+            return (
+                name.toLowerCase().includes(term) ||
+                description.toLowerCase().includes(term) ||
+                defName.toLowerCase().includes(term) ||
+                defGroup.toLowerCase().includes(term)
+            );
         });
     }, [availableDefinitions, query, isSearching]);
 
@@ -222,12 +327,18 @@ function PickerPanel() {
         );
     };
 
+    const openFolderFromSearch = (path: string[]) => {
+        setNavPath(path);
+        setQuery('');
+    };
+
     const handleBack = () => {
         setNavPath((prev) => prev.slice(0, -1));
     };
 
     const pathKey = navPath.join('/');
     const currentMeta = getFolderMeta(pathKey, navPath[navPath.length - 1] ?? '');
+    const totalSearchResults = folderResults.length + searchResults.length;
 
     const headerTitle = useMemo(() => {
         if (isSearching) return 'نتایج جستجو';
@@ -239,11 +350,11 @@ function PickerPanel() {
     }, [isSearching, targetHandle, navPath.length, currentMeta.title]);
 
     const headerDescription = useMemo(() => {
-        if (isSearching) return `${searchResults.length} نود پیدا شد`;
+        if (isSearching) return `${totalSearchResults} نتیجه پیدا شد`;
         if (isSlotMode) return 'یک نود سازگار را برای اتصال انتخاب کنید';
         if (navPath.length > 0) return currentMeta.description;
         return 'یک دسته را برای مشاهده نودها انتخاب کنید';
-    }, [isSearching, searchResults.length, isSlotMode, navPath.length, currentMeta.description]);
+    }, [isSearching, totalSearchResults, isSlotMode, navPath.length, currentMeta.description]);
 
     return (
         <aside
@@ -335,21 +446,50 @@ function PickerPanel() {
                 </div>
             </div>
 
-            <div className="custom-scrollbar flex-1 overflow-y-auto p-4 space-y-2.5 select-none">
+            <div className="custom-scrollbar flex-1 space-y-2.5 overflow-y-auto p-4 select-none">
                 {isSearching ? (
-                    searchResults.length === 0 ? (
-                        <div className="py-16 text-center text-xs text-content-muted space-y-2">
+                    totalSearchResults === 0 ? (
+                        <div className="space-y-2 py-16 text-center text-xs text-content-muted">
                             <Icon name="search" className="mx-auto size-7 opacity-30" />
-                            <p>نودی متناسب با جستجوی شما پیدا نشد.</p>
+                            <p>نود یا پوشه‌ای متناسب با جستجوی شما پیدا نشد.</p>
                         </div>
                     ) : (
-                        searchResults.map((entry) => (
-                            <NodeCard key={entry.key} entry={entry} onSelect={select} />
-                        ))
+                        <>
+                            {folderResults.length > 0 && (
+                                <div className="space-y-2">
+                                    {searchResults.length > 0 && (
+                                        <p className="px-1 text-[11px] font-bold text-content-muted">
+                                            پوشه‌ها ({folderResults.length})
+                                        </p>
+                                    )}
+                                    {folderResults.map(({ path, meta }) => (
+                                        <FolderCard
+                                            key={path.join('/')}
+                                            meta={meta}
+                                            showBadge
+                                            onClick={() => openFolderFromSearch(path)}
+                                        />
+                                    ))}
+                                </div>
+                            )}
+
+                            {searchResults.length > 0 && (
+                                <div className={`space-y-2 ${folderResults.length > 0 ? 'pt-2' : ''}`}>
+                                    {folderResults.length > 0 && (
+                                        <p className="px-1 text-[11px] font-bold text-content-muted">
+                                            نودها ({searchResults.length})
+                                        </p>
+                                    )}
+                                    {searchResults.map((entry) => (
+                                        <NodeCard key={entry.key} entry={entry} onSelect={select} />
+                                    ))}
+                                </div>
+                            )}
+                        </>
                     )
                 ) : isSlotMode ? (
                     availableDefinitions.length === 0 ? (
-                        <div className="py-16 text-center text-xs text-content-muted space-y-2">
+                        <div className="space-y-2 py-16 text-center text-xs text-content-muted">
                             <Icon name="box" className="mx-auto size-7 opacity-30" />
                             <p>نود سازگاری برای این نقطه اتصال تعریف نشده است.</p>
                         </div>
@@ -369,33 +509,11 @@ function PickerPanel() {
                             const meta = getFolderMeta(subfolderPath, subfolderKey);
 
                             return (
-                                <button
+                                <FolderCard
                                     key={subfolderKey}
-                                    type="button"
+                                    meta={meta}
                                     onClick={() => setNavPath([...navPath, subfolderKey])}
-                                    className="group flex w-full items-center justify-between gap-3.5 rounded-2xl border border-line-border/60 bg-surface-card p-3.5 text-start transition duration-150 shadow-xs hover:border-line-border hover:bg-surface-raised hover:shadow-md active:scale-[0.99]"
-                                >
-                                    <div className="flex items-center gap-3.5 min-w-0">
-                                        <div
-                                            className={`flex size-10 shrink-0 items-center justify-center rounded-xl transition-transform group-hover:scale-105 ${meta.iconClass}`}
-                                        >
-                                            <Icon name={meta.icon} className="size-5" />
-                                        </div>
-                                        <div className="min-w-0">
-                                            <span className="block truncate text-xs font-bold text-content-main group-hover:text-primary transition-colors">
-                                                {meta.title}
-                                            </span>
-                                            <p className="truncate text-[11px] text-content-muted mt-0.5 leading-4">
-                                                {meta.description}
-                                            </p>
-                                        </div>
-                                    </div>
-
-                                    <Icon
-                                        name="chevron-left"
-                                        className="size-4 shrink-0 text-content-muted group-hover:text-primary transition-transform group-hover:-translate-x-0.5"
-                                    />
-                                </button>
+                                />
                             );
                         })}
 
@@ -429,7 +547,7 @@ function PickerPanel() {
                         )}
 
                         {currentActionNodes.length === 0 && currentTriggerNodes.length === 0 && currentSubfolders.length === 0 && (
-                            <div className="py-16 text-center text-xs text-content-muted space-y-2">
+                            <div className="space-y-2 py-16 text-center text-xs text-content-muted">
                                 <Icon name="box" className="mx-auto size-7 opacity-30" />
                                 <p>هنوز نودی در این بخش تعریف نشده است.</p>
                             </div>
@@ -440,33 +558,11 @@ function PickerPanel() {
                         const meta = getFolderMeta(catKey, catKey);
 
                         return (
-                            <button
+                            <FolderCard
                                 key={catKey}
-                                type="button"
+                                meta={meta}
                                 onClick={() => setNavPath([catKey])}
-                                className="group flex w-full items-center justify-between gap-3.5 rounded-2xl border border-line-border/60 bg-surface-card p-3.5 text-start transition duration-150 shadow-xs hover:border-line-border hover:bg-surface-raised hover:shadow-md active:scale-[0.99]"
-                            >
-                                <div className="flex items-center gap-3.5 min-w-0">
-                                    <div
-                                        className={`flex size-10 shrink-0 items-center justify-center rounded-xl transition-transform group-hover:scale-105 ${meta.iconClass}`}
-                                    >
-                                        <Icon name={meta.icon} className="size-5" />
-                                    </div>
-                                    <div className="min-w-0">
-                                        <span className="block truncate text-xs font-bold text-content-main group-hover:text-primary transition-colors">
-                                            {meta.title}
-                                        </span>
-                                        <p className="truncate text-[11px] text-content-muted mt-0.5 leading-4">
-                                            {meta.description}
-                                        </p>
-                                    </div>
-                                </div>
-
-                                <Icon
-                                    name="chevron-left"
-                                    className="size-4 shrink-0 text-content-muted group-hover:text-primary transition-transform group-hover:-translate-x-0.5"
-                                />
-                            </button>
+                            />
                         );
                     })
                 )}
