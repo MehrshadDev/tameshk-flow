@@ -3,6 +3,7 @@
 namespace App\Console\Commands;
 
 use App\Docs\DocumentationRepository;
+use App\Templates\TemplateRepository;
 use Carbon\Carbon;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\File;
@@ -56,6 +57,36 @@ class GenerateSitemapCommand extends Command
             'changefreq' => 'weekly',
             'priority' => '0.9',
         ];
+
+        $templates = TemplateRepository::all();
+        $templateFilePaths = [resource_path('views/pages/templates/index.blade.php')];
+
+        foreach ($templates as $template) {
+            if ($sourceFile = TemplateRepository::sourceFilePath($template->slug)) {
+                $templateFilePaths[] = $sourceFile;
+            }
+        }
+
+        $urls[] = [
+            'loc' => $baseUrl . '/templates',
+            'lastmod' => $this->resolveLastModifiedAbsolute($templateFilePaths),
+            'changefreq' => 'weekly',
+            'priority' => '0.9',
+        ];
+
+        foreach ($templates as $template) {
+            $files = [resource_path('views/pages/templates/show.blade.php')];
+            if ($sourceFile = TemplateRepository::sourceFilePath($template->slug)) {
+                $files[] = $sourceFile;
+            }
+
+            $urls[] = [
+                'loc' => $baseUrl . '/templates/' . $template->slug,
+                'lastmod' => $this->resolveLastModifiedAbsolute($files),
+                'changefreq' => 'weekly',
+                'priority' => '0.85',
+            ];
+        }
 
         foreach (DocumentationRepository::allArticles() as $index => $article) {
             $viewRelativePath = 'views/' . str_replace('.', '/', $article['view']) . '.blade.php';
@@ -114,11 +145,16 @@ class GenerateSitemapCommand extends Command
 
     private function resolveLastModified(array $resourceRelativePaths): string
     {
+        return $this->resolveLastModifiedAbsolute(
+            array_map(fn (string $p) => resource_path($p), $resourceRelativePaths)
+        );
+    }
+
+    private function resolveLastModifiedAbsolute(array $absolutePaths): string
+    {
         $latestTimestamp = 0;
 
-        foreach ($resourceRelativePaths as $relativePath) {
-            $fullPath = resource_path($relativePath);
-
+        foreach ($absolutePaths as $fullPath) {
             if (File::exists($fullPath)) {
                 $mtime = File::lastModified($fullPath);
                 if ($mtime > $latestTimestamp) {
@@ -167,6 +203,8 @@ class GenerateSitemapCommand extends Command
             'Allow: /',
             'Allow: /buy-n8n',
             'Allow: /bot-builder',
+            'Allow: /templates',
+            'Allow: /templates/',
             'Allow: /docs',
             'Allow: /docs/',
             'Allow: /terms',

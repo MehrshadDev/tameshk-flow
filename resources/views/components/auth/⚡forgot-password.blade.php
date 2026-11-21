@@ -1,6 +1,7 @@
 <?php
 
 use App\Models\User;
+use App\Support\GmailGuard;
 use App\Traits\HasEmailCodeVerification;
 use App\Traits\HasFormSecurity;
 use Illuminate\Support\Facades\Auth;
@@ -25,7 +26,7 @@ new class extends Component
     protected function rules(): array
     {
         return match ($this->step) {
-            1 => ['email' => ['required', 'string', 'email', 'max:255', 'exists:users,email']],
+            1 => ['email' => ['required', 'string', 'email', 'max:255']],
             2 => ['verificationCode' => ['required', 'string', 'digits:6']],
             default => ['password' => ['required', 'string', 'confirmed', PasswordRule::min(8)->letters()->numbers()]],
         };
@@ -36,7 +37,6 @@ new class extends Component
         return [
             'email.required' => 'وارد کردن ایمیل الزامی است.',
             'email.email' => 'فرمت ایمیل وارد شده صحیح نیست.',
-            'email.exists' => 'کاربری با این ایمیل یافت نشد.',
             'email.max' => 'ایمیل نمی‌تواند بیشتر از ۲۵۵ کاراکتر باشد.',
             'verificationCode.required' => 'وارد کردن کد تایید الزامی است.',
             'verificationCode.digits' => 'کد تایید باید ۶ رقم باشد.',
@@ -70,25 +70,43 @@ new class extends Component
 
     public function sendCode(): void
     {
+        if ($this->step !== 1) {
+            return;
+        }
+
         $this->validate();
+
+        if ($gmailError = GmailGuard::validate($this->email, allowAdminBypass: true)) {
+            $this->addError('email', $gmailError);
+            return;
+        }
 
         if (! $this->securityChecks('forgot-password', 5)) {
             return;
         }
 
-        $email = $this->normalizeEmail($this->email);
+        $email = GmailGuard::normalize($this->email);
+
+        if (! User::query()->where('email', $email)->exists()) {
+            $this->hitRateLimiter('forgot-password', 300);
+            $this->addError('email', 'کاربری با این ایمیل یافت نشد.');
+            return;
+        }
 
         if (! $this->issueCode($email, 'email')) {
             return;
         }
 
         $this->hitRateLimiter('forgot-password', 300);
-        $this->clearRateLimiter('forgot-password');
         $this->startVerification($email);
     }
 
     public function verifyCode(): void
     {
+        if ($this->step !== 2) {
+            return;
+        }
+
         $this->resendStatus = null;
         $this->validate();
 
@@ -98,7 +116,7 @@ new class extends Component
             return;
         }
 
-        $user = User::where('email', $this->email)->first();
+        $user = User::query()->where('email', $this->email)->first();
 
         if (! $user) {
             $this->addError('verificationCode', 'کاربری با این ایمیل یافت نشد.');
@@ -120,6 +138,10 @@ new class extends Component
 
     public function resetPassword(): void
     {
+        if ($this->step !== 3) {
+            return;
+        }
+
         $this->validate();
 
         if (! $this->securityChecks('reset-password', 5)) {
@@ -154,8 +176,9 @@ new class extends Component
         }
 
         session()->forget('reset_token_' . $this->email);
+        $this->clearRateLimiter('forgot-password');
 
-        Auth::login(User::where('email', $this->email)->first(), remember: true);
+        Auth::login(User::query()->where('email', $this->email)->first(), remember: true);
 
         session()->regenerate();
         session()->regenerateToken();
@@ -169,13 +192,13 @@ new class extends Component
     @if ($step === 1)
         <div class="text-center mb-6">
             <h1 class="text-xl font-bold text-content-main">فراموشی رمز عبور</h1>
-            <p class="text-sm text-content-muted mt-1">ایمیل خود را وارد کنید تا کد بازیابی برایتان ارسال شود</p>
+            <p class="text-sm text-content-muted mt-1">جیمیل خود را وارد کنید تا کد بازیابی برایتان ارسال شود</p>
         </div>
 
         <form wire:submit="sendCode" class="space-y-4">
             <x-auth.honeypot/>
 
-            <x-ui.input name="email" type="email" wire:model="email" label="ایمیل" placeholder="example@gmail.com" autocomplete="email" autofocus/>
+            <x-ui.input name="email" type="email" wire:model="email" label="جیمیل" placeholder="example@gmail.com" autocomplete="email" autofocus/>
 
             <x-auth.submit target="sendCode" label="ارسال کد بازیابی" loading="در حال ارسال..."/>
         </form>

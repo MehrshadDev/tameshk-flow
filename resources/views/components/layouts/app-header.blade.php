@@ -1,6 +1,7 @@
 @php
     $links = array_values(array_filter([
         ['label' => 'قابلیت‌ها', 'href' => '#features', 'icon' => 'sparkles'],
+        ['label' => 'ورکفلوهای آماده', 'href' => route('templates.index'), 'icon' => 'rocket'],
         config('saas.enabled') ? ['label' => 'تعرفه‌ها', 'href' => '#pricing', 'icon' => 'credit-card'] : null,
         ['label' => 'مستندات', 'href' => route('docs.index'), 'icon' => 'file-text'],
     ]));

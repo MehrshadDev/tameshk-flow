@@ -1,9 +1,20 @@
-<div x-data="{
+@php
+    $flashError = session('template_error');
+@endphp
+
+<div data-flash-error="{{ $flashError ?? '' }}"
+     x-data="{
          items: [],
+         init() {
+             const initialError = this.$el.dataset.flashError;
+             if (initialError) {
+                 this.push({ message: initialError, type: 'error' });
+             }
+         },
          push(detail) {
              const id = Date.now() + Math.random();
              this.items.push({ id, message: detail.message, type: detail.type ?? 'success' });
-             setTimeout(() => this.remove(id), 4000);
+             setTimeout(() => this.remove(id), 4500);
          },
          remove(id) {
              this.items = this.items.filter(item => item.id !== id);

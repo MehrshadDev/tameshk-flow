@@ -5,6 +5,9 @@ namespace App\Http\Controllers\Auth;
 use App\Http\Controllers\Controller;
 use App\Models\User;
 use App\Support\AvatarStorage;
+use App\Support\GmailGuard;
+use App\Templates\PendingTemplate;
+use DomainException;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -40,7 +43,7 @@ class GoogleAuthController extends Controller
         return redirect()->away($authBase . '/o/oauth2/v2/auth?' . $params);
     }
 
-    public function callback(Request $request): RedirectResponse
+    public function callback(Request $request, PendingTemplate $pendingTemplate): RedirectResponse
     {
         $code = (string) $request->query('code');
         $state = (string) $request->query('state');
@@ -93,13 +96,19 @@ class GoogleAuthController extends Controller
             $request->session()->regenerate();
             $request->session()->regenerateToken();
 
+            if ($workflow = $pendingTemplate->consume($user)) {
+                return redirect()->route('app.workflows.show', $workflow);
+            }
+
             return redirect()->intended(route('app.workflows.index'));
+        } catch (DomainException $e) {
+            return redirect()->route('login')->with('auth_error', $e->getMessage());
         } catch (Throwable) {
             return redirect()->route('login')->with('auth_error', 'خطا در ارتباط با سرور گوگل. لطفاً دوباره تلاش کنید.');
         }
     }
 
-    public function oneTap(Request $request): JsonResponse
+    public function oneTap(Request $request, PendingTemplate $pendingTemplate): JsonResponse
     {
         $credential = (string) $request->input('credential');
         $expectedClientId = (string) config('services.google.client_id');
@@ -143,10 +152,16 @@ class GoogleAuthController extends Controller
             $request->session()->regenerate();
             $request->session()->regenerateToken();
 
+            $redirectUrl = ($workflow = $pendingTemplate->consume($user))
+                ? route('app.workflows.show', $workflow)
+                : route('app.workflows.index');
+
             return response()->json([
                 'status' => 'success',
-                'redirect' => route('app.workflows.index'),
+                'redirect' => $redirectUrl,
             ]);
+        } catch (DomainException $e) {
+            return response()->json(['message' => $e->getMessage()], 422);
         } catch (Throwable) {
             return response()->json(['message' => 'خطا در تایید هویت با سرور گوگل.'], 500);
         }
@@ -160,13 +175,17 @@ class GoogleAuthController extends Controller
         $remotePicture = data_get($data, 'picture');
 
         if (empty($googleId) || empty($rawEmail) || ! filter_var($rawEmail, FILTER_VALIDATE_EMAIL)) {
-            abort(400, 'اطلاعات دریافت شده از گوگل نامعتبر است.');
+            throw new DomainException('اطلاعات دریافت شده از گوگل نامعتبر است.');
         }
 
-        $email = $this->normalizeEmail($rawEmail);
+        if ($gmailError = GmailGuard::validate($rawEmail, allowAdminBypass: true)) {
+            throw new DomainException($gmailError);
+        }
+
+        $email = GmailGuard::normalize($rawEmail);
 
         if ($name === '') {
-            $name = explode('@', $rawEmail)[0] ?: 'کاربر';
+            $name = explode('@', $email)[0] ?: 'کاربر';
         }
 
         $user = User::query()->where('google_id', $googleId)->first();
@@ -213,24 +232,6 @@ class GoogleAuthController extends Controller
             'password' => Hash::make(Str::random(32)),
             'email_verified_at' => now(),
         ]);
-    }
-
-    private function normalizeEmail(string $email): string
-    {
-        $email = strtolower(trim($email));
-
-        if (! str_contains($email, '@')) {
-            return $email;
-        }
-
-        [$username, $domain] = explode('@', $email, 2);
-
-        if ($domain === 'gmail.com') {
-            $username = explode('+', $username)[0];
-            $username = str_replace('.', '', $username);
-        }
-
-        return $username . '@' . $domain;
     }
 
     private function getRedirectUri(): string

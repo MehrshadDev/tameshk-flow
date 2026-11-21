@@ -1,5 +1,7 @@
 <?php
 
+use App\Support\GmailGuard;
+use App\Templates\PendingTemplate;
 use App\Traits\HasFormSecurity;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\RateLimiter;
@@ -47,21 +49,25 @@ new class extends Component {
         ];
     }
 
-    public function login(): void
+    public function login(PendingTemplate $pendingTemplate): void
     {
         $this->validate();
 
-        if (!$this->securityChecks('login', 5)) {
+        if ($gmailError = GmailGuard::validate($this->email, allowAdminBypass: true)) {
+            $this->addError('email', $gmailError);
             return;
         }
 
-        $normalizedEmail = $this->normalizeEmail($this->email);
+        if (! $this->securityChecks('login', 5)) {
+            return;
+        }
 
-        if (!Auth::attempt([
+        $normalizedEmail = GmailGuard::normalize($this->email);
+
+        if (! Auth::attempt([
             'email' => $normalizedEmail,
             'password' => $this->password,
         ], remember: true)) {
-
             $this->hitRateLimiter('login');
 
             throw ValidationException::withMessages([
@@ -76,6 +82,11 @@ new class extends Component {
         session()->regenerate();
         session()->regenerateToken();
 
+        if ($workflow = $pendingTemplate->consume(auth()->user())) {
+            $this->redirect(route('app.workflows.show', $workflow));
+            return;
+        }
+
         $this->redirectIntended(default: route('app.workflows.index'));
     }
 };
@@ -84,7 +95,7 @@ new class extends Component {
 <div>
     <div class="text-center mb-6">
         <h1 class="text-xl font-bold text-content-main">خوش آمدید 👋</h1>
-        <p class="text-sm text-content-muted mt-1">برای ادامه وارد حساب خود شوید</p>
+        <p class="text-sm text-content-muted mt-1">برای ادامه با حساب جیمیل خود وارد شوید</p>
     </div>
 
     <x-auth.alert />
@@ -92,7 +103,7 @@ new class extends Component {
     <form wire:submit="login" class="space-y-4">
         <x-auth.honeypot/>
 
-        <x-ui.input name="email" type="email" wire:model="email" label="ایمیل" placeholder="example@gmail.com" autocomplete="email" autofocus/>
+        <x-ui.input name="email" type="email" wire:model="email" label="جیمیل" placeholder="example@gmail.com" autocomplete="email" autofocus/>
 
         <div>
             <x-ui.input name="password" type="password" wire:model="password" label="رمز عبور" placeholder="••••••••" autocomplete="current-password"/>

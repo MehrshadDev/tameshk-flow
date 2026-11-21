@@ -1,6 +1,8 @@
 <?php
 
 use App\Models\User;
+use App\Support\GmailGuard;
+use App\Templates\PendingTemplate;
 use App\Traits\HasEmailCodeVerification;
 use App\Traits\HasFormSecurity;
 use Illuminate\Support\Facades\Auth;
@@ -24,7 +26,7 @@ new class extends Component
     {
         if ($this->step === 1) {
             return [
-                'email' => ['required', 'string', 'email', 'max:255', 'unique:users,email'],
+                'email' => ['required', 'string', 'email', 'max:255'],
                 'password' => ['required', 'string', 'confirmed', Password::min(8)->letters()->numbers()],
             ];
         }
@@ -39,7 +41,6 @@ new class extends Component
         return [
             'email.required' => 'وارد کردن ایمیل الزامی است.',
             'email.email' => 'فرمت ایمیل وارد شده صحیح نیست.',
-            'email.unique' => 'این ایمیل قبلاً ثبت شده است.',
             'email.max' => 'ایمیل نمی‌تواند بیشتر از ۲۵۵ کاراکتر باشد.',
             'password.required' => 'وارد کردن رمز عبور الزامی است.',
             'password.confirmed' => 'تکرار رمز عبور مطابقت ندارد.',
@@ -71,25 +72,43 @@ new class extends Component
 
     public function register(): void
     {
+        if ($this->step !== 1) {
+            return;
+        }
+
         $this->validate();
+
+        if ($gmailError = GmailGuard::validate($this->email)) {
+            $this->addError('email', $gmailError);
+            return;
+        }
 
         if (! $this->securityChecks('register', 5)) {
             return;
         }
 
-        $email = $this->normalizeEmail($this->email);
+        $email = GmailGuard::normalize($this->email);
+
+        if (User::query()->where('email', $email)->exists()) {
+            $this->hitRateLimiter('register', 300);
+            $this->addError('email', 'این حساب جیمیل قبلاً ثبت شده است.');
+            return;
+        }
 
         if (! $this->issueCode($email, 'email')) {
             return;
         }
 
         $this->hitRateLimiter('register', 300);
-        $this->clearRateLimiter('register');
         $this->startVerification($email);
     }
 
-    public function verifyCode(): void
+    public function verifyCode(PendingTemplate $pendingTemplate): void
     {
+        if ($this->step !== 2) {
+            return;
+        }
+
         $this->resendStatus = null;
         $this->validate();
 
@@ -99,20 +118,41 @@ new class extends Component
             return;
         }
 
+        $email = GmailGuard::normalize($this->email);
+
+        if ($gmailError = GmailGuard::validate($email)) {
+            $this->resetFlow();
+            $this->addError('email', $gmailError);
+            return;
+        }
+
+        if (User::query()->where('email', $email)->exists()) {
+            $this->finishVerification('verify-code', $record);
+            $this->resetFlow();
+            $this->addError('email', 'این حساب جیمیل قبلاً ثبت شده است. لطفاً وارد شوید.');
+            return;
+        }
+
         $user = User::create([
-            'name' => $this->extractNameFromEmail($this->email),
-            'email' => $this->email,
+            'name' => $this->extractNameFromEmail($email),
+            'email' => $email,
             'password' => Hash::make($this->password),
         ]);
 
         $user->forceFill(['email_verified_at' => now()])->save();
 
         $this->finishVerification('verify-code', $record);
+        $this->clearRateLimiter('register');
 
         Auth::login($user, remember: true);
 
         session()->regenerate();
         session()->regenerateToken();
+
+        if ($workflow = $pendingTemplate->consume($user)) {
+            $this->redirect(route('app.workflows.show', $workflow));
+            return;
+        }
 
         $this->redirect(route('app.workflows.index'), navigate: true);
     }
@@ -121,7 +161,7 @@ new class extends Component
     {
         $username = trim(explode('@', $email, 2)[0] ?? '');
 
-        return $username !== '' ? $username : 'کاربر';
+        return $username !== '' ? mb_substr($username, 0, 50) : 'کاربر';
     }
 };
 ?>
@@ -130,7 +170,7 @@ new class extends Component
     @if ($step === 1)
         <div class="text-center mb-6">
             <h1 class="text-xl font-bold text-content-main">ایجاد حساب کاربری</h1>
-            <p class="text-sm text-content-muted mt-1">برای شروع، ایمیل و رمز عبور خود را وارد کنید</p>
+            <p class="text-sm text-content-muted mt-1">برای شروع، آدرس جیمیل و رمز عبور خود را وارد کنید</p>
         </div>
 
         <x-auth.alert />
@@ -138,7 +178,7 @@ new class extends Component
         <form wire:submit="register" class="space-y-4">
             <x-auth.honeypot/>
 
-            <x-ui.input name="email" type="email" wire:model="email" label="ایمیل" placeholder="example@gmail.com" autocomplete="email" autofocus/>
+            <x-ui.input name="email" type="email" wire:model="email" label="جیمیل (فقط @gmail.com)" placeholder="example@gmail.com" autocomplete="email" autofocus/>
 
             <x-ui.input name="password" type="password" wire:model="password" label="رمز عبور" placeholder="حداقل ۸ کاراکتر شامل حروف و اعداد" autocomplete="new-password"/>
 
@@ -170,7 +210,7 @@ new class extends Component
         </p>
     @else
         <x-auth.verify-step
-            title="تایید ایمیل 📧"
+            title="تایید جیمیل 📧"
             submit="تایید و ورود"
             :email="$email"
             :expires-at="$codeExpiresAt"

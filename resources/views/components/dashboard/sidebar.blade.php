@@ -3,6 +3,7 @@
     use App\Models\Ticket;
     use App\Models\WorkflowRun;
     use App\Subscriptions\SubscriptionManager;
+    use App\Templates\TemplateRepository;
 
     $user = auth()->user();
     $subscriptions = app(SubscriptionManager::class);
@@ -32,6 +33,7 @@
     $activeDiscountsCount = ($user && $user->isAdmin())
         ? DiscountCode::query()->where('is_active', true)->count()
         : 0;
+    $templatesCount = count(TemplateRepository::all());
 @endphp
 
 <div x-show="sidebarOpen"
@@ -97,6 +99,14 @@
             :active="request()->routeIs('app.workflows.*')"
             :count="$totalWorkflows">
             ورکفلوها
+        </x-dashboard.sidebar-link>
+
+        <x-dashboard.sidebar-link
+            icon="rocket"
+            :href="route('templates.index')"
+            :active="request()->routeIs('templates.*')"
+            :count="$templatesCount > 0 ? $templatesCount : null">
+            ورکفلوهای آماده
         </x-dashboard.sidebar-link>
 
         <x-dashboard.sidebar-link

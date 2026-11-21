@@ -2,6 +2,7 @@
 
 namespace App\Traits;
 
+use App\Support\GmailGuard;
 use Illuminate\Support\Facades\RateLimiter;
 
 trait HasFormSecurity
@@ -11,20 +12,7 @@ trait HasFormSecurity
 
     protected function normalizeEmail(string $email): string
     {
-        $email = strtolower(trim($email));
-
-        if (!str_contains($email, '@')) {
-            return $email;
-        }
-
-        [$username, $domain] = explode('@', $email, 2);
-
-        if (in_array($domain, ['gmail.com'])) {
-            $username = explode('+', $username)[0];
-            $username = str_replace('.', '', $username);
-        }
-
-        return $username . '@' . $domain;
+        return GmailGuard::normalize($email);
     }
 
     protected function securityChecks(string $actionKey = 'auth', int $maxAttempts = 5): bool
@@ -36,7 +24,7 @@ trait HasFormSecurity
             return false;
         }
 
-        if (!empty($this->email)) {
+        if (! empty($this->email)) {
             $email = $this->normalizeEmail($this->email);
             $emailKey = $actionKey . ':email:' . $email;
 
@@ -46,7 +34,7 @@ trait HasFormSecurity
             }
         }
 
-        if (!empty($this->honeypot)) {
+        if (! empty($this->honeypot)) {
             $this->addError('email', 'درخواست نامعتبر شناسایی شد. 🛡️');
             return false;
         }
@@ -64,7 +52,7 @@ trait HasFormSecurity
     {
         RateLimiter::hit($actionKey . ':ip:' . request()->ip(), $decaySeconds);
 
-        if (!empty($this->email)) {
+        if (! empty($this->email)) {
             $email = $this->normalizeEmail($this->email);
             RateLimiter::hit($actionKey . ':email:' . $email, $decaySeconds);
         }
@@ -74,7 +62,7 @@ trait HasFormSecurity
     {
         RateLimiter::clear($actionKey . ':ip:' . request()->ip());
 
-        if (!empty($this->email)) {
+        if (! empty($this->email)) {
             RateLimiter::clear($actionKey . ':email:' . $this->email);
             RateLimiter::clear($actionKey . ':email:' . $this->normalizeEmail($this->email));
         }

@@ -38,6 +38,7 @@
 
     $links = array_values(array_filter([
         ['label' => 'قابلیت‌ها', 'href' => route('home') . '#features', 'external' => false],
+        ['label' => 'ورکفلوهای آماده', 'href' => route('templates.index'), 'external' => false],
         $saasEnabled ? ['label' => 'تعرفه‌ها', 'href' => route('home') . '#pricing', 'external' => false] : null,
         ['label' => 'مستندات', 'href' => route('docs.index'), 'external' => false],
         ['label' => 'قوانین و مقررات', 'href' => route('terms'), 'external' => false],
