@@ -80,6 +80,13 @@
             ],
         ],
     ];
+
+    $filterableTemplates = array_map(fn ($tpl) => [
+        'slug' => $tpl->slug,
+        'category' => $tpl->category->value,
+        'apps' => $tpl->appKeys(),
+        'search' => $tpl->searchableText(),
+    ], $templates);
 @endphp
 
 <x-layouts.app
@@ -125,12 +132,20 @@
                      query: '',
                      category: 'all',
                      appFilter: 'all',
-                     matches(el) {
+                     items: @js($filterableTemplates),
+                     matchesItem(item) {
                          const q = this.query.trim().toLowerCase();
-                         const catOk = this.category === 'all' || el.dataset.category === this.category;
-                         const appOk = this.appFilter === 'all' || (el.dataset.apps || '').split(',').includes(this.appFilter);
-                         const textOk = q === '' || (el.dataset.search || '').includes(q);
+                         const catOk = this.category === 'all' || item.category === this.category;
+                         const appOk = this.appFilter === 'all' || item.apps.includes(this.appFilter);
+                         const textOk = q === '' || item.search.includes(q);
                          return catOk && appOk && textOk;
+                     },
+                     matchesSlug(slug) {
+                         const item = this.items.find(i => i.slug === slug);
+                         return item ? this.matchesItem(item) : false;
+                     },
+                     get hasVisibleTemplates() {
+                         return this.items.some(item => this.matchesItem(item));
                      },
                      resetFilters() {
                          this.query = '';
@@ -205,33 +220,22 @@
                 @foreach ($templates as $template)
                     <x-templates.card
                         :template="$template"
-                        data-category="{{ $template->category->value }}"
-                        data-apps="{{ implode(',', $template->appKeys()) }}"
-                        data-search="{{ $template->searchableText() }}"
-                        x-show="matches($el)"
+                        x-show="matchesSlug('{{ $template->slug }}')"
                     />
                 @endforeach
             </div>
 
-            <div class="mt-14 rounded-3xl border border-line-border bg-surface-card p-6 text-center shadow-2xs sm:p-10">
-                <div class="mx-auto flex size-12 items-center justify-center rounded-2xl bg-primary/10 text-primary">
-                    <x-ui.icon name="rocket" class="size-6"/>
-                </div>
-                <h2 class="mt-4 text-lg font-extrabold text-content-main sm:text-2xl">
-                    سناریوی اختصاصی خودتان را در ذهن دارید؟
-                </h2>
-                <p class="mx-auto mt-2 max-w-xl text-xs leading-7 text-content-muted sm:text-sm">
-                    در بوم بصری تمشک فلو می‌توانید هر ترکیبی از ووکامرس، تلگرام، گوگل شیت، جیمیل، MySQL و مدل‌های هوش مصنوعی را از صفر و بدون کدنویسی بسازید.
-                </p>
-                <div class="mt-6 flex flex-wrap items-center justify-center gap-3">
-                    <x-ui.button :href="auth()->check() ? route('app.workflows.index') : route('register')" size="lg" class="shadow-md shadow-primary/20">
-                        <x-ui.icon name="bolt" class="size-4.5"/>
-                        <span>{{ auth()->check() ? 'ورود به ویرایشگر ورکفلوها' : 'شروع رایگان با ۵۰۰ اجرا' }}</span>
-                    </x-ui.button>
-                    <x-ui.button :href="route('docs.index')" variant="secondary" size="lg">
-                        مرور مستندات
-                    </x-ui.button>
-                </div>
+            <div x-show="!hasVisibleTemplates"
+                 x-cloak
+                 class="mt-8 rounded-2xl border border-dashed border-line-border bg-surface-card/60 px-6 py-12 text-center">
+                <p class="text-sm font-bold text-content-main">ورکفلویی با این فیلتر پیدا نشد.</p>
+                <p class="mt-1.5 text-xs text-content-muted">عبارت جستجو را تغییر دهید یا فیلترها را پاک کنید.</p>
+                <button type="button"
+                        @click="resetFilters()"
+                        class="mt-4 inline-flex items-center gap-1.5 rounded-xl border border-line-border bg-surface-raised px-4 py-2 text-xs font-bold text-content-main transition hover:border-primary/50 hover:text-primary cursor-pointer">
+                    <x-ui.icon name="x" class="size-3.5"/>
+                    <span>پاک کردن فیلترها</span>
+                </button>
             </div>
         </section>
     </div>

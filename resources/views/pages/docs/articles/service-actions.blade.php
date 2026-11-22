@@ -1,3 +1,9 @@
+@php
+    $sheetsRowSample = [
+        '["[[ input.first_name ]]", "[[ input.username ]]", "ثبت‌شده"]',
+    ];
+@endphp
+
 <section id="telegram-action" class="scroll-mt-24 space-y-3">
     <h2 class="text-lg font-extrabold text-content-main">نود عملیاتی تلگرام (Telegram)</h2>
     <p class="text-content-muted">
@@ -30,15 +36,13 @@
     <ul class="list-disc space-y-2 pr-5 text-content-muted">
         <li><strong class="text-content-main">افزودن ردیف (Append Row):</strong> اضافه کردن یک یا چند ردیف به انتهای شیت. مقادیر را می‌توانید به صورت آرایه JSON یا مقادیر جداشده با کاما وارد کنید.</li>
         <li><strong class="text-content-main">خواندن ردیف‌ها (Get Rows):</strong> دریافت سطرهای شیت. اگر گزینه «ستون‌های نام‌گذاری‌شده» فعال باشد، هر ردیف بر اساس عنوان ستون‌های سطر اول شیت به صورت کلید-مقدار برگردانده می‌شود.</li>
-        <li><strong class="text-content-main">به‌روزرسانی ردیف (Update Row):</strong> ویرایش مقادیر یک بازه مشخص (مثلا <code>A2:D2</code>).</li>
+        <li><strong class="text-content-main">به‌روزرسانی ردیف (Update Row):</strong> ویرایش مقادیر یک بازه مشخص (مثلاً <code>A2:D2</code>).</li>
         <li><strong class="text-content-main">پاک کردن بازه (Clear):</strong> پاک‌سازی مقادیر سلول‌ها بدون حذف ساختار شیت.</li>
     </ul>
 
     <x-docs.code
         label="نمونه مقدار ورودی برای فیلد «مقادیر ردیف» در Google Sheets"
-        :lines="[
-            '[&quot;[[ input.first_name ]]&quot;, &quot;[[ input.username ]]&quot;, &quot;ثبت‌شده&quot;]',
-        ]"
+        :lines="$sheetsRowSample"
     />
 </section>
 
@@ -52,7 +56,7 @@
         title="داده‌های خروجی نود HTTP Request"
         :items="[
             ['label' => 'پاسخ دریافتی از سرور مقصد (JSON یا متن)', 'expr' => 'input.body'],
-            ['label' => 'کد وضعیت HTTP پاسخ (مثلا 200)', 'expr' => 'input.status'],
+            ['label' => 'کد وضعیت HTTP پاسخ (مثلاً 200)', 'expr' => 'input.status'],
             ['label' => 'هدرهای پاسخ سرور', 'expr' => 'input.headers'],
         ]"
     />

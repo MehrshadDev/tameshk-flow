@@ -14,14 +14,14 @@ final class DocumentationRepository
                 'items' => [
                     [
                         'slug'        => 'introduction',
-                        'title'       => 'معرفی تمشک و نحوه کارکرد',
-                        'description' => 'آشنایی با پلتفرم اتوماسیون گردش‌کار و هوش مصنوعی تمشک، معماری نودها و کاربردها.',
+                        'title'       => 'معرفی تمشک فلو و نحوه کارکرد',
+                        'description' => 'آشنایی با پلتفرم اتوماسیون گردش‌کار و هوش مصنوعی تمشک فلو، معماری نودها و کاربردها.',
                         'readingTime' => '۴ دقیقه',
                         'view'        => 'pages.docs.articles.introduction',
                         'toc'         => [
-                            ['id' => 'what-is-tameshk', 'label' => 'تمشک چیست؟'],
+                            ['id' => 'what-is-tameshk', 'label' => 'تمشک فلو چیست؟'],
                             ['id' => 'core-concepts', 'label' => 'اجزای اصلی یک ورکفلو'],
-                            ['id' => 'node-categories', 'label' => 'دسته‌بندی نودها در تمشک'],
+                            ['id' => 'node-categories', 'label' => 'دسته‌بندی نودها در تمشک فلو'],
                             ['id' => 'execution-modes', 'label' => 'حالت تست در برابر حالت انتشار'],
                         ],
                     ],
@@ -42,14 +42,14 @@ final class DocumentationRepository
                     [
                         'slug'        => 'expressions-and-data',
                         'title'       => 'کار با داده‌ها و متغیرها (fx)',
-                        'description' => 'نحوه انتقال داده بین نودها با Drag & Drop و نگارش عبارت‌های پویا با {{ ... }}.',
+                        'description' => 'نحوه انتقال داده بین نودها با کشیدن و رها کردن و نوشتن عبارت‌های پویا در حالت متغیر.',
                         'readingTime' => '۵ دقیقه',
                         'view'        => 'pages.docs.articles.expressions-and-data',
                         'toc'         => [
                             ['id' => 'data-flow', 'label' => 'جریان داده بین نودها (JSON)'],
+                            ['id' => 'drag-and-drop', 'label' => 'کشیدن و رها کردن فیلدها'],
                             ['id' => 'expression-syntax', 'label' => 'استفاده از متغیرها در حالت (fx)'],
                             ['id' => 'referencing-nodes', 'label' => 'دسترسی به خروجی نودهای قبلی'],
-                            ['id' => 'drag-and-drop', 'label' => 'کشیدن و رها کردن فیلدها'],
                         ],
                     ],
                 ],
@@ -62,7 +62,7 @@ final class DocumentationRepository
                     [
                         'slug'        => 'core-triggers',
                         'title'       => 'وب‌هوک، زمان‌بندی و چت عمومی',
-                        'description' => 'راهنمای کامل شروع‌کننده‌های پایه: اجرای دستی، زمان‌بندی (Cron)، دریافت Webhook و صفحه چت.',
+                        'description' => 'راهنمای کامل شروع‌کننده‌های پایه: اجرای دستی، زمان‌بندی خودکار، دریافت وب‌هوک و صفحه چت.',
                         'readingTime' => '۷ دقیقه',
                         'view'        => 'pages.docs.articles.core-triggers',
                         'toc'         => [
@@ -74,14 +74,15 @@ final class DocumentationRepository
                     ],
                     [
                         'slug'        => 'app-triggers',
-                        'title'       => 'شروع‌کننده‌های تلگرام، جیمیل و شیت',
-                        'description' => 'آغاز خودکار ورکفلو به محض دریافت پیام در ربات تلگرام، ایمیل جدید یا تغییر در Google Sheets.',
-                        'readingTime' => '۶ دقیقه',
+                        'title'       => 'شروع‌کننده‌های تلگرام، جیمیل، شیت و ووکامرس',
+                        'description' => 'آغاز خودکار ورکفلو به محض دریافت پیام تلگرام، ایمیل جدید در جیمیل، تغییر در گوگل شیت یا ثبت سفارش در ووکامرس.',
+                        'readingTime' => '۷ دقیقه',
                         'view'        => 'pages.docs.articles.app-triggers',
                         'toc'         => [
                             ['id' => 'telegram-trigger', 'label' => 'شروع‌کننده ربات تلگرام'],
                             ['id' => 'gmail-trigger', 'label' => 'دریافت ایمیل جدید در جیمیل'],
                             ['id' => 'sheets-trigger', 'label' => 'تغییر یا افزودن ردیف در گوگل شیت'],
+                            ['id' => 'woocommerce-trigger', 'label' => 'رویدادهای فروشگاه ووکامرس'],
                         ],
                     ],
                 ],
@@ -94,7 +95,7 @@ final class DocumentationRepository
                     [
                         'slug'        => 'ai-agent-and-memory',
                         'title'       => 'ایجنت هوش مصنوعی و حافظه',
-                        'description' => 'نحوه کارکرد AI Agent، تنظیم دستورالعمل سیستمی، اتصال مدل زبانی و مدیریت حافظه گفتگو.',
+                        'description' => 'نحوه کارکرد ایجنت هوش مصنوعی، تنظیم دستورالعمل سیستمی، اتصال مدل زبانی و مدیریت حافظه گفتگو.',
                         'readingTime' => '۷ دقیقه',
                         'view'        => 'pages.docs.articles.ai-agent-and-memory',
                         'toc'         => [
@@ -107,14 +108,14 @@ final class DocumentationRepository
                     [
                         'slug'        => 'agent-tools',
                         'title'       => 'ابزارهای ایجنت (Agent Tools)',
-                        'description' => 'توانمندسازی ایجنت با ابزارهای گوگل شیت، جیمیل، تلگرام، وب‌اسکرپر، ویکی‌پدیا، دیتاستور و ماشین‌حساب.',
+                        'description' => 'توانمندسازی ایجنت با ابزارهای گوگل شیت، جیمیل، تلگرام، ووکامرس، دیتابیس، جدول داده و وب‌اسکرپر.',
                         'readingTime' => '۸ دقیقه',
                         'view'        => 'pages.docs.articles.agent-tools',
                         'toc'         => [
                             ['id' => 'what-are-tools', 'label' => 'ابزار (Tool) در ایجنت چیست؟'],
-                            ['id' => 'service-tools', 'label' => 'ابزارهای گوگل شیت، جیمیل و تلگرام'],
+                            ['id' => 'service-tools', 'label' => 'ابزارهای گوگل شیت، جیمیل، تلگرام و ووکامرس'],
                             ['id' => 'web-and-api-tools', 'label' => 'ابزارهای HTTP، وب‌اسکرپر و ویکی‌پدیا'],
-                            ['id' => 'utility-tools', 'label' => 'ابزارهای دیتاستور، تاریخ و ماشین‌حساب'],
+                            ['id' => 'utility-tools', 'label' => 'ابزارهای جدول داده، دیتابیس، تاریخ و ماشین‌حساب'],
                         ],
                     ],
                     [
@@ -140,20 +141,20 @@ final class DocumentationRepository
                     [
                         'slug'        => 'credentials-setup',
                         'title'       => 'تنظیم اعتبارنامه‌ها و اتصال گوگل',
-                        'description' => 'راهنمای دریافت توکن ربات تلگرام از BotFather، کلیدهای هوش مصنوعی و تنظیم OAuth2 گوگل.',
+                        'description' => 'راهنمای دریافت توکن ربات تلگرام، کلیدهای هوش مصنوعی، اتصال ووکامرس و تنظیم دسترسی گوگل.',
                         'readingTime' => '۶ دقیقه',
                         'view'        => 'pages.docs.articles.credentials-setup',
                         'toc'         => [
                             ['id' => 'credential-security', 'label' => 'امنیت و رمزنگاری اعتبارنامه‌ها'],
                             ['id' => 'telegram-botfather', 'label' => 'دریافت توکن ربات تلگرام'],
                             ['id' => 'google-oauth-setup', 'label' => 'راه‌اندازی اتصال جیمیل و گوگل شیت'],
-                            ['id' => 'ai-and-http-keys', 'label' => 'کلیدهای هوش مصنوعی و HTTP'],
+                            ['id' => 'ai-and-http-keys', 'label' => 'کلیدهای هوش مصنوعی، ووکامرس، دیتابیس و HTTP'],
                         ],
                     ],
                     [
                         'slug'        => 'service-actions',
                         'title'       => 'عملیات تلگرام، جیمیل، شیت و HTTP',
-                        'description' => 'آموزش کامل نودهای عملیاتی Telegram، Gmail، Google Sheets و ارسال درخواست با HTTP Request.',
+                        'description' => 'آموزش کامل نودهای عملیاتی تلگرام، جیمیل، گوگل شیت و ارسال درخواست‌های وب.',
                         'readingTime' => '۸ دقیقه',
                         'view'        => 'pages.docs.articles.service-actions',
                         'toc'         => [
@@ -173,7 +174,7 @@ final class DocumentationRepository
                     [
                         'slug'        => 'logic-nodes',
                         'title'       => 'شرط‌گذاری و کنترل مسیر (Logic)',
-                        'description' => 'هدایت هوشمند جریان ورکفلو با نودهای If Condition، Switch، Delay و Stop and Error.',
+                        'description' => 'هدایت هوشمند جریان ورکفلو با نودهای شرط دو مسیره، مسیریابی چندشاخه، وقفه زمانی و توقف.',
                         'readingTime' => '۶ دقیقه',
                         'view'        => 'pages.docs.articles.logic-nodes',
                         'toc'         => [
@@ -185,8 +186,8 @@ final class DocumentationRepository
                     ],
                     [
                         'slug'        => 'transform-nodes',
-                        'title'       => 'تغییر داده، تاریخ و دیتاستور',
-                        'description' => 'کار با نودهای Edit Fields، Item Lists، Text Operations، JSON Parser، Date & Time، Crypto و Data Store.',
+                        'title'       => 'تغییر داده، تاریخ و ذخیره‌سازی',
+                        'description' => 'ویرایش فیلدها، پردازش لیست‌ها، عملیات متنی، تبدیل JSON، تاریخ شمسی و میلادی، رمزنگاری، جدول داده و دیتاستور.',
                         'readingTime' => '۸ دقیقه',
                         'view'        => 'pages.docs.articles.transform-nodes',
                         'toc'         => [
@@ -194,7 +195,7 @@ final class DocumentationRepository
                             ['id' => 'item-lists-node', 'label' => 'پردازش آرایه‌ها (Item Lists)'],
                             ['id' => 'text-and-json', 'label' => 'عملیات متنی و مبدل JSON'],
                             ['id' => 'datetime-and-crypto', 'label' => 'تاریخ شمسی/میلادی و رمزنگاری (OTP)'],
-                            ['id' => 'datastore-node', 'label' => 'مخزن داده دائمی (Data Store)'],
+                            ['id' => 'datastore-node', 'label' => 'جدول داده داخلی و مخزن کلید-مقدار'],
                         ],
                     ],
                 ],

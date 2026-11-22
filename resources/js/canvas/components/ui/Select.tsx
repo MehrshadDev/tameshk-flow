@@ -94,9 +94,14 @@ export function Select({
                 type="button"
                 id={id}
                 onClick={toggleOpen}
-                className="flex w-full items-center justify-between rounded-xl border border-line-border bg-field px-3.5 py-2.5 text-xs font-medium text-content-main shadow-xs transition hover:border-content-muted/40 focus:border-primary focus:bg-surface-card focus:outline-none focus:ring-2 focus:ring-primary/20"
+                aria-expanded={isOpen}
+                className={`flex w-full items-center justify-between rounded-xl border bg-field px-3.5 py-2.5 text-xs font-medium text-content-main transition-colors focus:outline-none ${
+                    isOpen
+                        ? 'border-primary ring-2 ring-primary/15'
+                        : 'border-field-border focus:border-primary focus:ring-2 focus:ring-primary/15'
+                }`}
             >
-                <span className={selectedOption ? 'text-content-main font-semibold' : 'text-content-muted'}>
+                <span className={selectedOption ? 'font-semibold text-content-main' : 'text-content-muted'}>
                     {selectedOption ? selectedOption.label : placeholder}
                 </span>
 
@@ -110,7 +115,7 @@ export function Select({
 
             {isOpen && (
                 <div
-                    className={`custom-scrollbar absolute inset-s-0 z-50 flex max-h-72 w-full flex-col rounded-xl border border-line-border bg-surface-raised p-1.5 shadow-xl dark:shadow-primary/5 backdrop-blur-md animate-in fade-in zoom-in-95 duration-100 ${
+                    className={`custom-scrollbar absolute inset-s-0 z-50 flex max-h-72 w-full flex-col rounded-xl border border-line-border bg-surface-raised p-1.5 shadow-xl backdrop-blur-md animate-in fade-in zoom-in-95 duration-100 dark:shadow-primary/5 ${
                         openUpward ? 'bottom-full mb-1.5' : 'top-full mt-1.5'
                     }`}
                 >
@@ -127,13 +132,13 @@ export function Select({
                                     value={searchQuery}
                                     onChange={(e) => setSearchQuery(e.target.value)}
                                     placeholder="جستجو در گزینه‌ها..."
-                                    className="w-full rounded-lg border border-line-border bg-surface-card py-1.5 pe-2.5 ps-8 text-xs text-content-main placeholder:text-content-muted/50 focus:border-primary focus:outline-none"
+                                    className="w-full rounded-lg border border-field-border bg-field py-1.5 pe-2.5 ps-8 text-xs text-content-main placeholder:text-content-muted/50 focus:border-primary focus:outline-none"
                                 />
                             </div>
                         </div>
                     )}
 
-                    <div className="custom-scrollbar flex-1 overflow-y-auto space-y-0.5 pe-0.5">
+                    <div className="custom-scrollbar flex-1 space-y-0.5 overflow-y-auto pe-0.5">
                         {filteredOptions.length === 0 ? (
                             <div className="py-3 text-center text-xs text-content-muted">موردی یافت نشد</div>
                         ) : (
@@ -147,22 +152,22 @@ export function Select({
                                             onChange({ target: { value: option.value } });
                                             setIsOpen(false);
                                         }}
-                                        className={`flex w-full items-center justify-between rounded-lg px-3 py-2 text-xs font-medium text-start transition ${
+                                        className={`flex w-full items-center justify-between rounded-lg px-3 py-2 text-start text-xs font-medium transition-colors ${
                                             isSelected
-                                                ? 'bg-primary/10 text-primary font-bold'
-                                                : 'text-content-main hover:bg-line-border/60 hover:text-primary'
+                                                ? 'bg-primary/10 font-bold text-primary'
+                                                : 'text-content-main hover:bg-surface-base dark:hover:bg-white/[0.06]'
                                         }`}
                                     >
                                         <div className="min-w-0 flex-1">
                                             <span className="block truncate">{option.label}</span>
                                             {option.description && (
-                                                <span className="block truncate text-[10px] text-content-muted font-normal mt-0.5">
+                                                <span className="mt-0.5 block truncate text-[10px] font-normal text-content-muted">
                                                     {option.description}
                                                 </span>
                                             )}
                                         </div>
                                         {isSelected && (
-                                            <Icon name="check" className="size-3.5 shrink-0 text-primary ms-2" />
+                                            <Icon name="check" className="ms-2 size-3.5 shrink-0 text-primary" />
                                         )}
                                     </button>
                                 );

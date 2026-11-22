@@ -1,5 +1,6 @@
 import type { RefObject } from 'react';
 import { Icon } from '@canvas/components/ui/Icon';
+import { hasRtlChars } from '@canvas/lib/fields';
 import { useWorkflowStore } from '@canvas/store/useWorkflowStore';
 import type { NodeRunData } from '@canvas/types/graph';
 
@@ -20,9 +21,19 @@ export function NodeOutputPanel({
                                 }: NodeOutputPanelProps) {
     const addToast = useWorkflowStore((state) => state.addToast);
 
+    const hasOutputData =
+        currentNodeRun !== undefined &&
+        currentNodeRun.output_data !== null &&
+        currentNodeRun.output_data !== undefined;
+
+    const showOutputBlock =
+        currentNodeRun !== undefined && (hasOutputData || !currentNodeRun.error);
+
+    const isPersianError = Boolean(currentNodeRun?.error && hasRtlChars(currentNodeRun.error));
+
     const copyOutputJson = () => {
-        if (!currentNodeRun?.output_data) return;
-        navigator.clipboard.writeText(JSON.stringify(currentNodeRun.output_data, null, 2));
+        if (!hasOutputData) return;
+        navigator.clipboard.writeText(JSON.stringify(currentNodeRun?.output_data, null, 2));
         addToast('داده‌های خروجی کپی شدند.', 'success', 2500);
     };
 
@@ -36,44 +47,46 @@ export function NodeOutputPanel({
         <section
             ref={panelRef}
             style={{ width: window.innerWidth >= 768 ? width : '100%' }}
-            className={`min-h-0 shrink-0 flex-col bg-surface-base/60 dark:bg-surface-card/40 ${
+            className={`min-h-0 shrink-0 flex-col bg-surface-base/80 dark:bg-surface-base/45 ${
                 visibleOnMobile ? 'flex' : 'hidden md:flex'
             }`}
             dir="rtl"
         >
-            <div className="flex items-center justify-between border-b border-line-border bg-surface-raised/60 px-5 py-3">
-                <span className="flex items-center gap-2 text-xs font-bold text-content-main">
-                    <Icon name="sparkles" className="size-4 text-primary" />
-                    نتیجه خروجی (Output)
+            <div className="flex h-11 shrink-0 items-center justify-between gap-2 border-b border-line-border bg-surface-raised/70 px-4">
+                <span className="flex shrink-0 items-center gap-2 whitespace-nowrap text-xs font-bold text-content-main">
+                    <Icon name="sparkles" className="size-4 shrink-0 text-primary" />
+                    <span>نتیجه خروجی</span>
                 </span>
 
                 {currentNodeRun && (
-                    <div className="flex items-center gap-2">
-                        <button
-                            type="button"
-                            onClick={copyOutputJson}
-                            title="کپی داده‌های خروجی"
-                            className="flex items-center gap-1 rounded-md border border-line-border bg-surface-raised px-2 py-0.5 text-[10px] text-content-muted transition hover:text-content-main"
-                        >
-                            <Icon name="copy" className="size-3" />
-                            <span>کپی خروجی</span>
-                        </button>
+                    <div className="flex shrink-0 items-center gap-2">
+                        {hasOutputData && (
+                            <button
+                                type="button"
+                                onClick={copyOutputJson}
+                                title="کپی داده‌های خروجی"
+                                className="inline-flex items-center gap-1 whitespace-nowrap rounded-lg border border-line-border bg-surface-card px-2 py-1 text-[11px] font-medium text-content-muted transition hover:border-primary/40 hover:text-content-main"
+                            >
+                                <Icon name="copy" className="size-3 shrink-0" />
+                                <span>کپی</span>
+                            </button>
+                        )}
 
                         {currentNodeRun.duration_ms !== null && (
                             <span
-                                className="flex items-center gap-1 font-mono text-[11px] text-content-muted"
+                                className="inline-flex items-center gap-1 whitespace-nowrap font-mono text-[11px] text-content-muted"
                                 dir="ltr"
                             >
-                                <Icon name="clock" className="size-3" />
-                                {currentNodeRun.duration_ms} ms
+                                <Icon name="clock" className="size-3 shrink-0" />
+                                <span>{currentNodeRun.duration_ms} ms</span>
                             </span>
                         )}
 
                         <span
-                            className={`rounded-md px-2 py-0.5 text-[10px] font-bold ${
+                            className={`whitespace-nowrap rounded-lg px-2 py-0.5 text-[11px] font-bold ${
                                 currentNodeRun.status === 'success'
                                     ? 'bg-emerald-500/15 text-emerald-600 dark:bg-emerald-500/10 dark:text-emerald-500'
-                                    : 'bg-primary/10 text-primary'
+                                    : 'bg-primary/12 text-primary'
                             }`}
                         >
                             {currentNodeRun.status === 'success' ? 'موفق' : 'خطا'}
@@ -95,35 +108,44 @@ export function NodeOutputPanel({
                 ) : (
                     <div className="space-y-4 text-xs">
                         {currentNodeRun.error && (
-                            <div className="max-h-56 space-y-2 overflow-y-auto rounded-2xl border border-primary/20 bg-primary/10 p-3.5 text-xs leading-5 text-primary">
-                                <div className="flex items-center justify-between border-b border-primary/20 pb-1.5">
-                                    <span className="text-[11px] font-bold">Error Output</span>
+                            <div className="max-h-64 space-y-2.5 overflow-y-auto rounded-2xl border border-primary/25 bg-primary/[0.07] p-4 text-xs leading-6 text-primary">
+                                <div className="flex items-center justify-between gap-2 border-b border-primary/20 pb-2">
+                                    <span className="flex items-center gap-1.5 whitespace-nowrap text-xs font-bold">
+                                        <Icon name="alert-triangle" className="size-3.5 shrink-0" />
+                                        <span>خطای اجرا</span>
+                                    </span>
                                     <button
                                         type="button"
                                         onClick={copyErrorText}
-                                        className="flex items-center gap-1 text-[10px] text-primary transition hover:underline"
+                                        className="inline-flex items-center gap-1 whitespace-nowrap text-[11px] font-semibold text-primary transition hover:underline"
                                     >
-                                        <Icon name="copy" className="size-3" />
+                                        <Icon name="copy" className="size-3 shrink-0" />
                                         <span>کپی متن خطا</span>
                                     </button>
                                 </div>
                                 <p
-                                    className="select-text text-start font-mono text-[11px] break-all whitespace-pre-wrap"
-                                    dir="auto"
+                                    dir={isPersianError ? 'rtl' : 'ltr'}
+                                    className={`select-text whitespace-pre-wrap wrap-break-word leading-6 ${
+                                        isPersianError
+                                            ? 'text-right text-xs font-medium'
+                                            : 'text-left font-mono text-[11px]'
+                                    }`}
                                 >
                                     {currentNodeRun.error}
                                 </p>
                             </div>
                         )}
 
-                        <div className="space-y-1.5">
-                            <pre
-                                dir="ltr"
-                                className="custom-scrollbar max-h-96 overflow-auto rounded-2xl border border-line-border bg-surface-card p-4 font-mono text-[11px] leading-5 text-content-main shadow-2xs select-text"
-                            >
-                                {JSON.stringify(currentNodeRun.output_data, null, 2) ?? 'null'}
-                            </pre>
-                        </div>
+                        {showOutputBlock && (
+                            <div className="space-y-1.5">
+                                <pre
+                                    dir="ltr"
+                                    className="custom-scrollbar max-h-96 overflow-auto rounded-2xl border border-line-border bg-surface-card p-4 font-mono text-[11px] leading-5 text-content-main shadow-2xs select-text"
+                                >
+                                    {JSON.stringify(currentNodeRun.output_data, null, 2) ?? 'null'}
+                                </pre>
+                            </div>
+                        )}
                     </div>
                 )}
             </div>

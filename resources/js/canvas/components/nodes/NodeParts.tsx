@@ -4,7 +4,7 @@ import type { NodeRunStatus } from '@canvas/types/graph';
 
 export const HANDLE_RESET = 'relative! left-auto! right-auto! top-auto! bottom-auto! transform-none!';
 
-export const DOT_HANDLE = `${HANDLE_RESET} pointer-events-auto size-3.5! rounded-full! border-2! border-surface-card! bg-content-muted/70! shadow-sm ring-1 ring-line-border transition-all duration-150 cursor-crosshair hover:scale-125 hover:bg-primary! hover:ring-primary/40`;
+export const DOT_HANDLE = `${HANDLE_RESET} pointer-events-auto size-3.5! rounded-full! border-2! border-surface-card! bg-edge! shadow-sm ring-1 ring-line-border transition-all duration-150 cursor-crosshair hover:scale-125 hover:bg-primary! hover:ring-primary/40`;
 
 export const DIAMOND_HANDLE = `${HANDLE_RESET} pointer-events-auto size-6! rounded-none! border-0! bg-transparent! cursor-pointer flex items-center justify-center`;
 
@@ -54,7 +54,7 @@ export function SidePlus({
                     labeled ? 'min-w-18 px-3' : 'w-5 group-hover/plus:w-7'
                 } transition-all duration-150`}
             >
-                <span className="pointer-events-none absolute inset-x-0 top-1/2 h-px -translate-y-1/2 bg-linear-to-r from-content-muted/65 to-content-muted/25 transition-all duration-150 group-hover/plus:from-primary group-hover/plus:to-primary/40" />
+                <span className="pointer-events-none absolute inset-x-0 top-1/2 h-px -translate-y-1/2 bg-linear-to-r from-edge to-edge/40 transition-all duration-150 group-hover/plus:from-primary group-hover/plus:to-primary/40" />
                 {labeled && labelText && (
                     <span
                         dir="rtl"

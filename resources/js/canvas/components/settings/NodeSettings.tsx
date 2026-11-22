@@ -21,14 +21,19 @@ import { useBackdropClose } from '@canvas/lib/useBackdropClose';
 import { useWorkflowStore } from '@canvas/store/useWorkflowStore';
 import type { ConfigField } from '@canvas/types/graph';
 
-const MIN_SIDE_WIDTH = 260;
+const MIN_SIDE_WIDTH = 340;
+const DEFAULT_LEFT_WIDTH = 360;
+const DEFAULT_RIGHT_WIDTH = 420;
 const MIN_CENTER_WIDTH = 440;
 
-const readClampedSideWidth = (key: string, fallback: number): number => {
+const readClampedSideWidth = (key: string, fallback: number, isSingleSide = false): number => {
     const raw = Number(localStorage.getItem(key));
-    if (!Number.isFinite(raw) || raw < MIN_SIDE_WIDTH) return fallback;
-    const maxSafe = Math.max(MIN_SIDE_WIDTH, Math.floor((window.innerWidth - MIN_CENTER_WIDTH) / 2));
-    return Math.min(raw, maxSafe);
+    const preferred = Number.isFinite(raw) && raw >= MIN_SIDE_WIDTH ? raw : fallback;
+    const maxSafe = isSingleSide
+        ? Math.max(MIN_SIDE_WIDTH, Math.min(680, window.innerWidth - MIN_CENTER_WIDTH - 32))
+        : Math.max(MIN_SIDE_WIDTH, Math.floor((window.innerWidth - MIN_CENTER_WIDTH - 32) / 2));
+
+    return Math.min(preferred, maxSafe);
 };
 
 export function NodeSettingsPanel() {
@@ -50,20 +55,6 @@ function NodeStudio({ nodeId }: { nodeId: string }) {
     const leftPanelRef = useRef<HTMLElement | null>(null);
     const rightPanelRef = useRef<HTMLElement | null>(null);
 
-    const [leftWidth, setLeftWidth] = useState(() =>
-        readClampedSideWidth('tameshk_studio_left_w', 350),
-    );
-    const [rightWidth, setRightWidth] = useState(() =>
-        readClampedSideWidth('tameshk_studio_right_w', 350),
-    );
-    const [activeHandle, setActiveHandle] = useState<'left' | 'right' | null>(null);
-
-    const activeSideRef = useRef<'left' | 'right' | null>(null);
-    const dragStartX = useRef(0);
-    const dragStartWidth = useRef(0);
-    const latestWidthRef = useRef(350);
-    const rafRef = useRef<number | null>(null);
-
     const isFullWorkflowRunning = useWorkflowStore((state) => state.isRunning);
     const node = useWorkflowStore((state) => state.nodes.find((item) => item.id === nodeId));
     const allNodes = useWorkflowStore((state) => state.nodes);
@@ -77,6 +68,23 @@ function NodeStudio({ nodeId }: { nodeId: string }) {
     const ids = useWorkflowStore((state) => state.ids);
     const lastRun = useWorkflowStore((state) => state.lastRun);
     const backdrop = useBackdropClose(closePanel);
+
+    const definition = definitions.find((item) => item.type === node?.data.nodeType);
+    const isTrigger = definition?.category === 'trigger';
+
+    const [leftWidth, setLeftWidth] = useState(() =>
+        readClampedSideWidth('tameshk_studio_left_w', DEFAULT_LEFT_WIDTH, false),
+    );
+    const [rightWidth, setRightWidth] = useState(() =>
+        readClampedSideWidth('tameshk_studio_right_w', DEFAULT_RIGHT_WIDTH, Boolean(isTrigger)),
+    );
+    const [activeHandle, setActiveHandle] = useState<'left' | 'right' | null>(null);
+
+    const activeSideRef = useRef<'left' | 'right' | null>(null);
+    const dragStartX = useRef(0);
+    const dragStartWidth = useRef(0);
+    const latestWidthRef = useRef(DEFAULT_RIGHT_WIDTH);
+    const rafRef = useRef<number | null>(null);
 
     const isManualTrigger = allNodes.some((n) => isTestableTrigger(n.data.nodeType));
 
@@ -119,7 +127,7 @@ function NodeStudio({ nodeId }: { nodeId: string }) {
 
             const dynamicMax = Math.max(
                 MIN_SIDE_WIDTH,
-                Math.min(640, totalWidth - oppositeWidth - MIN_CENTER_WIDTH),
+                Math.min(680, totalWidth - oppositeWidth - MIN_CENTER_WIDTH),
             );
 
             const clamped = Math.max(
@@ -207,8 +215,6 @@ function NodeStudio({ nodeId }: { nodeId: string }) {
         document.body.style.userSelect = 'none';
     };
 
-    const definition = definitions.find((item) => item.type === node?.data.nodeType);
-
     const isSupplyNode =
         definition !== undefined &&
         definition.inputs.length === 0 &&
@@ -282,7 +288,6 @@ function NodeStudio({ nodeId }: { nodeId: string }) {
 
     const { iconName, iconStyle } = nodeAppearance(definition, node.data.config);
 
-    const isTrigger = definition?.category === 'trigger';
     const canTestNode =
         isManualTrigger &&
         (!isTrigger ||
@@ -385,10 +390,10 @@ function NodeStudio({ nodeId }: { nodeId: string }) {
                                 value={node.data.label}
                                 maxLength={100}
                                 autoComplete="off"
-                                dir="ltr"
+                                dir="auto"
                                 onChange={(e) => updateNode(node.id, { label: e.target.value })}
                                 onBlur={restoreName}
-                                className="w-48 truncate rounded-md bg-transparent px-1 text-sm font-bold text-content-main select-text focus:bg-surface-card focus:ring-2 focus:ring-primary/40 focus:outline-none sm:w-64"
+                                className="w-48 truncate rounded-md bg-transparent px-1 text-left text-sm font-bold text-content-main select-text focus:bg-field focus:ring-2 focus:ring-primary/30 focus:outline-none sm:w-64"
                             />
                             <p className="px-1 text-left text-[11px] text-content-muted">
                                 {definition?.name ?? 'نوع ناشناخته'}
@@ -401,7 +406,7 @@ function NodeStudio({ nodeId }: { nodeId: string }) {
                             type="button"
                             onClick={closePanel}
                             aria-label="بستن"
-                            className="flex size-9 items-center justify-center rounded-xl text-content-muted transition hover:bg-line-border hover:text-content-main"
+                            className="flex size-9 items-center justify-center rounded-xl text-content-muted transition hover:bg-line-border/60 hover:text-content-main"
                         >
                             <Icon name="x" className="size-5" />
                         </button>
@@ -446,7 +451,7 @@ function NodeStudio({ nodeId }: { nodeId: string }) {
                     </div>
                 </header>
 
-                <div className="flex border-b border-line-border bg-surface-card/60 p-1 text-xs font-semibold md:hidden">
+                <div className="flex border-b border-line-border bg-surface-base/80 p-1 text-xs font-semibold md:hidden">
                     {!isTrigger && (
                         <button
                             type="button"
@@ -502,9 +507,9 @@ function NodeStudio({ nodeId }: { nodeId: string }) {
                             <div
                                 onPointerDown={startLeftResize}
                                 onDoubleClick={() => {
-                                    setLeftWidth(350);
-                                    if (leftPanelRef.current) leftPanelRef.current.style.width = '350px';
-                                    localStorage.setItem('tameshk_studio_left_w', '350');
+                                    setLeftWidth(DEFAULT_LEFT_WIDTH);
+                                    if (leftPanelRef.current) leftPanelRef.current.style.width = `${DEFAULT_LEFT_WIDTH}px`;
+                                    localStorage.setItem('tameshk_studio_left_w', String(DEFAULT_LEFT_WIDTH));
                                 }}
                                 className="group/handle relative z-20 hidden w-px shrink-0 cursor-col-resize touch-none select-none bg-line-border md:block"
                             >
@@ -526,10 +531,10 @@ function NodeStudio({ nodeId }: { nodeId: string }) {
                         }`}
                         dir="rtl"
                     >
-                        <div className="flex items-center justify-between border-b border-line-border px-6 py-3">
-                            <span className="flex items-center gap-2 text-xs font-bold text-content-main">
-                                <Icon name={isTrigger ? 'player-play' : 'settings'} className="size-4 text-primary" />
-                                {isTrigger ? 'تنظیمات شروع‌کننده (Trigger)' : 'تنظیمات نود (Parameters)'}
+                        <div className="flex h-11 shrink-0 items-center justify-between border-b border-line-border px-5">
+                            <span className="flex items-center gap-2 whitespace-nowrap text-xs font-bold text-content-main">
+                                <Icon name={isTrigger ? 'player-play' : 'settings'} className="size-4 shrink-0 text-primary" />
+                                <span>{isTrigger ? 'تنظیمات شروع‌کننده' : 'تنظیمات نود'}</span>
                             </span>
                         </div>
 
@@ -605,9 +610,9 @@ function NodeStudio({ nodeId }: { nodeId: string }) {
                                 return (
                                     <div
                                         key={key}
-                                        className="relative rounded-2xl border border-line-border/70 bg-surface-card/60 p-4 pt-3"
+                                        className="relative rounded-2xl border border-line-border/80 bg-surface-base/45 p-4 pt-3 dark:bg-surface-card/60"
                                     >
-                                        <div className="mb-2 flex items-center justify-between border-b border-line-border/50 pb-1.5">
+                                        <div className="mb-2.5 flex items-center justify-between border-b border-line-border/60 pb-2">
                                             <span className="text-xs font-bold text-content-main">
                                                 {field.label ?? key}
                                             </span>
@@ -639,7 +644,7 @@ function NodeStudio({ nodeId }: { nodeId: string }) {
                                         <button
                                             type="button"
                                             onClick={() => setOptionsMenuOpen((prev) => !prev)}
-                                            className="flex w-full items-center justify-center gap-2 rounded-2xl border border-line-border bg-surface-card py-2.5 text-xs font-semibold text-content-main shadow-xs transition hover:bg-line-border/40"
+                                            className="flex w-full items-center justify-center gap-2 rounded-2xl border border-line-border bg-field py-2.5 text-xs font-semibold text-content-main shadow-2xs transition hover:border-content-muted/40"
                                         >
                                             <Icon name="plus" className="size-3.5" />
                                             <span>افزودن گزینه (گزینه‌های بیشتر)</span>
@@ -669,9 +674,9 @@ function NodeStudio({ nodeId }: { nodeId: string }) {
                     <div
                         onPointerDown={startRightResize}
                         onDoubleClick={() => {
-                            setRightWidth(350);
-                            if (rightPanelRef.current) rightPanelRef.current.style.width = '350px';
-                            localStorage.setItem('tameshk_studio_right_w', '350');
+                            setRightWidth(DEFAULT_RIGHT_WIDTH);
+                            if (rightPanelRef.current) rightPanelRef.current.style.width = `${DEFAULT_RIGHT_WIDTH}px`;
+                            localStorage.setItem('tameshk_studio_right_w', String(DEFAULT_RIGHT_WIDTH));
                         }}
                         className="group/handle relative z-20 hidden w-px shrink-0 cursor-col-resize touch-none select-none bg-line-border md:block"
                     >

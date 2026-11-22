@@ -38,7 +38,7 @@
     font-display: swap;
 }
 
-@variant dark (&:where(.dark, .dark *));
+@custom-variant dark (&:where(.dark, .dark *));
 
 :root {
     --color-surface-base: #f1f5f9;
@@ -49,7 +49,9 @@
     --color-line-border: #cbd5e1;
     --color-menu: #ffffff;
     --color-primary: #E21C48;
-    --color-field: #f8fafc;
+    --color-field: #ffffff;
+    --color-field-border: #c5ccd6;
+    --color-edge: #9aa4b2;
     color-scheme: light;
 
     --default-font-family: var(--font-sans);
@@ -65,7 +67,9 @@
     --color-line-border: #2e2e2e;
     --color-menu: #141414;
     --color-primary: #E21C48;
-    --color-field: rgba(250, 250, 250, 0.035);
+    --color-field: #0e0e10;
+    --color-field-border: #38383e;
+    --color-edge: #a3a3a8;
     color-scheme: dark;
 }
 
@@ -84,6 +88,8 @@
     --color-menu: var(--color-menu);
     --color-primary: #E21C48;
     --color-field: var(--color-field);
+    --color-field-border: var(--color-field-border);
+    --color-edge: var(--color-edge);
 
     --animate-scroll-up: scrollUp 25s linear infinite;
 
@@ -91,6 +97,16 @@
         from { transform: translateY(0); }
         to { transform: translateY(-50%); }
     }
+}
+
+::selection {
+    background-color: color-mix(in oklab, var(--color-primary) 20%, transparent);
+    color: var(--color-primary);
+}
+
+.dark ::selection {
+    background-color: color-mix(in oklab, var(--color-primary) 38%, transparent);
+    color: #ffffff;
 }
 
 [x-cloak] {
@@ -214,7 +230,7 @@
     --xy-controls-button-background-color-hover: var(--color-surface-card);
     --xy-controls-button-color: var(--color-content-main);
     --xy-controls-button-border-color: var(--color-line-border);
-    --xy-edge-stroke-default: var(--color-content-muted);
+    --xy-edge-stroke-default: var(--color-edge);
     --xy-edge-stroke-width-default: 2;
     --xy-edge-stroke-selected-default: var(--color-primary);
 }
@@ -223,7 +239,7 @@
     width: 10px;
     height: 10px;
     border: 2px solid var(--color-surface-card);
-    background: var(--color-content-muted);
+    background: var(--color-edge);
 }
 
 .react-flow .react-flow__handle:hover,

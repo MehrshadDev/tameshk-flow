@@ -81,6 +81,7 @@ export function MultiSelectField({ field, value, onChange }: MultiSelectFieldPro
             <div
                 role="button"
                 tabIndex={0}
+                aria-expanded={isOpen}
                 onClick={toggleOpen}
                 onKeyDown={(event) => {
                     if (event.key === 'Enter' || event.key === ' ') {
@@ -88,10 +89,10 @@ export function MultiSelectField({ field, value, onChange }: MultiSelectFieldPro
                         toggleOpen();
                     }
                 }}
-                className={`flex min-h-10.5 w-full cursor-pointer items-center justify-between gap-2 rounded-xl border px-2.5 py-1.5 text-xs transition focus:outline-none ${
+                className={`flex min-h-10.5 w-full cursor-pointer items-center justify-between gap-2 rounded-xl border bg-field px-2.5 py-1.5 text-xs transition-colors focus:outline-none ${
                     isOpen
-                        ? 'border-primary bg-surface-card'
-                        : 'border-line-border bg-field hover:border-content-muted/40 focus-visible:border-primary'
+                        ? 'border-primary ring-2 ring-primary/15'
+                        : 'border-field-border focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-primary/15'
                 }`}
             >
                 <div className="flex min-w-0 flex-1 flex-wrap items-center gap-1.5">
@@ -144,10 +145,10 @@ export function MultiSelectField({ field, value, onChange }: MultiSelectFieldPro
                                 key={option.value}
                                 type="button"
                                 onClick={() => toggle(option.value)}
-                                className={`flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-start text-xs font-medium transition ${
+                                className={`flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-start text-xs font-medium transition-colors ${
                                     isOn
                                         ? 'bg-primary/10 font-bold text-primary'
-                                        : 'text-content-main hover:bg-line-border/60 hover:text-primary'
+                                        : 'text-content-main hover:bg-surface-base dark:hover:bg-white/6'
                                 }`}
                             >
                                 <span

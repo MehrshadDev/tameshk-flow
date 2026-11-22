@@ -67,7 +67,7 @@ export function TopBar({ backUrl }: TopBarProps) {
                 {isBusy ? (
                     <>
                         {listeningText && (
-                            <span className="hidden items-center gap-1.5 rounded-xl border border-amber-500/25 bg-amber-500/10 px-3 py-1.5 text-xs font-semibold text-amber-500 sm:flex">
+                            <span className="hidden h-9 items-center gap-1.5 rounded-xl border border-amber-500/25 bg-amber-500/10 px-3 text-xs font-semibold text-amber-500 sm:flex">
                                 <Icon name="loader" className="size-3.5 animate-spin text-amber-500" />
                                 {listeningText}
                             </span>
@@ -76,7 +76,7 @@ export function TopBar({ backUrl }: TopBarProps) {
                         <button
                             type="button"
                             onClick={() => void cancelWorkflow()}
-                            className="flex items-center gap-2 rounded-xl border border-amber-500/20 bg-amber-500/10 px-3.5 py-1.5 text-xs font-bold text-amber-500 shadow-sm transition hover:bg-amber-500/20"
+                            className="flex h-9 items-center gap-2 rounded-xl border border-amber-500/20 bg-amber-500/10 px-3.5 text-xs font-bold text-amber-500 shadow-sm transition hover:bg-amber-500/20"
                         >
                             <Icon name="player-stop" className="size-4" />
                             <span>توقف اجرا</span>
@@ -90,7 +90,7 @@ export function TopBar({ backUrl }: TopBarProps) {
                             <button
                                 type="button"
                                 onClick={() => void executeWorkflow()}
-                                className="flex items-center gap-2 rounded-xl bg-emerald-600 px-3.5 py-1.5 text-xs font-bold text-white shadow-sm transition hover:bg-emerald-500"
+                                className="flex h-9 items-center gap-2 rounded-xl bg-emerald-600 px-3.5 text-xs font-bold text-white shadow-sm transition hover:bg-emerald-500"
                             >
                                 <Icon name="player-play" className="size-4" />
                                 <span>تست اجرا</span>

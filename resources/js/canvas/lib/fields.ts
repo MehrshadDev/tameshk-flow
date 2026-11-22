@@ -1,14 +1,29 @@
 import type { ConfigField } from '@canvas/types/graph';
 
+const PERSIAN_OR_ARABIC = /[\u0600-\u06FF\u0750-\u077F\u08A0-\u08FF\uFB50-\uFDFF\uFE70-\uFEFF]/;
 const FIRST_LETTER_RTL = /^[^\p{L}]*[\u0590-\u08FF\uFB1D-\uFDFF\uFE70-\uFEFF]/u;
 
 export type SelectOption = { value: string; label: string };
+
+export const hasRtlChars = (value: string): boolean => PERSIAN_OR_ARABIC.test(value);
 
 export const textDir = (value: string, fallback = ''): 'rtl' | 'ltr' => {
     const sample = value.trim() !== '' ? value.trim() : fallback.trim();
     if (sample === '') {
         return 'rtl';
     }
+    const stripped = sample
+        .replace(/\{\{[\s\S]*?}}/g, ' ')
+        .replace(/<\/?[a-z][^>]*>/gi, ' ')
+        .trim();
+
+    if (stripped !== '') {
+        if (FIRST_LETTER_RTL.test(stripped) || hasRtlChars(stripped)) {
+            return 'rtl';
+        }
+        return 'ltr';
+    }
+
     return FIRST_LETTER_RTL.test(sample) ? 'rtl' : 'ltr';
 };
 

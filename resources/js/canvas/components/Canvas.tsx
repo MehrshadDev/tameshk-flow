@@ -429,7 +429,7 @@ function CanvasInner() {
                     display: none !important;
                 }
                 .react-flow__edge-path {
-                    stroke: var(--color-content-muted);
+                    stroke: var(--color-edge);
                     stroke-width: 2px;
                     transition: stroke 0.15s ease, stroke-width 0.15s ease, filter 0.15s ease;
                 }

@@ -20,11 +20,17 @@
             @endphp
 
             <div x-data="{ copied: false }"
-                 class="flex flex-col justify-between gap-2 px-4 py-3 transition hover:bg-surface-card/60 sm:flex-row sm:items-center">
+                 class="flex flex-col justify-between gap-2 px-4 py-3 sm:flex-row sm:items-center">
                 <div class="min-w-0 flex-1">
                     <p class="text-xs font-bold text-content-main">{{ $item['label'] ?? '' }}</p>
                     @if (! empty($item['desc']))
                         <p class="mt-0.5 text-[11px] text-content-muted">{{ $item['desc'] }}</p>
+                    @endif
+                    @if (! empty($item['example']))
+                        <p class="mt-0.5 text-[11px] text-content-muted">
+                            <span>مثال:</span>
+                            <span dir="ltr" class="mr-1 inline-block font-mono text-content-main/85">{{ $item['example'] }}</span>
+                        </p>
                     @endif
                 </div>
 
@@ -32,7 +38,7 @@
                         dir="ltr"
                         data-expr="{{ $fullExpr }}"
                         @click="navigator.clipboard.writeText($el.dataset.expr); copied = true; setTimeout(() => copied = false, 2000)"
-                        class="inline-flex w-fit shrink-0 items-center gap-2 self-end rounded-xl border border-line-border bg-surface-card px-3 py-1.5 font-mono text-xs text-primary transition hover:border-primary/50 hover:bg-primary/5 sm:self-auto cursor-pointer">
+                        class="inline-flex w-fit shrink-0 items-center gap-2 self-end rounded-xl border border-line-border bg-surface-card px-3 py-1.5 font-mono text-xs text-primary transition hover:border-primary/50 hover:bg-primary/8 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 sm:self-auto cursor-pointer">
                     <span>{{ $fullExpr }}</span>
                     <x-ui.icon name="copy" x-show="!copied" class="size-3.5 text-content-muted"/>
                     <x-ui.icon name="check" x-show="copied" x-cloak class="size-3.5 text-emerald-500"/>

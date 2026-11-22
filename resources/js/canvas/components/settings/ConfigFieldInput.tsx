@@ -8,7 +8,7 @@ import { SwitchRulesEditor } from '@canvas/components/settings/SwitchRulesEditor
 import { ModelSelect } from '@canvas/components/settings/ModelSelect';
 import { PasswordField } from '@canvas/components/ui/PasswordField';
 import { Select } from '@canvas/components/ui/Select';
-import { asString, normalizeOptions, textDir } from '@canvas/lib/fields';
+import { asString, hasRtlChars, normalizeOptions, textDir } from '@canvas/lib/fields';
 import type { ConfigField } from '@canvas/types/graph';
 import { MultiSelectField } from '@canvas/components/settings/MultiSelectField';
 import { DynamicSelect } from '@canvas/components/settings/DynamicSelect';
@@ -277,13 +277,25 @@ export function ConfigFieldInput(props: ConfigFieldInputProps) {
     const evaluation = isExpression && hasText && hasIncomingRun ? resolveExpression(incomingData, text) : null;
     const isValid = evaluation ? evaluation.found : true;
 
+    const resolvedDir: 'rtl' | 'ltr' =
+        field.type === 'code' || isExpression
+            ? 'ltr'
+            : textDir(text, field.placeholder);
+
+    const isRtl = resolvedDir === 'rtl';
+    const useMono = field.type === 'code' || (isExpression && hasText && !hasRtlChars(text));
+
     const expressionStyles = isExpression && hasText
         ? (hasIncomingRun
             ? (isValid
-                ? 'border-emerald-500/50! bg-emerald-500/10! focus:bg-emerald-500/10! text-emerald-400 font-mono focus:border-emerald-500!'
-                : 'border-primary/50! bg-primary/10! focus:bg-primary/10! text-primary font-mono focus:border-primary!')
-            : 'border-content-muted/30! bg-content-muted/10! focus:bg-content-muted/10! font-mono focus:border-content-muted/60!')
+                ? `border-emerald-500/50! bg-emerald-500/[0.04]! text-emerald-700 dark:text-emerald-400 focus:border-emerald-500! focus:ring-emerald-500/15! ${useMono ? 'font-mono' : ''}`
+                : `border-primary/50! bg-primary/[0.04]! text-primary focus:border-primary! focus:ring-primary/15! ${useMono ? 'font-mono' : ''}`)
+            : (useMono ? 'font-mono' : ''))
         : '';
+
+    const fxColor = isExpression && hasText && hasIncomingRun
+        ? (isValid ? 'text-emerald-500' : 'text-primary')
+        : 'text-content-muted/70';
 
     const handleDrop = (event: React.DragEvent<HTMLInputElement | HTMLTextAreaElement>) => {
         event.preventDefault();
@@ -383,7 +395,7 @@ export function ConfigFieldInput(props: ConfigFieldInputProps) {
                 role="switch"
                 aria-checked={checked}
                 onClick={() => onChange(!checked)}
-                className="group flex w-full items-center justify-between rounded-xl border border-line-border bg-surface-card/50 px-3.5 py-2.5 text-start transition hover:border-content-muted/40"
+                className="group flex w-full items-center justify-between rounded-xl border border-field-border bg-field px-3.5 py-2.5 text-start transition-colors"
             >
                 <span className="text-xs font-medium text-content-main">
                     {field.label}
@@ -419,6 +431,11 @@ export function ConfigFieldInput(props: ConfigFieldInputProps) {
 
     const supportsExpressionToggle = field.type === 'text' || field.type === 'textarea' || field.type === 'code';
     const isMultiline = field.type === 'textarea' || field.type === 'code';
+    const textareaRows = Math.min(10, Math.max(4, text.split('\n').length + 1));
+
+    const fxPadding = isExpression
+        ? 'pl-9 text-left'
+        : (isRtl ? 'text-right' : 'text-left');
 
     return (
         <div className="space-y-1.5">
@@ -427,8 +444,8 @@ export function ConfigFieldInput(props: ConfigFieldInputProps) {
                     <span className="text-[10px] text-content-muted">
                         {isExpression && hasText && hasIncomingRun && (
                             isValid
-                                ? <span className="text-emerald-500 font-bold">معتبر</span>
-                                : <span className="text-primary font-bold">نامعتبر</span>
+                                ? <span className="font-bold text-emerald-500">معتبر</span>
+                                : <span className="font-bold text-primary">نامعتبر</span>
                         )}
                     </span>
 
@@ -438,7 +455,7 @@ export function ConfigFieldInput(props: ConfigFieldInputProps) {
                             onClick={() => setIsExpressionMode(false)}
                             className={`rounded-md px-2 py-0.5 transition ${
                                 !isExpression
-                                    ? 'bg-line-border text-content-main shadow-xs'
+                                    ? 'bg-surface-raised text-content-main shadow-2xs'
                                     : 'text-content-muted hover:text-content-main'
                             }`}
                         >
@@ -449,7 +466,7 @@ export function ConfigFieldInput(props: ConfigFieldInputProps) {
                             onClick={() => setIsExpressionMode(true)}
                             className={`rounded-md px-2 py-0.5 transition ${
                                 isExpression
-                                    ? 'bg-primary text-white shadow-xs'
+                                    ? 'bg-primary text-white shadow-2xs'
                                     : 'text-content-muted hover:text-content-main'
                             }`}
                         >
@@ -462,8 +479,8 @@ export function ConfigFieldInput(props: ConfigFieldInputProps) {
             <div className="relative">
                 {isExpression && (
                     <span
-                        className={`pointer-events-none absolute inset-y-0 left-0 z-10 flex ps-3 text-xs font-black italic leading-5 text-content-muted opacity-60 ${
-                            isMultiline ? 'items-start pt-2' : 'items-center'
+                        className={`pointer-events-none absolute inset-y-0 left-0 z-10 flex pl-3 text-xs font-black italic leading-5 ${fxColor} ${
+                            isMultiline ? 'items-start pt-2.5' : 'items-center'
                         }`}
                         dir="ltr"
                     >
@@ -474,17 +491,17 @@ export function ConfigFieldInput(props: ConfigFieldInputProps) {
                 {field.type === 'textarea' ? (
                     <textarea
                         id={id}
-                        rows={4}
+                        rows={textareaRows}
                         autoComplete="off"
                         spellCheck={false}
                         value={text}
                         maxLength={10000}
                         placeholder={isExpression ? '{{ input.property }}' : field.placeholder}
-                        dir={isExpression && hasText ? 'ltr' : textDir(text, field.placeholder)}
+                        dir={resolvedDir}
                         onChange={(event) => onChange(event.target.value)}
                         onDragOver={handleDragOver}
                         onDrop={handleDrop}
-                        className={`${inputClass} resize-none ${isExpression ? 'pl-9 text-left' : ''} ${expressionStyles}`}
+                        className={`${inputClass} custom-scrollbar resize-none leading-6 ${fxPadding} ${expressionStyles}`}
                     />
                 ) : field.type === 'code' ? (
                     <textarea
@@ -499,7 +516,9 @@ export function ConfigFieldInput(props: ConfigFieldInputProps) {
                         onChange={(event) => onChange(event.target.value)}
                         onDragOver={handleDragOver}
                         onDrop={handleDrop}
-                        className={`${inputClass} resize-none font-mono text-xs ${isExpression ? 'pl-9 text-left' : ''} ${expressionStyles}`}
+                        className={`${inputClass} custom-scrollbar resize-none font-mono text-xs leading-5 ${
+                            isExpression ? 'pl-9 text-left' : 'text-left'
+                        } ${expressionStyles}`}
                     />
                 ) : (
                     <input
@@ -510,11 +529,11 @@ export function ConfigFieldInput(props: ConfigFieldInputProps) {
                         value={text}
                         maxLength={2000}
                         placeholder={isExpression ? '{{ input.property }}' : field.placeholder}
-                        dir={isExpression && hasText ? 'ltr' : textDir(text, field.placeholder)}
+                        dir={resolvedDir}
                         onChange={(event) => onChange(event.target.value)}
                         onDragOver={handleDragOver}
                         onDrop={handleDrop}
-                        className={`${inputClass} ${isExpression ? 'pl-9 text-left' : ''} ${expressionStyles}`}
+                        className={`${inputClass} ${fxPadding} ${expressionStyles}`}
                     />
                 )}
             </div>

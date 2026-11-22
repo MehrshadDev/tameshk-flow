@@ -56,18 +56,18 @@ export function NodeInputPanel({
         <section
             ref={panelRef}
             style={{ width: window.innerWidth >= 768 ? width : '100%' }}
-            className={`min-h-0 shrink-0 flex-col bg-surface-base/60 dark:bg-surface-card/40 ${
+            className={`min-h-0 shrink-0 flex-col bg-surface-base/80 dark:bg-surface-base/45 ${
                 visibleOnMobile ? 'flex' : 'hidden md:flex'
             }`}
             dir="rtl"
         >
-            <div className="flex items-center justify-between border-b border-line-border bg-surface-raised/60 px-5 py-3">
-                <span className="flex items-center gap-2 text-xs font-bold text-content-main">
-                    <Icon name="brackets" className="size-4 text-primary" />
-                    داده‌های ورودی (Input)
+            <div className="flex h-11 shrink-0 items-center justify-between gap-2 border-b border-line-border bg-surface-raised/70 px-4">
+                <span className="flex shrink-0 items-center gap-2 whitespace-nowrap text-xs font-bold text-content-main">
+                    <Icon name="brackets" className="size-4 shrink-0 text-primary" />
+                    <span>داده‌های ورودی</span>
                 </span>
                 {upstreamDataList.length > 0 && (
-                    <span className="rounded-md bg-line-border/60 px-2 py-0.5 text-[10px] font-semibold text-content-muted">
+                    <span className="shrink-0 whitespace-nowrap rounded-lg bg-line-border/60 px-2 py-0.5 text-[10px] font-semibold text-content-muted">
                         {upstreamDataList.length} نود قبلی
                     </span>
                 )}
@@ -92,13 +92,13 @@ export function NodeInputPanel({
                         return (
                             <div
                                 key={item.sourceNode.id}
-                                className="overflow-hidden rounded-2xl border border-line-border/80 bg-surface-raised shadow-xs transition-all"
+                                className="overflow-hidden rounded-2xl border border-line-border/80 bg-surface-card shadow-2xs transition-all"
                             >
                                 <button
                                     type="button"
                                     dir="ltr"
                                     onClick={() => toggleNodeCard(item.sourceNode.id, idx)}
-                                    className="flex w-full items-center justify-between gap-3 px-3.5 py-2.5 text-left transition hover:bg-surface-base/60 dark:hover:bg-surface-card/70"
+                                    className="flex w-full items-center justify-between gap-3 px-3.5 py-2.5 text-left transition hover:bg-surface-base/60 dark:hover:bg-surface-raised/70"
                                 >
                                     <div className="flex min-w-0 flex-1 items-center gap-3">
                                         <span
@@ -123,7 +123,7 @@ export function NodeInputPanel({
                                         {item.status && (
                                             <span
                                                 dir="rtl"
-                                                className={`rounded-md px-2 py-0.5 text-[10px] font-bold ${
+                                                className={`whitespace-nowrap rounded-md px-2 py-0.5 text-[10px] font-bold ${
                                                     item.status === 'success'
                                                         ? 'bg-emerald-500/15 text-emerald-600 dark:bg-emerald-500/10 dark:text-emerald-500'
                                                         : 'bg-primary/10 text-primary'
@@ -134,7 +134,7 @@ export function NodeInputPanel({
                                         )}
                                         <Icon
                                             name="chevron-down"
-                                            className={`size-4 text-content-muted transition-transform duration-200 ${
+                                            className={`size-4 shrink-0 text-content-muted transition-transform duration-200 ${
                                                 isOpen ? 'rotate-180 text-primary' : ''
                                             }`}
                                         />
@@ -142,7 +142,7 @@ export function NodeInputPanel({
                                 </button>
 
                                 {isOpen && (
-                                    <div className="border-t border-line-border/60 bg-surface-card/50 p-3.5">
+                                    <div className="border-t border-line-border/60 bg-surface-base/40 p-3.5 dark:bg-surface-card/50">
                                         {item.outputData ? (
                                             <DataTreeViewer data={item.outputData} basePath={basePath} />
                                         ) : (

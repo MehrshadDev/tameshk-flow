@@ -6,16 +6,19 @@
 </section>
 
 <section id="service-tools" class="scroll-mt-24 space-y-3 pt-4">
-    <h2 class="text-lg font-extrabold text-content-main">۱. ابزارهای گوگل شیت، جیمیل و تلگرام</h2>
+    <h2 class="text-lg font-extrabold text-content-main">۱. ابزارهای گوگل شیت، جیمیل، تلگرام و ووکامرس</h2>
     <ul class="list-disc space-y-2.5 pr-5 text-content-muted">
         <li>
-            <strong class="text-emerald-500">Google Sheets Tool:</strong> به ایجنت اجازه می‌دهد در اسپردشیت شما جستجو کند، ردیف‌ها را بخواند، ردیف جدید اضافه کند یا سطری را ویرایش نماید. می‌توانید عملیات مجاز را روی «همه عملیات‌ها (تشخیص خودکار)» یا مثلا «فقط خواندن» محدود کنید.
+            <strong class="text-emerald-500">Google Sheets Tool:</strong> به ایجنت اجازه می‌دهد در اسپردشیت شما جستجو کند، ردیف‌ها را بخواند، ردیف جدید اضافه کند یا سطری را ویرایش نماید. می‌توانید عملیات مجاز را روی «همه عملیات‌ها (تشخیص خودکار)» یا مثلاً «فقط خواندن» محدود کنید.
         </li>
         <li>
             <strong class="text-rose-500">Gmail Tool:</strong> امکان جستجو در صندوق ایمیل، خواندن متن ایمیل‌ها، ارسال ایمیل جدید و پاسخ دادن خودکار به ایمیل‌ها توسط ایجنت.
         </li>
         <li>
             <strong class="text-sky-500">Telegram Tool:</strong> ارسال پیام متنی، عکس، سند و مدیریت پیام‌ها در چت یا کانال تلگرام به تشخیص ایجنت.
+        </li>
+        <li>
+            <strong class="text-purple-500">WooCommerce Tool:</strong> دسترسی هوشمند ایجنت به اطلاعات محصولات، سفارش‌ها و مشتریان فروشگاه ووکامرس برای پاسخ‌گویی به سوالات خریداران.
         </li>
     </ul>
 </section>
@@ -24,7 +27,7 @@
     <h2 class="text-lg font-extrabold text-content-main">۲. ابزارهای HTTP، وب‌اسکرپر و ویکی‌پدیا</h2>
     <ul class="list-disc space-y-2.5 pr-5 text-content-muted">
         <li>
-            <strong class="text-content-main">HTTP Tool:</strong> فراخوانی هر نوع وب‌سرویس و API خارجی (GET, POST, PUT, DELETE) همراه با هدرهای دلخواه.
+            <strong class="text-content-main">HTTP Tool:</strong> فراخوانی هر نوع وب‌سرویس و API خارجی (GET، POST، PUT و DELETE) همراه با هدرهای دلخواه.
         </li>
         <li>
             <strong class="text-content-main">Web Scraper Tool:</strong> باز کردن آدرس اینترنتی (URL) و استخراج متن تمیز، عنوان، توضیحات و لینک‌های صفحه وب برای مطالعه توسط هوش مصنوعی.
@@ -36,13 +39,16 @@
 </section>
 
 <section id="utility-tools" class="scroll-mt-24 space-y-3 pt-4">
-    <h2 class="text-lg font-extrabold text-content-main">۳. ابزارهای دیتاستور، تاریخ و ماشین‌حساب</h2>
+    <h2 class="text-lg font-extrabold text-content-main">۳. ابزارهای جدول داده، دیتابیس، تاریخ و ماشین‌حساب</h2>
     <ul class="list-disc space-y-2.5 pr-5 text-content-muted">
         <li>
-            <strong class="text-content-main">Data Store Tool:</strong> حافظه کلید-مقدار دائمی که ایجنت می‌تواند اطلاعات مهم (مثل یادداشت‌ها، ترجیحات کاربر یا شمارنده‌ها) را در آن ذخیره و بازیابی کند.
+            <strong class="text-content-main">Data table Tool و Data Store Tool:</strong> ذخیره و جستجوی اطلاعات ساختاری در جداول داده داخلی یا حافظه کلید-مقدار دائمی برای به خاطر سپردن ترجیحات کاربر، سفارش‌ها و یادداشت‌ها.
         </li>
         <li>
-            <strong class="text-content-main">Date & Time Tool:</strong> دریافت زمان و تاریخ دقیق فعلی (شمسی و میلادی)، تبدیل مناطق زمانی و محاسبه اختلاف بین دو تاریخ.
+            <strong class="text-content-main">MySQL Tool:</strong> خواندن و جستجوی داده‌ها در جداول پایگاه داده MySQL متصل‌شده توسط ایجنت.
+        </li>
+        <li>
+            <strong class="text-content-main">Date &amp; Time Tool:</strong> دریافت زمان و تاریخ دقیق فعلی (شمسی و میلادی)، تبدیل مناطق زمانی و محاسبه اختلاف بین دو تاریخ.
         </li>
         <li>
             <strong class="text-content-main">Calculator Tool:</strong> انجام محاسبات دقیق ریاضی و فرمول‌های عددی بدون خطای محاسباتی مدل‌های زبانی.
@@ -50,6 +56,6 @@
     </ul>
 
     <x-docs.callout type="success" title="نکته طلایی برای نوشتن توضیحات ابزار">
-        در فیلد «توضیحات عملکرد ابزار برای مدل»، دقیقا بنویسید این ابزار چه کاری انجام می‌دهد و چه زمانی باید از آن استفاده شود تا دقت ایجنت در انتخاب ابزار به حداکثر برسد.
+        در فیلد «توضیحات عملکرد ابزار برای مدل»، دقیقاً بنویسید این ابزار چه کاری انجام می‌دهد و چه زمانی باید از آن استفاده شود تا دقت ایجنت در انتخاب ابزار به حداکثر برسد.
     </x-docs.callout>
 </section>

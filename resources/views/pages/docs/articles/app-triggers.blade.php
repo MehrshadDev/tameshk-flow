@@ -6,7 +6,7 @@
         هر زمان کاربری به ربات تلگرام یا اکانت بیزینس شما پیام بفرستد و یا روی دکمه‌های شیشه‌ای (Inline Buttons) کلیک کند، ورکفلو به صورت آنی اجرا می‌شود.
     </p>
     <ul class="list-disc space-y-2 pr-5 text-content-muted">
-        <li><strong class="text-content-main">ثبت خودکار Webhook تلگرام:</strong> نیازی به خرید سرور مجازی یا تنظیم دستی وب‌هوک در تلگرام ندارید؛ به محض انتشار ورکفلو، تمشک به صورت خودکار وب‌هوک امن را روی ربات شما ثبت می‌کند.</li>
+        <li><strong class="text-content-main">ثبت خودکار وب‌هوک تلگرام:</strong> نیازی به خرید سرور مجازی یا تنظیم دستی وب‌هوک در تلگرام ندارید؛ به محض انتشار ورکفلو، تمشک فلو به صورت خودکار وب‌هوک امن را روی ربات شما ثبت می‌کند.</li>
         <li><strong class="text-content-main">فیلتر نوع رویداد (Trigger On):</strong> می‌توانید مشخص کنید ورکفلو با پیام جدید (<code>message</code>)، پیام اکانت بیزینس (<code>business_message</code>)، کلیک روی دکمه (<code>callback_query</code>)، پست کانال (<code>channel_post</code>) یا سایر رویدادها فعال شود.</li>
     </ul>
 
@@ -23,7 +23,7 @@
     />
 
     <x-docs.callout type="info" title="نکته مهم هنگام تست دستی">
-        اگر ورکفلو در حالت «منتشر شده» باشد، وب‌هوک تلگرام فعال است. برای استفاده از دکمه «دریافت پیام تستی» داخل ویرایشگر، ابتدا انتشار ورکفلو را موقتا لغو کنید.
+        اگر ورکفلو در حالت «منتشر شده» باشد، وب‌هوک تلگرام فعال است. برای استفاده از دکمه «دریافت پیام تستی» داخل ویرایشگر، ابتدا انتشار ورکفلو را موقتاً لغو کنید.
     </x-docs.callout>
 </section>
 
@@ -33,7 +33,7 @@
         این شروع‌کننده صندوق ورودی حساب جیمیل متصل‌شده را بررسی می‌کند و با دریافت ایمیل جدید منطبق با فیلتر شما، ورکفلو را راه می‌اندازد.
     </p>
     <ul class="list-disc space-y-2 pr-5 text-content-muted">
-        <li><strong class="text-content-main">فیلتر پیام‌ها (Query):</strong> از عبارت‌های جستجوی استاندارد جیمیل پشتیبانی می‌کند؛ مثلا <code>is:unread label:INBOX</code> یا <code>from:support@example.com</code>.</li>
+        <li><strong class="text-content-main">فیلتر پیام‌ها (Query):</strong> از عبارت‌های جستجوی استاندارد جیمیل پشتیبانی می‌کند؛ مثلاً <code>is:unread label:INBOX</code> یا <code>from:support@example.com</code>.</li>
         <li><strong class="text-content-main">علامت‌گذاری به عنوان خوانده‌شده:</strong> از بخش گزینه‌های بیشتر می‌توانید مشخص کنید که ایمیل پس از پردازش به حالت خوانده‌شده (Read) تغییر کند تا دوباره پردازش نشود.</li>
     </ul>
 
@@ -66,6 +66,25 @@
             ['label' => 'اطلاعات ردیف جدید یا ویرایش‌شده', 'expr' => 'input.row'],
             ['label' => 'شماره سطر در شیت', 'expr' => 'input.row_number'],
             ['label' => 'نوع تغییر رخ‌داده (added یا updated)', 'expr' => 'input.event'],
+        ]"
+    />
+</section>
+
+<section id="woocommerce-trigger" class="scroll-mt-24 space-y-3 pt-4">
+    <h2 class="text-lg font-extrabold text-content-main">رویدادهای فروشگاه ووکامرس (WooCommerce Trigger)</h2>
+    <p class="text-content-muted">
+        این شروع‌کننده مستقیماً از طریق REST API و وب‌هوک رسمی ووکامرس به فروشگاه وردپرسی شما متصل می‌شود و به محض ثبت یا تغییر سفارش، ورکفلو را به صورت آنی اجرا می‌کند.
+    </p>
+
+    <x-docs.vars
+        title="داده‌های پرکاربرد در رویداد سفارش ووکامرس"
+        :items="[
+            ['label' => 'شماره سفارش', 'expr' => 'input.number'],
+            ['label' => 'نام خریدار', 'expr' => 'input.billing.first_name'],
+            ['label' => 'شماره تماس خریدار', 'expr' => 'input.billing.phone'],
+            ['label' => 'مبلغ کل سفارش', 'expr' => 'input.total'],
+            ['label' => 'وضعیت سفارش', 'expr' => 'input.status'],
+            ['label' => 'تاریخ ثبت سفارش', 'expr' => 'input.date_created'],
         ]"
     />
 </section>

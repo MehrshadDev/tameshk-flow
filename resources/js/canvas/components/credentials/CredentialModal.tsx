@@ -21,7 +21,7 @@ type CredentialModalProps = {
 };
 
 const baseInputClass =
-    'w-full rounded-xl border border-line-border bg-field px-4 py-2.5 text-sm text-content-main transition focus:border-primary focus:bg-surface-card focus:outline-none focus:ring-2 focus:ring-primary/20 shadow-xs';
+    'w-full rounded-xl border border-field-border bg-field px-3.5 py-2.5 text-sm text-content-main transition-colors focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/15';
 
 const getDefaultName = (def: CredentialDefinition): string => {
     switch (def.key) {
@@ -73,7 +73,6 @@ export function CredentialModal({
     const addToast = useWorkflowStore((state) => state.addToast);
 
     const schemaEntries = Object.entries(definition.schema);
-    const isSingleField = schemaEntries.length === 1;
 
     useEffect(() => {
         if (isOpen) {
@@ -182,7 +181,6 @@ export function CredentialModal({
         const value = formData[key] ?? '';
         const inputName = `credential_${key}_field`;
         const label = field.label ?? key;
-        const spanFull = isSingleField || field.type === 'textarea' || field.type === 'code';
         const fieldDir = textDir(value, field.placeholder ?? '');
 
         const control = (() => {
@@ -223,7 +221,7 @@ export function CredentialModal({
                             placeholder={field.placeholder}
                             onChange={(e) => updateField(key, e.target.value)}
                             className={`${baseInputClass} resize-none ${
-                                field.type === 'code' || fieldDir === 'ltr' ? 'text-left font-mono' : 'text-right'
+                                field.type === 'code' || fieldDir === 'ltr' ? 'text-left font-mono text-xs' : 'text-right'
                             }`}
                         />
                     );
@@ -241,7 +239,7 @@ export function CredentialModal({
                             maxLength={20}
                             placeholder={field.placeholder}
                             onChange={(e) => updateField(key, e.target.value)}
-                            className={`${baseInputClass} text-left font-mono`}
+                            className={`${baseInputClass} text-left font-mono text-xs`}
                         />
                     );
 
@@ -258,20 +256,21 @@ export function CredentialModal({
                             maxLength={2000}
                             placeholder={field.placeholder}
                             onChange={(e) => updateField(key, e.target.value)}
-                            className={`${baseInputClass} ${fieldDir === 'ltr' ? 'text-left' : 'text-right'}`}
+                            className={`${baseInputClass} ${fieldDir === 'ltr' ? 'text-left font-mono text-xs' : 'text-right'}`}
                         />
                     );
             }
         })();
 
         return (
-            <div key={key} className={`space-y-2 ${spanFull ? 'sm:col-span-2' : ''}`}>
-                <label className="block text-xs font-semibold text-content-main">
-                    {label}
+            <div key={key} className="space-y-1.5">
+                <label className="flex items-center gap-1 text-xs font-semibold text-content-main">
+                    <span>{label}</span>
+                    {field.required && <span className="text-primary">*</span>}
                 </label>
                 {control}
                 {field.help && (
-                    <p className="text-[11px] leading-5 text-content-muted">{field.help}</p>
+                    <p className="text-[11px] leading-5 text-content-muted/75">{field.help}</p>
                 )}
             </div>
         );
@@ -286,27 +285,27 @@ export function CredentialModal({
                 onClose={() => {
                     if (!pendingDelete) onClose();
                 }}
-                maxWidth="max-w-3xl"
+                maxWidth="max-w-xl"
             >
-                <div className="p-7 sm:p-8" dir="rtl">
-                    <div className="flex items-center justify-between gap-6 border-b border-line-border/60 pb-5 mb-6">
-                        <div className="flex items-center gap-3">
-                            <div className="flex size-10 items-center justify-center rounded-xl bg-purple-500/10 text-purple-500">
+                <div className="p-5 sm:p-6" dir="rtl">
+                    <div className="mb-5 flex flex-wrap items-center justify-between gap-3 border-b border-line-border/70 pb-4">
+                        <div className="flex min-w-0 items-center gap-3">
+                            <div className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-purple-500/10 text-purple-500">
                                 <Icon name={definition.icon ?? 'key'} className="size-5" />
                             </div>
-                            <div>
-                                <h3 className="text-base font-bold text-content-main">{definition.name}</h3>
-                                <p className="text-xs text-content-muted mt-1">{definition.description}</p>
+                            <div className="min-w-0">
+                                <h3 className="truncate text-sm font-bold text-content-main sm:text-base">{definition.name}</h3>
+                                <p className="mt-0.5 truncate text-[11px] text-content-muted">{definition.description}</p>
                             </div>
                         </div>
 
-                        <div className="flex items-center gap-1 bg-surface-card p-1 rounded-xl border border-line-border">
+                        <div className="flex shrink-0 items-center gap-1 rounded-xl border border-line-border bg-surface-base p-1">
                             <button
                                 type="button"
                                 onClick={() => setView('create')}
                                 className={`rounded-lg px-3 py-1 text-xs font-semibold transition ${
                                     view === 'create'
-                                        ? 'bg-primary text-white shadow-xs'
+                                        ? 'bg-primary text-white shadow-2xs'
                                         : 'text-content-muted hover:text-content-main'
                                 }`}
                             >
@@ -317,7 +316,7 @@ export function CredentialModal({
                                 onClick={() => setView('list')}
                                 className={`rounded-lg px-3 py-1 text-xs font-semibold transition ${
                                     view === 'list'
-                                        ? 'bg-primary text-white shadow-xs'
+                                        ? 'bg-primary text-white shadow-2xs'
                                         : 'text-content-muted hover:text-content-main'
                                 }`}
                             >
@@ -333,8 +332,8 @@ export function CredentialModal({
                     )}
 
                     {view === 'create' ? (
-                        <form onSubmit={handleCreate} autoComplete="off" className="space-y-6">
-                            <div className="space-y-2">
+                        <form onSubmit={handleCreate} autoComplete="off" className="space-y-4">
+                            <div className="space-y-1.5">
                                 <label className="block text-xs font-semibold text-content-main">
                                     نام حساب
                                 </label>
@@ -352,13 +351,13 @@ export function CredentialModal({
                                 />
                             </div>
 
-                            <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
+                            <div className="space-y-4">
                                 {schemaEntries.map(([key, field]) => renderField(key, field))}
                             </div>
 
                             {(definition.key === 'gmail' || definition.key === 'google') && (
-                                <div className="space-y-2.5 rounded-xl border border-line-border/70 bg-surface-card p-4">
-                                    <div className="flex items-center justify-between">
+                                <div className="space-y-2 rounded-xl border border-line-border/70 bg-surface-base/60 p-3.5">
+                                    <div className="flex items-center justify-between gap-2">
                                         <span className="text-xs font-semibold text-content-main">Redirect URI</span>
                                         <span className="text-[10px] text-content-muted">برای تنظیم در Google Cloud Console</span>
                                     </div>
@@ -368,7 +367,7 @@ export function CredentialModal({
                                             dir="ltr"
                                             value={`${window.location.origin}/oauth/google/callback`}
                                             onFocus={(e) => e.currentTarget.select()}
-                                            className="w-full rounded-lg border border-line-border bg-field px-3.5 py-2.5 font-mono text-xs text-left text-content-main select-all focus:outline-none"
+                                            className="w-full rounded-lg border border-field-border bg-field px-3 py-2 font-mono text-xs text-left text-content-main select-all focus:outline-none"
                                         />
                                         <button
                                             type="button"
@@ -376,7 +375,7 @@ export function CredentialModal({
                                                 navigator.clipboard.writeText(`${window.location.origin}/oauth/google/callback`);
                                                 addToast('کپی شد.', 'success', 2000);
                                             }}
-                                            className="flex size-8 shrink-0 items-center justify-center rounded-lg border border-line-border bg-surface-raised text-content-muted hover:border-primary hover:text-primary transition"
+                                            className="flex size-9 shrink-0 items-center justify-center rounded-lg border border-field-border bg-field text-content-muted transition hover:border-primary hover:text-primary"
                                         >
                                             <Icon name="copy" className="size-3.5" />
                                         </button>
@@ -384,26 +383,26 @@ export function CredentialModal({
                                 </div>
                             )}
 
-                            <div className="flex items-center justify-end gap-2.5 pt-3 border-t border-line-border/60">
+                            <div className="flex items-center justify-end gap-2.5 border-t border-line-border/60 pt-4">
                                 <button
                                     type="button"
                                     onClick={onClose}
                                     disabled={isSaving}
-                                    className="rounded-xl border border-line-border px-4 py-2 text-xs font-semibold text-content-main hover:bg-line-border/60 transition"
+                                    className="rounded-xl border border-field-border px-4 py-2 text-xs font-semibold text-content-main transition hover:bg-line-border/60"
                                 >
                                     انصراف
                                 </button>
                                 <button
                                     type="submit"
                                     disabled={isSaving}
-                                    className="rounded-xl bg-primary px-5 py-2 text-xs font-bold text-white hover:bg-primary/90 transition shadow-md disabled:opacity-50"
+                                    className="rounded-xl bg-primary px-5 py-2 text-xs font-bold text-white shadow-md transition hover:bg-primary/90 disabled:opacity-50"
                                 >
                                     {isSaving ? 'در حال ذخیره‌سازی...' : 'ذخیره و اتصال'}
                                 </button>
                             </div>
                         </form>
                     ) : (
-                        <div className="space-y-2.5 max-h-112 overflow-y-auto custom-scrollbar pe-1">
+                        <div className="custom-scrollbar max-h-112 space-y-2.5 overflow-y-auto pe-1">
                             {existingItems.length === 0 ? (
                                 <p className="py-8 text-center text-xs text-content-muted">
                                     هنوز هیچ حسابی ثبت نشده است.
@@ -412,15 +411,15 @@ export function CredentialModal({
                                 existingItems.map((item) => (
                                     <div
                                         key={item.id}
-                                        className="flex items-center justify-between gap-4 rounded-xl border border-line-border bg-surface-card p-3.5 shadow-xs"
+                                        className="flex items-center justify-between gap-4 rounded-xl border border-line-border bg-surface-card p-3.5"
                                     >
-                                        <div className="flex items-center gap-3 min-w-0">
+                                        <div className="flex min-w-0 items-center gap-3">
                                             <div className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-purple-500/10 text-purple-500">
                                                 <Icon name={definition.icon ?? 'key'} className="size-4.5" />
                                             </div>
                                             <div className="min-w-0">
                                                 <div className="flex items-center gap-2">
-                                                    <span dir="auto" className="text-xs font-bold text-content-main truncate">
+                                                    <span dir="auto" className="truncate text-xs font-bold text-content-main">
                                                         {item.name}
                                                     </span>
                                                     {item.is_connected && (
@@ -431,14 +430,14 @@ export function CredentialModal({
                                                     )}
                                                 </div>
                                                 {item.connected_email && (
-                                                    <p dir="ltr" className="text-[11px] font-mono text-content-muted mt-0.5 text-right truncate">
+                                                    <p dir="ltr" className="mt-0.5 truncate text-right font-mono text-[11px] text-content-muted">
                                                         {item.connected_email}
                                                     </p>
                                                 )}
                                             </div>
                                         </div>
 
-                                        <div className="flex items-center gap-2 shrink-0">
+                                        <div className="flex shrink-0 items-center gap-2">
                                             {(definition.key === 'gmail' || definition.key === 'google') && (
                                                 <button
                                                     type="button"
