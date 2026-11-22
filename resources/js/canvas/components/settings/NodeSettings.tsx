@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { ConfigFieldInput } from '@canvas/components/settings/ConfigFieldInput';
+import { FieldDragOverlay } from '@canvas/components/settings/FieldDragOverlay';
 import { FieldShell } from '@canvas/components/settings/FieldShell';
 import { NodeInputPanel } from '@canvas/components/settings/NodeInputPanel';
 import { NodeOutputPanel } from '@canvas/components/settings/NodeOutputPanel';
@@ -21,17 +22,33 @@ import { useBackdropClose } from '@canvas/lib/useBackdropClose';
 import { useWorkflowStore } from '@canvas/store/useWorkflowStore';
 import type { ConfigField } from '@canvas/types/graph';
 
-const MIN_SIDE_WIDTH = 340;
-const DEFAULT_LEFT_WIDTH = 360;
-const DEFAULT_RIGHT_WIDTH = 420;
-const MIN_CENTER_WIDTH = 440;
+const MIN_SIDE_WIDTH = 280;
+const MAX_SIDE_WIDTH = 820;
+const MIN_CENTER_WIDTH = 360;
 
-const readClampedSideWidth = (key: string, fallback: number, isSingleSide = false): number => {
+const LEFT_STORAGE_KEY = 'tameshk_studio_left_w_v2';
+const RIGHT_STORAGE_KEY = 'tameshk_studio_right_w_v2';
+const TRIGGER_RIGHT_STORAGE_KEY = 'tameshk_studio_trigger_right_w_v2';
+
+const getDefaultSideWidth = (isSingleSide: boolean): number => {
+    const modalWidth = Math.min(1680, window.innerWidth - 16);
+    const ratio = isSingleSide ? 0.48 : 0.35;
+    const preferred = Math.round(modalWidth * ratio);
+    const maxSafe = isSingleSide
+        ? Math.max(MIN_SIDE_WIDTH, Math.min(MAX_SIDE_WIDTH, modalWidth - MIN_CENTER_WIDTH - 16))
+        : Math.max(MIN_SIDE_WIDTH, Math.floor((modalWidth - MIN_CENTER_WIDTH - 16) / 2));
+
+    return Math.max(MIN_SIDE_WIDTH, Math.min(preferred, maxSafe));
+};
+
+const readClampedSideWidth = (key: string, isSingleSide: boolean): number => {
+    const fallback = getDefaultSideWidth(isSingleSide);
     const raw = Number(localStorage.getItem(key));
     const preferred = Number.isFinite(raw) && raw >= MIN_SIDE_WIDTH ? raw : fallback;
+    const modalWidth = Math.min(1680, window.innerWidth - 16);
     const maxSafe = isSingleSide
-        ? Math.max(MIN_SIDE_WIDTH, Math.min(680, window.innerWidth - MIN_CENTER_WIDTH - 32))
-        : Math.max(MIN_SIDE_WIDTH, Math.floor((window.innerWidth - MIN_CENTER_WIDTH - 32) / 2));
+        ? Math.max(MIN_SIDE_WIDTH, Math.min(MAX_SIDE_WIDTH, modalWidth - MIN_CENTER_WIDTH - 16))
+        : Math.max(MIN_SIDE_WIDTH, Math.floor((modalWidth - MIN_CENTER_WIDTH - 16) / 2));
 
     return Math.min(preferred, maxSafe);
 };
@@ -71,19 +88,20 @@ function NodeStudio({ nodeId }: { nodeId: string }) {
 
     const definition = definitions.find((item) => item.type === node?.data.nodeType);
     const isTrigger = definition?.category === 'trigger';
+    const rightStorageKey = isTrigger ? TRIGGER_RIGHT_STORAGE_KEY : RIGHT_STORAGE_KEY;
 
     const [leftWidth, setLeftWidth] = useState(() =>
-        readClampedSideWidth('tameshk_studio_left_w', DEFAULT_LEFT_WIDTH, false),
+        readClampedSideWidth(LEFT_STORAGE_KEY, false),
     );
     const [rightWidth, setRightWidth] = useState(() =>
-        readClampedSideWidth('tameshk_studio_right_w', DEFAULT_RIGHT_WIDTH, Boolean(isTrigger)),
+        readClampedSideWidth(rightStorageKey, Boolean(isTrigger)),
     );
     const [activeHandle, setActiveHandle] = useState<'left' | 'right' | null>(null);
 
     const activeSideRef = useRef<'left' | 'right' | null>(null);
     const dragStartX = useRef(0);
     const dragStartWidth = useRef(0);
-    const latestWidthRef = useRef(DEFAULT_RIGHT_WIDTH);
+    const latestWidthRef = useRef(rightWidth);
     const rafRef = useRef<number | null>(null);
 
     const isManualTrigger = allNodes.some((n) => isTestableTrigger(n.data.nodeType));
@@ -127,7 +145,7 @@ function NodeStudio({ nodeId }: { nodeId: string }) {
 
             const dynamicMax = Math.max(
                 MIN_SIDE_WIDTH,
-                Math.min(680, totalWidth - oppositeWidth - MIN_CENTER_WIDTH),
+                Math.min(MAX_SIDE_WIDTH, totalWidth - oppositeWidth - MIN_CENTER_WIDTH),
             );
 
             const clamped = Math.max(
@@ -157,10 +175,10 @@ function NodeStudio({ nodeId }: { nodeId: string }) {
 
             if (activeSideRef.current === 'left') {
                 setLeftWidth(latestWidthRef.current);
-                localStorage.setItem('tameshk_studio_left_w', String(latestWidthRef.current));
+                localStorage.setItem(LEFT_STORAGE_KEY, String(latestWidthRef.current));
             } else if (activeSideRef.current === 'right') {
                 setRightWidth(latestWidthRef.current);
-                localStorage.setItem('tameshk_studio_right_w', String(latestWidthRef.current));
+                localStorage.setItem(rightStorageKey, String(latestWidthRef.current));
             }
 
             activeSideRef.current = null;
@@ -181,7 +199,7 @@ function NodeStudio({ nodeId }: { nodeId: string }) {
             window.removeEventListener('pointerup', handlePointerUp);
             window.removeEventListener('pointercancel', handlePointerUp);
         };
-    }, [activeHandle, rightWidth]);
+    }, [activeHandle, rightWidth, rightStorageKey]);
 
     const startLeftResize = (e: React.PointerEvent<HTMLDivElement>) => {
         if (e.button !== 0) return;
@@ -507,9 +525,10 @@ function NodeStudio({ nodeId }: { nodeId: string }) {
                             <div
                                 onPointerDown={startLeftResize}
                                 onDoubleClick={() => {
-                                    setLeftWidth(DEFAULT_LEFT_WIDTH);
-                                    if (leftPanelRef.current) leftPanelRef.current.style.width = `${DEFAULT_LEFT_WIDTH}px`;
-                                    localStorage.setItem('tameshk_studio_left_w', String(DEFAULT_LEFT_WIDTH));
+                                    const nextW = getDefaultSideWidth(false);
+                                    setLeftWidth(nextW);
+                                    if (leftPanelRef.current) leftPanelRef.current.style.width = `${nextW}px`;
+                                    localStorage.setItem(LEFT_STORAGE_KEY, String(nextW));
                                 }}
                                 className="group/handle relative z-20 hidden w-px shrink-0 cursor-col-resize touch-none select-none bg-line-border md:block"
                             >
@@ -526,7 +545,7 @@ function NodeStudio({ nodeId }: { nodeId: string }) {
                     )}
 
                     <section
-                        className={`min-h-0 min-w-0 flex-1 flex-col bg-surface-raised md:min-w-105 ${
+                        className={`min-h-0 min-w-0 flex-1 flex-col bg-surface-raised md:min-w-90 ${
                             activeTab === 'parameters' ? 'flex' : 'hidden md:flex'
                         }`}
                         dir="rtl"
@@ -674,9 +693,10 @@ function NodeStudio({ nodeId }: { nodeId: string }) {
                     <div
                         onPointerDown={startRightResize}
                         onDoubleClick={() => {
-                            setRightWidth(DEFAULT_RIGHT_WIDTH);
-                            if (rightPanelRef.current) rightPanelRef.current.style.width = `${DEFAULT_RIGHT_WIDTH}px`;
-                            localStorage.setItem('tameshk_studio_right_w', String(DEFAULT_RIGHT_WIDTH));
+                            const nextW = getDefaultSideWidth(Boolean(isTrigger));
+                            setRightWidth(nextW);
+                            if (rightPanelRef.current) rightPanelRef.current.style.width = `${nextW}px`;
+                            localStorage.setItem(rightStorageKey, String(nextW));
                         }}
                         className="group/handle relative z-20 hidden w-px shrink-0 cursor-col-resize touch-none select-none bg-line-border md:block"
                     >
@@ -699,6 +719,8 @@ function NodeStudio({ nodeId }: { nodeId: string }) {
                     />
                 </div>
             </div>
+
+            <FieldDragOverlay />
         </div>
     );
 }

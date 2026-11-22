@@ -200,9 +200,6 @@ class WebhookTriggerController extends Controller
             'method' => $request->method(),
             'path' => $path,
             'ip' => $request->ip(),
-            'chatInput' => is_string($body['chatInput'] ?? null)
-                ? $body['chatInput']
-                : json_encode($body ?: $request->query(), JSON_UNESCAPED_UNICODE),
         ];
     }
 }

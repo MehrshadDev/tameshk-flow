@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { ConditionsEditor } from '@canvas/components/settings/ConditionsEditor';
 import { CredentialSelect } from '@canvas/components/settings/CredentialSelect';
 import { inputClass } from '@canvas/components/settings/fieldStyles';
@@ -9,6 +9,7 @@ import { ModelSelect } from '@canvas/components/settings/ModelSelect';
 import { PasswordField } from '@canvas/components/ui/PasswordField';
 import { Select } from '@canvas/components/ui/Select';
 import { asString, hasRtlChars, normalizeOptions, textDir } from '@canvas/lib/fields';
+import { useFieldDrop } from '@canvas/lib/fieldDrag';
 import type { ConfigField } from '@canvas/types/graph';
 import { MultiSelectField } from '@canvas/components/settings/MultiSelectField';
 import { DynamicSelect } from '@canvas/components/settings/DynamicSelect';
@@ -264,6 +265,26 @@ export function ConfigFieldInput(props: ConfigFieldInputProps) {
     const [isExpressionMode, setIsExpressionMode] = useState<boolean>(() => hasExpressionSyntax);
     const isExpression = isExpressionMode || hasExpressionSyntax;
     const hasText = text.trim() !== '';
+    const controlRef = useRef<HTMLInputElement | HTMLTextAreaElement | null>(null);
+
+    const insertExpression = (expr: string) => {
+        setIsExpressionMode(true);
+        const el = controlRef.current;
+
+        if (el && document.activeElement === el) {
+            const start = el.selectionStart ?? el.value.length;
+            const end = el.selectionEnd ?? el.value.length;
+            const current = el.value;
+            onChange(current.substring(0, start) + expr + current.substring(end));
+            return;
+        }
+
+        onChange(text === '' ? expr : text + expr);
+    };
+
+    const { isDragging, isOver, dropProps } = useFieldDrop((dragged) => {
+        insertExpression(dragged.expression);
+    });
 
     const hasIncomingRun = (() => {
         if (!incomingData || typeof incomingData !== 'object') return false;
@@ -293,27 +314,15 @@ export function ConfigFieldInput(props: ConfigFieldInputProps) {
             : (useMono ? 'font-mono' : ''))
         : '';
 
+    const dropHighlight = isOver
+        ? 'border-dashed! border-primary! bg-primary/[0.06]! ring-2! ring-primary/25!'
+        : isDragging
+            ? 'border-dashed! border-primary/55!'
+            : '';
+
     const fxColor = isExpression && hasText && hasIncomingRun
         ? (isValid ? 'text-emerald-500' : 'text-primary')
         : 'text-content-muted/70';
-
-    const handleDrop = (event: React.DragEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-        event.preventDefault();
-        const textToInsert = event.dataTransfer.getData('text/plain');
-        if (!textToInsert) return;
-
-        setIsExpressionMode(true);
-        const target = event.currentTarget;
-        const start = target.selectionStart ?? target.value.length;
-        const end = target.selectionEnd ?? target.value.length;
-        const current = target.value;
-        onChange(current.substring(0, start) + textToInsert + current.substring(end));
-    };
-
-    const handleDragOver = (event: React.DragEvent) => {
-        event.preventDefault();
-        event.dataTransfer.dropEffect = 'copy';
-    };
 
     if (field.type === 'switch_rules') {
         return (
@@ -476,7 +485,7 @@ export function ConfigFieldInput(props: ConfigFieldInputProps) {
                 </div>
             )}
 
-            <div className="relative">
+            <div className="relative" {...dropProps}>
                 {isExpression && (
                     <span
                         className={`pointer-events-none absolute inset-y-0 left-0 z-10 flex pl-3 text-xs font-black italic leading-5 ${fxColor} ${
@@ -490,6 +499,9 @@ export function ConfigFieldInput(props: ConfigFieldInputProps) {
 
                 {field.type === 'textarea' ? (
                     <textarea
+                        ref={(el) => {
+                            controlRef.current = el;
+                        }}
                         id={id}
                         rows={textareaRows}
                         autoComplete="off"
@@ -499,12 +511,13 @@ export function ConfigFieldInput(props: ConfigFieldInputProps) {
                         placeholder={isExpression ? '{{ input.property }}' : field.placeholder}
                         dir={resolvedDir}
                         onChange={(event) => onChange(event.target.value)}
-                        onDragOver={handleDragOver}
-                        onDrop={handleDrop}
-                        className={`${inputClass} custom-scrollbar resize-none leading-6 ${fxPadding} ${expressionStyles}`}
+                        className={`${inputClass} custom-scrollbar resize-none leading-6 ${fxPadding} ${expressionStyles} ${dropHighlight}`}
                     />
                 ) : field.type === 'code' ? (
                     <textarea
+                        ref={(el) => {
+                            controlRef.current = el;
+                        }}
                         id={id}
                         rows={8}
                         dir="ltr"
@@ -514,14 +527,15 @@ export function ConfigFieldInput(props: ConfigFieldInputProps) {
                         maxLength={10000}
                         placeholder={field.placeholder}
                         onChange={(event) => onChange(event.target.value)}
-                        onDragOver={handleDragOver}
-                        onDrop={handleDrop}
                         className={`${inputClass} custom-scrollbar resize-none font-mono text-xs leading-5 ${
                             isExpression ? 'pl-9 text-left' : 'text-left'
-                        } ${expressionStyles}`}
+                        } ${expressionStyles} ${dropHighlight}`}
                     />
                 ) : (
                     <input
+                        ref={(el) => {
+                            controlRef.current = el;
+                        }}
                         id={id}
                         type="text"
                         autoComplete="off"
@@ -531,9 +545,7 @@ export function ConfigFieldInput(props: ConfigFieldInputProps) {
                         placeholder={isExpression ? '{{ input.property }}' : field.placeholder}
                         dir={resolvedDir}
                         onChange={(event) => onChange(event.target.value)}
-                        onDragOver={handleDragOver}
-                        onDrop={handleDrop}
-                        className={`${inputClass} ${fxPadding} ${expressionStyles}`}
+                        className={`${inputClass} ${fxPadding} ${expressionStyles} ${dropHighlight}`}
                     />
                 )}
             </div>

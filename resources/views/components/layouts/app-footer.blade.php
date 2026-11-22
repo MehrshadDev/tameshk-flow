@@ -36,19 +36,22 @@
     $zibalDarkSrc = 'https://zibal.ir/trust/assets/2.png';
     $localZibalLogo = asset('icons/brands/zibal.svg');
 
-    $links = array_values(array_filter([
+    $productLinks = array_values(array_filter([
         ['label' => 'قابلیت‌ها', 'href' => route('home') . '#features', 'external' => false],
         ['label' => 'ورکفلوهای آماده', 'href' => route('templates.index'), 'external' => false],
         $saasEnabled ? ['label' => 'تعرفه‌ها', 'href' => route('home') . '#pricing', 'external' => false] : null,
         ['label' => 'مستندات', 'href' => route('docs.index'), 'external' => false],
+    ]));
+
+    $legalLinks = [
         ['label' => 'قوانین و مقررات', 'href' => route('terms'), 'external' => false],
         ['label' => 'حریم خصوصی', 'href' => route('privacy'), 'external' => false],
         ['label' => 'گیت‌هاب', 'href' => 'https://github.com/MehrshadDev/tameshk-flow', 'external' => true],
-    ]));
+    ];
 
     $sealImgClass = 'size-full cursor-pointer object-contain opacity-90 transition duration-300 group-hover:scale-105 group-hover:opacity-100 dark:opacity-75 dark:brightness-0 dark:invert dark:group-hover:opacity-100';
-    $sealBoxClass = 'group relative flex size-20 sm:size-24 shrink-0 items-center justify-center rounded-2xl border border-line-border/90 bg-surface-base/80 p-1.5 shadow-xs transition-all duration-300 hover:-translate-y-0.5 hover:border-primary/40 hover:shadow-md';
-    $linkClass = 'rounded-xl px-2.5 py-1.5 text-xs font-medium text-content-muted transition-colors hover:bg-surface-base hover:text-primary sm:px-3 sm:text-sm';
+    $sealBoxClass = 'group relative flex h-20 w-16 sm:h-24 sm:w-18 shrink-0 items-center justify-center rounded-2xl border border-line-border/90 bg-surface-base/80 p-1.5 shadow-xs transition-all duration-300 hover:-translate-y-0.5 hover:border-primary/40 hover:shadow-md';
+    $linkClass = 'group inline-flex items-center gap-1 text-xs font-medium text-content-muted transition-colors hover:text-primary sm:text-sm';
     $currentYear = CalendarUtils::convertNumbers(
         Jalalian::now()->format('Y')
     );
@@ -66,31 +69,71 @@
                 class="pointer-events-none absolute -bottom-24 -left-24 size-64 rounded-full bg-rose-500/6 blur-3xl"></div>
 
             @if ($saasEnabled)
-                <div class="relative flex flex-col items-center justify-between gap-6 md:flex-row md:items-center md:gap-8">
-                    <div class="flex w-full flex-col items-center text-center md:w-auto md:items-start md:text-start">
+                <div class="relative grid grid-cols-1 gap-6 md:grid-cols-12 md:items-center lg:gap-8">
+                    <div class="flex flex-col items-start text-start md:col-span-12 lg:col-span-5">
                         <x-layouts.logo logoClasses="h-8 sm:h-9 w-auto"/>
 
-                        <p class="mt-2.5 max-w-md text-xs leading-6 text-content-muted sm:mt-3 sm:text-sm">
+                        <p class="mt-3 max-w-xs text-xs leading-6 text-content-muted sm:text-sm">
                             پلتفرم بصری اتوماسیون گردش‌کار و ساخت ایجنت‌های هوش مصنوعی، بدون نیاز به کدنویسی.
                         </p>
+                    </div>
 
-                        <nav aria-label="پیوندهای فوتر"
-                             class="mt-4 flex flex-wrap items-center justify-center gap-1 sm:mt-5 md:-mr-3 md:justify-start">
-                            @foreach ($links as $link)
-                                <a href="{{ $link['href'] }}"
-                                   @if ($link['external']) target="_blank" rel="noopener noreferrer" @endif
-                                   class="{{ $linkClass }}">
-                                    {{ $link['label'] }}
-                                </a>
-                            @endforeach
+                    <div class="h-px w-full bg-linear-to-r from-transparent via-line-border to-transparent md:col-span-12 lg:hidden"></div>
+
+                    <div class="grid grid-cols-2 gap-6 sm:gap-8 md:col-span-7 lg:col-span-4">
+                        <nav aria-label="دسترسی سریع" class="flex flex-col items-start">
+                            <h3 class="text-xs font-bold text-content-main sm:text-sm">
+                                دسترسی سریع
+                            </h3>
+                            <ul class="mt-3 flex flex-col gap-2.5">
+                                @foreach ($productLinks as $link)
+                                    <li>
+                                        <a href="{{ $link['href'] }}"
+                                           @if ($link['external']) target="_blank" rel="noopener noreferrer" @endif
+                                           class="{{ $linkClass }}">
+                                            {{ $link['label'] }}
+                                        </a>
+                                    </li>
+                                @endforeach
+                            </ul>
+                        </nav>
+
+                        <nav aria-label="قوانین و منابع" class="flex flex-col items-start">
+                            <h3 class="text-xs font-bold text-content-main sm:text-sm">
+                                قوانین و منابع
+                            </h3>
+                            <ul class="mt-3 flex flex-col gap-2.5">
+                                @foreach ($legalLinks as $link)
+                                    <li>
+                                        <a href="{{ $link['href'] }}"
+                                           @if ($link['external']) target="_blank" rel="noopener noreferrer" @endif
+                                           class="{{ $linkClass }}">
+                                            <span>{{ $link['label'] }}</span>
+                                            @if ($link['external'])
+                                                <svg class="size-3 shrink-0 opacity-60 transition-transform duration-200 group-hover:-translate-x-0.5 group-hover:-translate-y-0.5"
+                                                     viewBox="0 0 24 24"
+                                                     fill="none"
+                                                     stroke="currentColor"
+                                                     stroke-width="2"
+                                                     stroke-linecap="round"
+                                                     stroke-linejoin="round"
+                                                     aria-hidden="true">
+                                                    <path d="M17 17 7 7"/>
+                                                    <path d="M7 17V7h10"/>
+                                                </svg>
+                                            @endif
+                                        </a>
+                                    </li>
+                                @endforeach
+                            </ul>
                         </nav>
                     </div>
 
                     <div class="h-px w-full bg-linear-to-r from-transparent via-line-border to-transparent md:hidden"></div>
 
-                    <div class="flex shrink-0 items-center justify-center gap-3 sm:gap-4">
+                    <div class="flex shrink-0 items-center justify-center gap-3.5 md:col-span-5 md:justify-end lg:col-span-3 lg:gap-4">
                         <div
-                            class="hidden h-20 w-px bg-linear-to-b from-transparent via-line-border to-transparent md:ml-2 md:block"></div>
+                            class="hidden h-20 w-px bg-linear-to-b from-transparent via-line-border to-transparent lg:ml-2 lg:block"></div>
 
                         <a href="{{ $zibalTrustHref }}"
                            target="_blank"
@@ -118,22 +161,22 @@
 
                             <div x-show="lightFailed"
                                  x-cloak
-                                 class="flex dark:hidden size-20 sm:size-24 items-center justify-center rounded-2xl border border-line-border/90 bg-surface-base/80 p-3 shadow-xs">
+                                 class="flex dark:hidden h-20 w-16 sm:h-24 sm:w-18 items-center justify-center rounded-2xl border border-line-border/90 bg-surface-base/80 p-2.5 shadow-xs">
                                 <img src="{{ $localZibalLogo }}"
                                      alt="پرداخت آنلاین زیبال"
                                      loading="lazy"
                                      decoding="async"
-                                     class="size-10 object-contain">
+                                     class="size-9 object-contain">
                             </div>
 
                             <div x-show="darkFailed"
                                  x-cloak
-                                 class="hidden dark:flex size-20 sm:size-24 items-center justify-center rounded-2xl border border-line-border/90 bg-surface-base/80 p-3 shadow-xs">
+                                 class="hidden dark:flex h-20 w-16 sm:h-24 sm:w-18 items-center justify-center rounded-2xl border border-line-border/90 bg-surface-base/80 p-2.5 shadow-xs">
                                 <img src="{{ $localZibalLogo }}"
                                      alt="پرداخت آنلاین زیبال"
                                      loading="lazy"
                                      decoding="async"
-                                     class="size-10 object-contain">
+                                     class="size-9 object-contain">
                             </div>
                         </a>
 
@@ -165,7 +208,7 @@
                                  data-remote-src="{{ $enamadRemoteSrc }}"
                                  class="{{ $sealBoxClass }}">
                                 <div
-                                    class="flex size-full items-center justify-center overflow-hidden rounded-xl p-1.5">
+                                    class="flex size-full items-center justify-center overflow-hidden rounded-xl p-0.5">
                                     <div x-show="!loaded && !failed"
                                          class="flex size-full animate-pulse items-center justify-center rounded-lg bg-line-border/40 text-[10px] font-bold text-content-muted">
                                         <span>eNamad</span>
@@ -214,7 +257,7 @@
                                aria-label="نماد اعتماد الکترونیکی"
                                class="{{ $sealBoxClass }}">
                                 <div
-                                    class="flex size-full items-center justify-center overflow-hidden rounded-xl p-1.5">
+                                    class="flex size-full items-center justify-center overflow-hidden rounded-xl p-0.5">
                                     <img src="{{ $localEnamadLogo }}"
                                          alt="نماد اعتماد الکترونیکی"
                                          loading="lazy"
@@ -227,25 +270,65 @@
                     </div>
                 </div>
             @else
-                <div class="relative flex flex-col items-center justify-between gap-6 md:flex-row">
-                    <div class="flex flex-col items-center gap-2.5 text-center md:items-start md:text-start">
+                <div class="relative grid grid-cols-1 gap-6 md:grid-cols-12 md:items-center md:gap-8">
+                    <div class="flex flex-col items-start gap-2.5 text-start md:col-span-6 lg:col-span-7">
                         <x-layouts.logo logoClasses="h-8 sm:h-9 w-auto"/>
 
-                        <p class="text-xs leading-6 text-content-muted sm:text-sm">
+                        <p class="max-w-sm text-xs leading-6 text-content-muted sm:text-sm">
                             پلتفرم بصری اتوماسیون گردش‌کار و ساخت ایجنت‌های هوش مصنوعی
                         </p>
                     </div>
 
-                    <nav aria-label="پیوندهای فوتر"
-                         class="flex flex-wrap items-center justify-center gap-1 md:justify-end">
-                        @foreach ($links as $link)
-                            <a href="{{ $link['href'] }}"
-                               @if ($link['external']) target="_blank" rel="noopener noreferrer" @endif
-                               class="{{ $linkClass }}">
-                                {{ $link['label'] }}
-                            </a>
-                        @endforeach
-                    </nav>
+                    <div class="h-px w-full bg-linear-to-r from-transparent via-line-border to-transparent md:hidden"></div>
+
+                    <div class="grid grid-cols-2 gap-6 sm:gap-8 md:col-span-6 lg:col-span-5">
+                        <nav aria-label="دسترسی سریع" class="flex flex-col items-start">
+                            <h3 class="text-xs font-bold text-content-main sm:text-sm">
+                                دسترسی سریع
+                            </h3>
+                            <ul class="mt-3 flex flex-col gap-2.5">
+                                @foreach ($productLinks as $link)
+                                    <li>
+                                        <a href="{{ $link['href'] }}"
+                                           @if ($link['external']) target="_blank" rel="noopener noreferrer" @endif
+                                           class="{{ $linkClass }}">
+                                            {{ $link['label'] }}
+                                        </a>
+                                    </li>
+                                @endforeach
+                            </ul>
+                        </nav>
+
+                        <nav aria-label="قوانین و منابع" class="flex flex-col items-start">
+                            <h3 class="text-xs font-bold text-content-main sm:text-sm">
+                                قوانین و منابع
+                            </h3>
+                            <ul class="mt-3 flex flex-col gap-2.5">
+                                @foreach ($legalLinks as $link)
+                                    <li>
+                                        <a href="{{ $link['href'] }}"
+                                           @if ($link['external']) target="_blank" rel="noopener noreferrer" @endif
+                                           class="{{ $linkClass }}">
+                                            <span>{{ $link['label'] }}</span>
+                                            @if ($link['external'])
+                                                <svg class="size-3 shrink-0 opacity-60 transition-transform duration-200 group-hover:-translate-x-0.5 group-hover:-translate-y-0.5"
+                                                     viewBox="0 0 24 24"
+                                                     fill="none"
+                                                     stroke="currentColor"
+                                                     stroke-width="2"
+                                                     stroke-linecap="round"
+                                                     stroke-linejoin="round"
+                                                     aria-hidden="true">
+                                                    <path d="M17 17 7 7"/>
+                                                    <path d="M7 17V7h10"/>
+                                                </svg>
+                                            @endif
+                                        </a>
+                                    </li>
+                                @endforeach
+                            </ul>
+                        </nav>
+                    </div>
                 </div>
             @endif
         </div>

@@ -43,7 +43,7 @@ export function TriggerEndpointList({ nodeType, config }: TriggerEndpointListPro
     };
 
     return (
-        <div className="space-y-3 rounded-2xl border border-line-border/80 bg-surface-card p-4">
+        <div className="space-y-3 rounded-2xl border border-line-border/80 bg-surface-base/60 p-4 dark:bg-surface-card">
             <div className="flex items-center justify-between gap-2">
                 <span className="flex items-center gap-1.5 text-xs font-bold text-primary">
                     <Icon name="link" className="size-4" />
@@ -53,14 +53,14 @@ export function TriggerEndpointList({ nodeType, config }: TriggerEndpointListPro
                 {hasBothModes ? (
                     <div
                         dir="ltr"
-                        className="flex items-center rounded-xl border border-line-border bg-surface-raised p-0.5 text-[11px] font-semibold"
+                        className="flex items-center gap-0.5 rounded-xl border border-line-border bg-surface-base p-0.5 text-[11px] font-semibold"
                     >
                         <button
                             type="button"
                             onClick={() => setActiveMode('test')}
                             className={`rounded-lg px-2.5 py-1 transition ${
                                 activeMode === 'test'
-                                    ? 'bg-surface-card text-content-main shadow-xs'
+                                    ? 'bg-primary text-white shadow-xs'
                                     : 'text-content-muted hover:text-content-main'
                             }`}
                         >
@@ -71,7 +71,7 @@ export function TriggerEndpointList({ nodeType, config }: TriggerEndpointListPro
                             onClick={() => setActiveMode('production')}
                             className={`rounded-lg px-2.5 py-1 transition ${
                                 activeMode === 'production'
-                                    ? 'bg-surface-card text-content-main shadow-xs'
+                                    ? 'bg-primary text-white shadow-xs'
                                     : 'text-content-muted hover:text-content-main'
                             }`}
                         >
@@ -93,11 +93,11 @@ export function TriggerEndpointList({ nodeType, config }: TriggerEndpointListPro
                 dir="ltr"
                 onClick={() => void copy(fullUrl)}
                 title="کلیک برای کپی آدرس"
-                className="group flex cursor-pointer items-center justify-between gap-2 rounded-xl border border-line-border bg-field px-3 py-2.5 transition hover:border-primary/50"
+                className="group flex cursor-pointer items-center justify-between gap-2 rounded-xl border border-field-border bg-field px-3 py-2.5 transition hover:border-primary/50"
             >
                 <div className="flex min-w-0 flex-1 items-center gap-2.5">
                     {httpMethod && (
-                        <span className="shrink-0 rounded-md bg-line-border px-2 py-0.5 font-mono text-[10px] font-bold text-content-main">
+                        <span className="shrink-0 rounded-md border border-line-border/80 bg-surface-base px-2 py-0.5 font-mono text-[10px] font-bold text-content-main">
                             {httpMethod}
                         </span>
                     )}

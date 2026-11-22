@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react';
 import { Icon } from '@canvas/components/ui/Icon';
+import { startFieldDrag, useFieldDragState, type FieldValueType } from '@canvas/lib/fieldDrag';
 import { useWorkflowStore } from '@canvas/store/useWorkflowStore';
 
 type DataTreeViewerProps = {
@@ -97,7 +98,7 @@ export function DataTreeViewer({ data, basePath = 'input' }: DataTreeViewerProps
                     {JSON.stringify(data, null, 2)}
                 </pre>
             ) : (
-                <div className="custom-scrollbar max-h-[32rem] overflow-y-auto space-y-1 pr-1">
+                <div className="custom-scrollbar max-h-128 overflow-y-auto space-y-1 pr-1">
                     {Object.entries(data as Record<string, unknown>).map(([key, value]) => (
                         <TreeNode
                             key={key}
@@ -131,6 +132,7 @@ function TreeNode({
     const isArray = Array.isArray(value);
     const [isOpen, setIsOpen] = useState(depth < 2 || searchTerm !== '');
     const addToast = useWorkflowStore((state) => state.addToast);
+    const { activeField } = useFieldDragState();
 
     const matchesSearch = useMemo(() => {
         if (!searchTerm) return true;
@@ -170,7 +172,7 @@ function TreeNode({
 
     const expression = `{{ ${path} }}`;
 
-    const inferredFieldType = isArray
+    const inferredFieldType: FieldValueType = isArray
         ? 'array'
         : isObject
             ? 'object'
@@ -180,10 +182,15 @@ function TreeNode({
                     ? 'boolean'
                     : 'string';
 
-    const handleDragStart = (e: React.DragEvent) => {
-        e.dataTransfer.setData('text/plain', expression);
-        e.dataTransfer.setData('application/x-tameshk-type', inferredFieldType);
-        e.dataTransfer.effectAllowed = 'copy';
+    const isBeingDragged = activeField?.path === path;
+
+    const handlePointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
+        startFieldDrag(e, {
+            keyName,
+            path,
+            expression,
+            fieldType: inferredFieldType,
+        });
     };
 
     const copyExpression = (e: React.MouseEvent) => {
@@ -195,14 +202,18 @@ function TreeNode({
     return (
         <div className="w-full text-left font-mono">
             <div
-                draggable
-                onDragStart={handleDragStart}
-                className="group flex w-full items-center justify-between gap-2 rounded-lg border border-transparent px-2 py-1 transition hover:border-line-border hover:bg-surface-raised cursor-grab active:cursor-grabbing"
+                onPointerDown={handlePointerDown}
+                className={`group flex w-full cursor-grab items-center justify-between gap-2 rounded-lg border px-2 py-1 transition active:cursor-grabbing ${
+                    isBeingDragged
+                        ? 'border-primary/40 bg-primary/8 opacity-60'
+                        : 'border-transparent hover:border-line-border hover:bg-surface-raised'
+                }`}
             >
                 <div className="flex min-w-0 flex-1 items-center gap-1.5 overflow-hidden">
                     {isObject ? (
                         <button
                             type="button"
+                            onPointerDown={(e) => e.stopPropagation()}
                             onClick={() => setIsOpen(!isOpen)}
                             className="flex size-4 shrink-0 items-center justify-center rounded text-content-muted transition hover:bg-line-border hover:text-content-main"
                         >
@@ -246,6 +257,7 @@ function TreeNode({
                 <div className="flex shrink-0 items-center gap-1 opacity-0 transition-opacity group-hover:opacity-100">
                     <button
                         type="button"
+                        onPointerDown={(e) => e.stopPropagation()}
                         onClick={copyExpression}
                         title={`Copy ${expression}`}
                         className="flex size-6 items-center justify-center rounded text-content-muted transition hover:bg-primary/10 hover:text-primary"

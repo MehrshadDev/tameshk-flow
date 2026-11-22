@@ -326,8 +326,10 @@ export function ConditionOperatorSelect({
                 ref={triggerRef}
                 type="button"
                 onClick={toggleOpen}
-                className={`flex h-10.5 w-full items-center justify-between gap-2 rounded-xl border bg-field px-3 text-xs font-medium text-content-main shadow-xs transition hover:border-content-muted/40 focus:outline-none ${
-                    isOpen ? 'border-primary bg-surface-card ring-2 ring-primary/20' : 'border-line-border'
+                className={`flex h-10 w-full items-center justify-between gap-2 rounded-xl border bg-field px-3 text-xs font-medium text-content-main transition focus:outline-none ${
+                    isOpen
+                        ? 'border-primary ring-2 ring-primary/15'
+                        : 'border-field-border hover:border-content-muted/40'
                 }`}
             >
                 <span className="flex min-w-0 items-center gap-2">
@@ -345,26 +347,28 @@ export function ConditionOperatorSelect({
                     <span className="truncate font-semibold text-content-main">
                         {currentOperator?.label ?? operator}
                     </span>
+                </span>
+
+                <span className="flex shrink-0 items-center gap-2">
                     {currentOperator?.shortEn && (
                         <span
                             dir="ltr"
-                            className="hidden shrink-0 rounded bg-line-border/50 px-1.5 py-0.5 font-mono text-[10px] text-content-muted sm:inline-block"
+                            className="rounded-md border border-line-border/70 bg-surface-base px-1.5 py-0.5 font-mono text-[10px] text-content-muted"
                         >
                             {currentOperator.shortEn}
                         </span>
                     )}
+                    <Icon
+                        name="chevron-down"
+                        className={`size-4 shrink-0 text-content-muted transition-transform duration-200 ${
+                            isOpen
+                                ? placement?.openUpward
+                                    ? 'rotate-0 text-primary'
+                                    : 'rotate-180 text-primary'
+                                : ''
+                        }`}
+                    />
                 </span>
-
-                <Icon
-                    name="chevron-down"
-                    className={`size-4 shrink-0 text-content-muted transition-transform duration-200 ${
-                        isOpen
-                            ? placement?.openUpward
-                                ? 'rotate-0 text-primary'
-                                : 'rotate-180 text-primary'
-                            : ''
-                    }`}
-                />
             </button>
 
             {isOpen &&
@@ -542,7 +546,7 @@ export function RuleCardShell({
                 e.preventDefault();
                 onDrop();
             }}
-            className={`group relative rounded-2xl border bg-surface-card p-3 shadow-2xs transition-all duration-150 ${
+            className={`group relative rounded-2xl border bg-surface-card p-3.5 shadow-2xs transition-all duration-150 ${
                 isDragging
                     ? 'scale-[0.99] border-primary/50 opacity-45'
                     : isDragOver
@@ -550,7 +554,7 @@ export function RuleCardShell({
                         : 'border-line-border/90 hover:border-line-border'
             }`}
         >
-            <div className="mb-2 flex items-center justify-between gap-2">
+            <div className="mb-3 flex items-center justify-between gap-2 border-b border-line-border/60 pb-2.5">
                 <div className="flex min-w-0 items-center gap-1.5">
                     {total > 1 && (
                         <span
@@ -626,35 +630,29 @@ export function RuleCardShell({
                 </div>
             </div>
 
-            <div className="space-y-2">
-                <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 sm:items-end">
-                    <div className="min-w-0">
-                        <ConfigFieldInput
-                            id={`${idPrefix}-field-${rule.id}`}
-                            field={{
-                                type: 'text',
-                                placeholder: 'مقدار اول (Value 1)',
-                            }}
-                            value={rule.field}
-                            incomingData={incomingData}
-                            onChange={(val) => onUpdate({ field: String(val ?? '') })}
-                        />
-                    </div>
+            <div className="space-y-2.5">
+                <ConfigFieldInput
+                    id={`${idPrefix}-field-${rule.id}`}
+                    field={{
+                        type: 'text',
+                        placeholder: 'مقدار اول (Value 1)',
+                    }}
+                    value={rule.field}
+                    incomingData={incomingData}
+                    onChange={(val) => onUpdate({ field: String(val ?? '') })}
+                />
 
-                    <div className="min-w-0">
-                        <ConditionOperatorSelect
-                            dataType={rule.data_type}
-                            operator={rule.operator}
-                            onChange={({ dataType, operator }) =>
-                                onUpdate({
-                                    data_type: dataType,
-                                    operator,
-                                    value: isUnaryOperator(operator) ? '' : rule.value,
-                                })
-                            }
-                        />
-                    </div>
-                </div>
+                <ConditionOperatorSelect
+                    dataType={rule.data_type}
+                    operator={rule.operator}
+                    onChange={({ dataType, operator }) =>
+                        onUpdate({
+                            data_type: dataType,
+                            operator,
+                            value: isUnaryOperator(operator) ? '' : rule.value,
+                        })
+                    }
+                />
 
                 {!hideSecondValue && (
                     <ConfigFieldInput

@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { Icon } from '@canvas/components/ui/Icon';
 import { asString, textDir } from '@canvas/lib/fields';
+import { useFieldDrop } from '@canvas/lib/fieldDrag';
 
 export type FieldType = 'string' | 'number' | 'boolean' | 'array' | 'object';
 
@@ -144,9 +145,169 @@ function TypeDropdown({
     );
 }
 
+function SetFieldRow({
+                         item,
+                         onUpdate,
+                         onRemove,
+                     }: {
+    item: SetFieldItem;
+    onUpdate: (patch: Partial<SetFieldItem>) => void;
+    onRemove: () => void;
+}) {
+    const valueInputRef = useRef<HTMLInputElement | null>(null);
+    const isExpr = /\{\{.+?}}/.test(item.value);
+    const isBoolFixed = item.type === 'boolean' && !isExpr;
+
+    const nameDrop = useFieldDrop((dragged) => {
+        const inferred = inferKeyFromExpression(dragged.expression);
+        onUpdate({
+            name: item.name.trim() === '' ? inferred : item.name,
+            value: item.value.trim() === '' ? dragged.expression : item.value,
+        });
+    });
+
+    const valueDrop = useFieldDrop((dragged) => {
+        const el = valueInputRef.current;
+        let nextVal = item.value === '' ? dragged.expression : item.value + dragged.expression;
+
+        if (el && document.activeElement === el) {
+            const start = el.selectionStart ?? el.value.length;
+            const end = el.selectionEnd ?? el.value.length;
+            nextVal = item.value.substring(0, start) + dragged.expression + item.value.substring(end);
+        }
+
+        const nextName = item.name.trim() === '' ? inferKeyFromExpression(dragged.expression) : item.name;
+        onUpdate({ name: nextName, value: nextVal });
+    });
+
+    const valuePlaceholder =
+        item.type === 'number'
+            ? '0'
+            : item.type === 'array'
+                ? '["item1", "item2"]'
+                : item.type === 'object'
+                    ? '{"key": "value"}'
+                    : 'value';
+
+    return (
+        <div className="group flex items-start gap-2" dir="ltr">
+            <button
+                type="button"
+                aria-label="حذف فیلد"
+                onClick={onRemove}
+                className="mt-1 flex size-7 shrink-0 items-center justify-center rounded-lg text-content-muted opacity-60 transition hover:bg-primary/10 hover:text-primary group-hover:opacity-100"
+            >
+                <Icon name="trash" className="size-3.5" />
+            </button>
+
+            <div className="min-w-0 flex-1 rounded-xl border border-line-border bg-field shadow-2xs transition focus-within:border-primary/60">
+                <div className="flex items-center border-b border-line-border">
+                    <input
+                        {...nameDrop.dropProps}
+                        type="text"
+                        dir="ltr"
+                        value={item.name}
+                        maxLength={200}
+                        placeholder="name"
+                        onChange={(e) => onUpdate({ name: e.target.value })}
+                        className={`h-9.5 min-w-0 flex-1 rounded-tl-xl bg-transparent px-3 font-mono text-xs text-content-main placeholder:text-content-muted/50 focus:outline-none transition ${
+                            nameDrop.isOver
+                                ? 'bg-primary/10 ring-2 ring-inset ring-primary/40'
+                                : nameDrop.isDragging
+                                    ? 'bg-primary/3'
+                                    : ''
+                        }`}
+                    />
+
+                    <TypeDropdown
+                        value={item.type}
+                        onChange={(nextType) => onUpdate({ type: nextType })}
+                    />
+                </div>
+
+                <div
+                    {...valueDrop.dropProps}
+                    className={`relative flex items-center rounded-b-xl transition ${
+                        valueDrop.isOver
+                            ? 'bg-primary/10 ring-2 ring-inset ring-primary/40'
+                            : valueDrop.isDragging
+                                ? 'bg-primary/3 ring-1 ring-inset ring-primary/35'
+                                : ''
+                    }`}
+                >
+                    {isExpr && (
+                        <span className="pointer-events-none pl-3 font-mono text-[10px] font-black italic text-emerald-500">
+                            fx
+                        </span>
+                    )}
+
+                    {isBoolFixed ? (
+                        <div className="flex h-9.5 w-full items-center justify-between px-3">
+                            <button
+                                type="button"
+                                role="switch"
+                                aria-checked={item.value === 'true'}
+                                onClick={() =>
+                                    onUpdate({
+                                        value: item.value === 'true' ? 'false' : 'true',
+                                    })
+                                }
+                                className="flex items-center gap-2.5 focus:outline-none"
+                            >
+                                <span
+                                    className={`relative inline-flex h-5 w-9 shrink-0 items-center rounded-full transition-colors ${
+                                        item.value === 'true' ? 'bg-emerald-500' : 'bg-line-border'
+                                    }`}
+                                >
+                                    <span
+                                        className={`inline-block size-3.5 transform rounded-full bg-white shadow-xs transition-transform ${
+                                            item.value === 'true' ? 'translate-x-4.5' : 'translate-x-0.5'
+                                        }`}
+                                    />
+                                </span>
+                                <span className="font-mono text-xs text-content-main">
+                                    {item.value === 'true' ? 'true' : 'false'}
+                                </span>
+                            </button>
+
+                            <button
+                                type="button"
+                                onClick={() => onUpdate({ value: '{{ }}' })}
+                                className="rounded px-1.5 py-0.5 font-mono text-[10px] text-content-muted transition hover:bg-line-border/60 hover:text-content-main"
+                            >
+                                fx
+                            </button>
+                        </div>
+                    ) : (
+                        <input
+                            ref={valueInputRef}
+                            type="text"
+                            dir={
+                                isExpr || item.type !== 'string'
+                                    ? 'ltr'
+                                    : textDir(item.value, 'ltr')
+                            }
+                            value={item.value}
+                            maxLength={5000}
+                            placeholder={valuePlaceholder}
+                            onChange={(e) => onUpdate({ value: e.target.value })}
+                            className={`h-9.5 w-full rounded-b-xl bg-transparent px-3 text-xs text-content-main placeholder:text-content-muted/50 focus:outline-none ${
+                                isExpr
+                                    ? 'bg-emerald-500/10 font-mono text-emerald-600 dark:text-emerald-400'
+                                    : item.type !== 'string'
+                                        ? 'font-mono'
+                                        : ''
+                            }`}
+                        />
+                    )}
+                </div>
+            </div>
+        </div>
+    );
+}
+
 export function SetFieldsEditor({ value, onChange }: SetFieldsEditorProps) {
     const [items, setItems] = useState<SetFieldItem[]>(() => toItems(value));
-    const [isDragOverZone, setIsDragOverZone] = useState(false);
 
     const commit = (next: SetFieldItem[]) => {
         setItems(next);
@@ -185,50 +346,12 @@ export function SetFieldsEditor({ value, onChange }: SetFieldsEditorProps) {
         commit(items.filter((item) => item.id !== id));
     };
 
-    const handleDropOnValue = (item: SetFieldItem, event: React.DragEvent<HTMLInputElement>) => {
-        event.preventDefault();
-        event.stopPropagation();
-        const textToInsert = event.dataTransfer.getData('text/plain');
-        if (!textToInsert) return;
+    const zoneDrop = useFieldDrop((dragged) => {
+        const validType: FieldType = FIELD_TYPES.some((t) => t.value === dragged.fieldType)
+            ? dragged.fieldType
+            : 'string';
 
-        const target = event.currentTarget;
-        const start = target.selectionStart ?? target.value.length;
-        const end = target.selectionEnd ?? target.value.length;
-        const nextVal = item.value.substring(0, start) + textToInsert + item.value.substring(end);
-        const nextName = item.name.trim() === '' ? inferKeyFromExpression(textToInsert) : item.name;
-
-        update(item.id, { name: nextName, value: nextVal });
-    };
-
-    const handleDropOnName = (item: SetFieldItem, event: React.DragEvent<HTMLInputElement>) => {
-        event.preventDefault();
-        event.stopPropagation();
-        const dropped = event.dataTransfer.getData('text/plain');
-        if (!dropped) return;
-
-        if (/\{\{.+?}}/.test(dropped)) {
-            const inferred = inferKeyFromExpression(dropped);
-            update(item.id, {
-                name: item.name.trim() === '' ? inferred : item.name,
-                value: item.value.trim() === '' ? dropped : item.value,
-            });
-        } else {
-            update(item.id, { name: dropped });
-        }
-    };
-
-    const handleZoneDrop = (event: React.DragEvent<HTMLDivElement>) => {
-        event.preventDefault();
-        event.stopPropagation();
-        setIsDragOverZone(false);
-
-        const dropped = event.dataTransfer.getData('text/plain');
-        if (!dropped) return;
-
-        const droppedType = event.dataTransfer.getData('application/x-tameshk-type') as FieldType;
-        const validType: FieldType = FIELD_TYPES.some((t) => t.value === droppedType) ? droppedType : 'string';
-
-        const baseKey = inferKeyFromExpression(dropped);
+        const baseKey = inferKeyFromExpression(dragged.expression);
         const existingNames = new Set(items.map((i) => i.name.trim()));
         let uniqueName = baseKey;
         let counter = 1;
@@ -239,159 +362,54 @@ export function SetFieldsEditor({ value, onChange }: SetFieldsEditorProps) {
         addField({
             name: uniqueName,
             type: validType,
-            value: dropped,
+            value: dragged.expression,
         });
-    };
+    });
 
     return (
         <div className="space-y-3">
-            {items.map((item) => {
-                const isExpr = /\{\{.+?}}/.test(item.value);
-                const isBoolFixed = item.type === 'boolean' && !isExpr;
-
-                const valuePlaceholder =
-                    item.type === 'number'
-                        ? '0'
-                        : item.type === 'array'
-                            ? '["item1", "item2"]'
-                            : item.type === 'object'
-                                ? '{"key": "value"}'
-                                : 'value';
-
-                return (
-                    <div key={item.id} className="group flex items-start gap-2" dir="ltr">
-                        <button
-                            type="button"
-                            aria-label="حذف فیلد"
-                            onClick={() => remove(item.id)}
-                            className="mt-1 flex size-7 shrink-0 items-center justify-center rounded-lg text-content-muted opacity-60 transition hover:bg-primary/10 hover:text-primary group-hover:opacity-100"
-                        >
-                            <Icon name="trash" className="size-3.5" />
-                        </button>
-
-                        <div className="min-w-0 flex-1 rounded-xl border border-line-border bg-field shadow-2xs transition focus-within:border-primary/60">
-                            <div className="flex items-center border-b border-line-border">
-                                <input
-                                    type="text"
-                                    dir="ltr"
-                                    value={item.name}
-                                    maxLength={200}
-                                    placeholder="name"
-                                    onChange={(e) => update(item.id, { name: e.target.value })}
-                                    onDragOver={(e) => {
-                                        e.preventDefault();
-                                        e.dataTransfer.dropEffect = 'copy';
-                                    }}
-                                    onDrop={(e) => handleDropOnName(item, e)}
-                                    className="h-9.5 min-w-0 flex-1 bg-transparent px-3 font-mono text-xs text-content-main placeholder:text-content-muted/50 focus:outline-none"
-                                />
-
-                                <TypeDropdown
-                                    value={item.type}
-                                    onChange={(nextType) => update(item.id, { type: nextType })}
-                                />
-                            </div>
-
-                            <div className="relative flex items-center">
-                                {isExpr && (
-                                    <span className="pointer-events-none pl-3 font-mono text-[10px] font-black italic text-emerald-500">
-                                        fx
-                                    </span>
-                                )}
-
-                                {isBoolFixed ? (
-                                    <div className="flex h-9.5 w-full items-center justify-between px-3">
-                                        <button
-                                            type="button"
-                                            role="switch"
-                                            aria-checked={item.value === 'true'}
-                                            onClick={() =>
-                                                update(item.id, {
-                                                    value: item.value === 'true' ? 'false' : 'true',
-                                                })
-                                            }
-                                            className="flex items-center gap-2.5 focus:outline-none"
-                                        >
-                                            <span
-                                                className={`relative inline-flex h-5 w-9 shrink-0 items-center rounded-full transition-colors ${
-                                                    item.value === 'true' ? 'bg-emerald-500' : 'bg-line-border'
-                                                }`}
-                                            >
-                                                <span
-                                                    className={`inline-block size-3.5 transform rounded-full bg-white shadow-xs transition-transform ${
-                                                        item.value === 'true' ? 'translate-x-4.5' : 'translate-x-0.5'
-                                                    }`}
-                                                />
-                                            </span>
-                                            <span className="font-mono text-xs text-content-main">
-                                                {item.value === 'true' ? 'true' : 'false'}
-                                            </span>
-                                        </button>
-
-                                        <button
-                                            type="button"
-                                            onClick={() => update(item.id, { value: '{{ }}' })}
-                                            className="rounded px-1.5 py-0.5 font-mono text-[10px] text-content-muted transition hover:bg-line-border/60 hover:text-content-main"
-                                        >
-                                            fx
-                                        </button>
-                                    </div>
-                                ) : (
-                                    <input
-                                        type="text"
-                                        dir={
-                                            isExpr || item.type !== 'string'
-                                                ? 'ltr'
-                                                : textDir(item.value, 'ltr')
-                                        }
-                                        value={item.value}
-                                        maxLength={5000}
-                                        placeholder={valuePlaceholder}
-                                        onChange={(e) => update(item.id, { value: e.target.value })}
-                                        onDragOver={(e) => {
-                                            e.preventDefault();
-                                            e.dataTransfer.dropEffect = 'copy';
-                                        }}
-                                        onDrop={(e) => handleDropOnValue(item, e)}
-                                        className={`h-9.5 w-full rounded-b-xl bg-transparent px-3 text-xs text-content-main placeholder:text-content-muted/50 focus:outline-none ${
-                                            isExpr
-                                                ? 'bg-emerald-500/10 font-mono text-emerald-400'
-                                                : item.type !== 'string'
-                                                    ? 'font-mono'
-                                                    : ''
-                                        }`}
-                                    />
-                                )}
-                            </div>
-                        </div>
-                    </div>
-                );
-            })}
+            {items.map((item) => (
+                <SetFieldRow
+                    key={item.id}
+                    item={item}
+                    onUpdate={(patch) => update(item.id, patch)}
+                    onRemove={() => remove(item.id)}
+                />
+            ))}
 
             <div
-                onDragOver={(e) => {
-                    e.preventDefault();
-                    e.dataTransfer.dropEffect = 'copy';
-                    setIsDragOverZone(true);
-                }}
-                onDragLeave={() => setIsDragOverZone(false)}
-                onDrop={handleZoneDrop}
+                {...zoneDrop.dropProps}
                 className={`flex flex-col items-center justify-center rounded-xl border border-dashed px-4 py-5 text-center transition ${
-                    isDragOverZone
-                        ? 'border-primary bg-primary/5'
-                        : 'border-line-border bg-surface-card/30 hover:border-content-muted/40'
+                    zoneDrop.isOver
+                        ? 'border-primary bg-primary/10 ring-2 ring-primary/20'
+                        : zoneDrop.isDragging
+                            ? 'border-primary/60 bg-primary/4'
+                            : 'border-line-border bg-surface-card/30 hover:border-content-muted/40'
                 }`}
             >
-                <div className="flex flex-wrap items-center justify-center gap-1.5 text-xs">
-                    <span className="text-content-muted">فیلدهای ورودی را به اینجا بکشید یا</span>
-                    <button
-                        type="button"
-                        onClick={() => addField()}
-                        className="font-bold text-primary transition hover:underline"
-                    >
-                        افزودن فیلد (Add Field)
-                    </button>
-                </div>
+                {zoneDrop.isDragging && zoneDrop.activeField ? (
+                    <div className="flex flex-wrap items-center justify-center gap-1.5 text-xs font-semibold text-content-main">
+                        <span>برای افزودن فیلد</span>
+                        <span
+                            dir="ltr"
+                            className="rounded-md bg-primary/12 px-1.5 py-0.5 font-mono font-bold text-primary"
+                        >
+                            {zoneDrop.activeField.keyName}
+                        </span>
+                        <span>اینجا رها کنید</span>
+                    </div>
+                ) : (
+                    <div className="flex flex-wrap items-center justify-center gap-1.5 text-xs">
+                        <span className="text-content-muted">فیلدهای ورودی را به اینجا بکشید یا</span>
+                        <button
+                            type="button"
+                            onClick={() => addField()}
+                            className="font-bold text-primary transition hover:underline"
+                        >
+                            افزودن فیلد (Add Field)
+                        </button>
+                    </div>
+                )}
             </div>
         </div>
     );
