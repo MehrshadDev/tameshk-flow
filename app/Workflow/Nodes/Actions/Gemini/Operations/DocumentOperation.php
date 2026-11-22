@@ -11,19 +11,20 @@ final class DocumentOperation extends GeminiOperation
 {
     public function handle(NodeContext $context, GeminiClient $client): NodeResult
     {
-        $document = $this->ensure($this->str($context, 'document_input'), 'ورودی سند (Document input) الزامی است.');
-        $model = $this->model($context);
+        $model = $this->model($context, 'model');
+        $rawDocument = $this->str($context, 'document_input');
+        $mimeType = $this->str($context, 'document_mime_type', 'application/pdf');
         $prompt = $this->str($context, 'prompt', 'این سند را بررسی و نکات مهم آن را خلاصه کن.');
         $system = $this->str($context, 'system_instruction');
 
-        $context->log("تحلیل سند توسط Gemini ($model)");
+        $part = $client->resolveInputPart($rawDocument, $mimeType, $context->input);
 
-        $part = $client->resolveInputPart($document, $this->str($context, 'document_mime_type', 'application/pdf'));
+        $context->log("تحلیل سند توسط Gemini ($model)");
 
         $answer = $client->ask(
             $model,
             [$part, ['text' => $prompt]],
-            ['temperature' => 0.3],
+            ['temperature' => (float) ($context->config['temperature'] ?? 0.3)],
             $system !== '' ? $system : null,
         );
 

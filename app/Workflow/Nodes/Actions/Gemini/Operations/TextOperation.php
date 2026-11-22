@@ -14,6 +14,20 @@ final class TextOperation extends GeminiOperation
         $model = $this->model($context, 'model');
         $prompt = $this->ensure($this->str($context, 'prompt'), 'پرامپت ورودی نمی‌تواند خالی باشد.');
         $system = $this->str($context, 'system_instruction');
+        $storeName = $this->str($context, 'file_search_store_name');
+
+        $tools = [];
+        $extra = [];
+
+        if ($storeName !== '') {
+            $normalizedStore = $client->normalizeStoreName($storeName);
+            $tools[] = [
+                'fileSearch' => [
+                    'fileSearchStoreNames' => [$normalizedStore],
+                ],
+            ];
+            $extra['store_name'] = $normalizedStore;
+        }
 
         $context->log("ارسال پرامپت متنی به Gemini ($model)");
 
@@ -22,9 +36,13 @@ final class TextOperation extends GeminiOperation
             [['text' => $prompt]],
             ['temperature' => (float) ($context->config['temperature'] ?? 0.7)],
             $system !== '' ? $system : null,
+            $tools,
         );
 
-        return $this->textResult($answer, $model);
+        if (isset($answer['grounding_metadata'])) {
+            $extra['grounding_metadata'] = $answer['grounding_metadata'];
+        }
+
+        return $this->textResult($answer, $model, $extra);
     }
 }
-

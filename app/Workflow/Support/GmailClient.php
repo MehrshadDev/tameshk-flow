@@ -89,7 +89,7 @@ final class GmailClient
     public function modifyMessage(string $messageId, array $addLabelIds = [], array $removeLabelIds = []): array
     {
         return $this->request('post', "/messages/$messageId/modify", [
-            'addLabelIds'    => array_values($addLabelIds),
+            'addLabelIds' => array_values($addLabelIds),
             'removeLabelIds' => array_values($removeLabelIds),
         ], 20);
     }
@@ -166,6 +166,10 @@ final class GmailClient
 
         $this->extractParts($payload, $textBody, $htmlBody);
 
+        if ($textBody === '' && $htmlBody !== '') {
+            $textBody = $this->htmlToPlainText($htmlBody);
+        }
+
         return [
             'id' => $raw['id'] ?? '',
             'threadId' => $raw['threadId'] ?? '',
@@ -181,7 +185,7 @@ final class GmailClient
             'messageId' => $getHeader('Message-ID'),
             'inReplyTo' => $getHeader('In-Reply-To'),
             'references' => $getHeader('References'),
-            'text' => $textBody ?: ($raw['snippet'] ?? ''),
+            'text' => $textBody !== '' ? $textBody : ($raw['snippet'] ?? ''),
             'html' => $htmlBody,
             'raw' => $raw,
         ];
@@ -189,21 +193,34 @@ final class GmailClient
 
     private function extractParts(array $part, string &$textBody, string &$htmlBody): void
     {
-        $mimeType = $part['mimeType'] ?? '';
+        $mimeType = strtolower((string) ($part['mimeType'] ?? ''));
         $data = $part['body']['data'] ?? null;
 
-        if ($data) {
+        if (is_string($data) && $data !== '') {
             $decoded = $this->base64UrlDecode($data);
-            if ($mimeType === 'text/plain' && empty($textBody)) {
+            if ($mimeType === 'text/plain' && $textBody === '') {
                 $textBody = $decoded;
-            } elseif ($mimeType === 'text/html' && empty($htmlBody)) {
+            } elseif ($mimeType === 'text/html' && $htmlBody === '') {
                 $htmlBody = $decoded;
             }
         }
 
         foreach ((array) ($part['parts'] ?? []) as $subPart) {
-            $this->extractParts($subPart, $textBody, $htmlBody);
+            if (is_array($subPart)) {
+                $this->extractParts($subPart, $textBody, $htmlBody);
+            }
         }
+    }
+
+    private function htmlToPlainText(string $html): string
+    {
+        $clean = preg_replace('/<(script|style|head)\b[^>]*>.*?<\/\1>/is', ' ', $html) ?? $html;
+        $clean = preg_replace('/<(br|p|div|li|tr|h[1-6])\b[^>]*>/i', "\n", $clean) ?? $clean;
+        $text = html_entity_decode(strip_tags($clean), ENT_QUOTES | ENT_HTML5, 'UTF-8');
+        $text = preg_replace('/[ \t]+/', ' ', $text) ?? $text;
+        $text = preg_replace('/\n\s*\n+/', "\n\n", $text) ?? $text;
+
+        return trim($text);
     }
 
     private function base64UrlEncode(string $data): string

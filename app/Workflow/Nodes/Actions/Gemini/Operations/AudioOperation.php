@@ -12,12 +12,15 @@ final class AudioOperation extends GeminiOperation
     public function handle(NodeContext $context, GeminiClient $client): NodeResult
     {
         $model = $this->model($context, 'model_multimodal');
-        $audio = $this->ensure($this->str($context, 'audio_input'), 'آدرس یا داده فایل صوتی (Audio input) الزامی است.');
-        $part = $client->resolveInputPart($audio, $this->str($context, 'audio_mime_type', 'audio/ogg'));
+        $operation = $this->str($context, 'operation_audio', 'analyze_audio');
+        $rawAudio = $this->str($context, 'audio_input');
+        $mimeType = $this->str($context, 'audio_mime_type', 'audio/ogg');
 
-        $customPrompt = $this->str($context, 'prompt');
+        $part = $client->resolveInputPart($rawAudio, $mimeType, $context->input);
 
-        $prompt = $this->str($context, 'operation_audio', 'analyze_audio') === 'transcribe_audio'
+        $customPrompt = $this->str($context, 'audio_prompt') ?: $this->str($context, 'prompt');
+
+        $prompt = $operation === 'transcribe_audio'
             ? ($customPrompt !== ''
                 ? $customPrompt
                 : 'لطفاً تمام کلمات بیان‌شده در این فایل صوتی را با دقت بالا، بدون کم‌وکاست و به صورت رونوشت کلمه‌به‌کلمه پیاده‌سازی کن.')
@@ -27,8 +30,15 @@ final class AudioOperation extends GeminiOperation
 
         $context->log("پردازش فایل صوتی در Gemini ($model)");
 
-        $answer = $client->ask($model, [$part, ['text' => $prompt]], ['temperature' => 0.2]);
+        $answer = $client->ask(
+            $model,
+            [$part, ['text' => $prompt]],
+            ['temperature' => (float) ($context->config['temperature'] ?? 0.2)],
+        );
 
-        return $this->textResult($answer, $model, ['transcription' => $answer['text']]);
+        return $this->textResult($answer, $model, [
+            'transcription' => $answer['text'],
+            'operation' => $operation,
+        ]);
     }
 }

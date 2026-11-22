@@ -27,114 +27,114 @@ class GoogleSheetsNode implements NodeContract
             configSchema: array_merge(
                 [
                     'credential_id' => [
-                        'type'            => 'credential',
+                        'type' => 'credential',
                         'credential_type' => 'google',
-                        'label'           => 'حساب گوگل',
-                        'required'        => true,
+                        'label' => 'حساب گوگل',
+                        'required' => true,
                     ],
                     'operation' => [
-                        'type'     => 'select',
-                        'label'    => 'عملیات',
-                        'options'  => [
+                        'type' => 'select',
+                        'label' => 'عملیات',
+                        'options' => [
                             ['value' => 'append', 'label' => 'افزودن ردیف (Append Row)'],
                             ['value' => 'read', 'label' => 'خواندن ردیف‌ها (Get Rows)'],
                             ['value' => 'update', 'label' => 'به‌روزرسانی ردیف (Update Row)'],
                             ['value' => 'clear', 'label' => 'پاک کردن بازه (Clear)'],
                         ],
-                        'default'  => 'append',
+                        'default' => 'append',
                         'required' => true,
                     ],
                 ],
                 GoogleSheetsConfig::schema(),
                 [
                     'values' => [
-                        'type'        => 'textarea',
-                        'label'       => 'مقادیر ردیف (JSON یا جداشده با کاما)',
-                        'required'    => true,
-                        'placeholder' => '["مهرشاد حسن خانی", "09120000000", "تهران"]',
-                        'help'        => 'یک آرایه JSON یا مقادیر جداشده با کاما وارد کنید؛ می‌توانید از {{ input.field }} استفاده کنید.',
-                        'depends_on'  => ['operation' => ['append', 'update']],
+                        'type' => 'textarea',
+                        'label' => 'مقادیر ردیف (آرایه JSON یا جداشده با کاما)',
+                        'required' => true,
+                        'placeholder' => '["علی محمدی", "09120000000", "تهران"]',
+                        'depends_on' => ['operation' => ['append', 'update']],
                     ],
                     'update_range' => [
-                        'type'        => 'text',
-                        'label'       => 'بازه سلول‌ها (Range)',
-                        'required'    => true,
+                        'type' => 'text',
+                        'label' => 'بازه سلول‌ها (Range)',
+                        'required' => true,
                         'placeholder' => 'A2:D2',
-                        'depends_on'  => ['operation' => 'update'],
+                        'depends_on' => ['operation' => 'update'],
                     ],
                     'clear_range' => [
-                        'type'        => 'text',
-                        'label'       => 'بازه پاک کردن (Range)',
-                        'required'    => true,
-                        'default'     => 'A2:Z1000',
+                        'type' => 'text',
+                        'label' => 'بازه پاک کردن (Range)',
+                        'required' => true,
+                        'default' => 'A2:Z1000',
                         'placeholder' => 'A2:Z1000',
-                        'depends_on'  => ['operation' => 'clear'],
+                        'depends_on' => ['operation' => 'clear'],
                     ],
                     'read_range' => [
-                        'type'        => 'text',
-                        'label'       => 'بازه خواندن (Range)',
-                        'default'     => 'A1:Z1000',
+                        'type' => 'text',
+                        'label' => 'بازه خواندن (Range)',
+                        'default' => 'A1:Z1000',
                         'placeholder' => 'A1:Z1000',
-                        'advanced'    => true,
-                        'depends_on'  => ['operation' => 'read'],
+                        'advanced' => true,
+                        'depends_on' => ['operation' => 'read'],
                     ],
                     'has_header' => [
-                        'type'     => 'select',
-                        'label'    => 'فرمت خروجی سطرها',
-                        'options'  => [
-                            ['value' => '1', 'label' => 'ستون‌های نام‌گذاری‌شده (بر اساس سطر اول شیت)'],
+                        'type' => 'select',
+                        'label' => 'فرمت خروجی سطرها',
+                        'options' => [
+                            ['value' => '1', 'label' => 'ستون‌های نام‌گذاری‌شده (بر اساس سطر اول)'],
                             ['value' => '0', 'label' => 'لیست ساده مقادیر (بدون عنوان ستون)'],
                         ],
-                        'default'  => '1',
+                        'default' => '1',
                         'advanced' => true,
+                        'depends_on' => ['operation' => 'read'],
                     ],
                     'limit' => [
-                        'type'       => 'number',
-                        'label'      => 'حداکثر تعداد ردیف',
-                        'default'    => 100,
-                        'min'        => 1,
-                        'max'        => 5000,
-                        'integer'    => true,
-                        'advanced'   => true,
+                        'type' => 'number',
+                        'label' => 'حداکثر تعداد ردیف',
+                        'default' => 100,
+                        'min' => 1,
+                        'max' => 5000,
+                        'integer' => true,
+                        'advanced' => true,
                         'depends_on' => ['operation' => 'read'],
                     ],
                     'value_input_option' => [
-                        'type'       => 'select',
-                        'label'      => 'نحوه ثبت مقادیر',
-                        'options'    => [
+                        'type' => 'select',
+                        'label' => 'نحوه ثبت مقادیر',
+                        'options' => [
                             ['value' => 'USER_ENTERED', 'label' => 'هوشمند و فرمول‌پذیر (USER_ENTERED)'],
                             ['value' => 'RAW', 'label' => 'متن خام بدون پردازش (RAW)'],
                         ],
-                        'default'    => 'USER_ENTERED',
-                        'advanced'   => true,
+                        'default' => 'USER_ENTERED',
+                        'advanced' => true,
                         'depends_on' => ['operation' => ['append', 'update']],
                     ],
                 ],
             ),
             presets: [
                 [
-                    'key'         => 'append_row',
-                    'name'        => 'Append Row',
+                    'key' => 'append_row',
+                    'name' => 'Append Row',
                     'description' => 'افزودن یک یا چند ردیف جدید به انتهای شیت.',
-                    'config'      => ['operation' => 'append'],
+                    'config' => ['operation' => 'append'],
                 ],
                 [
-                    'key'         => 'get_rows',
-                    'name'        => 'Get Rows',
+                    'key' => 'get_rows',
+                    'name' => 'Get Rows',
                     'description' => 'خواندن ردیف‌های شیت به صورت آرایه یا کلید-مقدار.',
-                    'config'      => ['operation' => 'read'],
+                    'config' => ['operation' => 'read'],
                 ],
                 [
-                    'key'         => 'update_row',
-                    'name'        => 'Update Row',
+                    'key' => 'update_row',
+                    'name' => 'Update Row',
                     'description' => 'جایگزینی مقادیر یک بازه مشخص از شیت.',
-                    'config'      => ['operation' => 'update'],
+                    'config' => ['operation' => 'update'],
                 ],
                 [
-                    'key'         => 'clear_range',
-                    'name'        => 'Clear',
+                    'key' => 'clear_range',
+                    'name' => 'Clear',
                     'description' => 'پاک‌کردن مقادیر یک بازه بدون حذف ساختار شیت.',
-                    'config'      => ['operation' => 'clear'],
+                    'config' => ['operation' => 'clear'],
                 ],
             ],
             color: 'emerald',
@@ -154,11 +154,11 @@ class GoogleSheetsNode implements NodeContract
         $spreadsheetId = GoogleSheetsConfig::resolveSpreadsheet($context);
 
         return match ($operation) {
-            'read'   => $this->handleRead($context, $client, $spreadsheetId),
+            'read' => $this->handleRead($context, $client, $spreadsheetId),
             'append' => $this->handleAppend($context, $client, $spreadsheetId),
             'update' => $this->handleUpdate($context, $client, $spreadsheetId),
-            'clear'  => $this->handleClear($context, $client, $spreadsheetId),
-            default  => throw NodeExecutionException::because("عملیات نامعتبر است: $operation"),
+            'clear' => $this->handleClear($context, $client, $spreadsheetId),
+            default => throw NodeExecutionException::because("عملیات نامعتبر است: $operation"),
         };
     }
 
@@ -168,7 +168,7 @@ class GoogleSheetsNode implements NodeContract
         $withHeader = ((string) ($context->config['has_header'] ?? '1')) === '1';
         $limit = (int) ($context->config['limit'] ?? 100);
 
-        $context->log("خواندن بازه {$range}");
+        $context->log("خواندن بازه $range");
 
         $response = $client->getValues($spreadsheetId, $range);
         $values = array_values((array) ($response['values'] ?? []));
@@ -194,12 +194,12 @@ class GoogleSheetsNode implements NodeContract
 
         return NodeResult::of([
             'spreadsheet_id' => $spreadsheetId,
-            'range'          => (string) ($response['range'] ?? $range),
-            'headers'        => $headers,
-            'rows'           => $rows,
-            'values'         => $values,
-            'count'          => count($rows),
-            'first'          => $rows[0] ?? null,
+            'range' => (string) ($response['range'] ?? $range),
+            'headers' => $headers,
+            'rows' => $rows,
+            'values' => $values,
+            'count' => count($rows),
+            'first' => $rows[0] ?? null,
         ]);
     }
 
@@ -214,15 +214,15 @@ class GoogleSheetsNode implements NodeContract
         $response = $client->appendValues($spreadsheetId, $range, $rows, $inputOption);
 
         return NodeResult::of([
-            'success'         => true,
-            'spreadsheet_id'  => $spreadsheetId,
-            'range'           => $range,
-            'updated_range'   => (string) data_get($response, 'updates.updatedRange', ''),
-            'updated_rows'    => (int) data_get($response, 'updates.updatedRows', count($rows)),
+            'success' => true,
+            'spreadsheet_id' => $spreadsheetId,
+            'range' => $range,
+            'updated_range' => (string) data_get($response, 'updates.updatedRange', ''),
+            'updated_rows' => (int) data_get($response, 'updates.updatedRows', count($rows)),
             'updated_columns' => (int) data_get($response, 'updates.updatedColumns', 0),
-            'updated_cells'   => (int) data_get($response, 'updates.updatedCells', 0),
-            'values'          => $rows,
-            'row_count'       => count($rows),
+            'updated_cells' => (int) data_get($response, 'updates.updatedCells', 0),
+            'values' => $rows,
+            'row_count' => count($rows),
         ]);
     }
 
@@ -232,20 +232,20 @@ class GoogleSheetsNode implements NodeContract
         $rows = $this->readRows($context);
         $inputOption = (string) ($context->config['value_input_option'] ?? 'USER_ENTERED');
 
-        $context->log("به‌روزرسانی بازه {$range}");
+        $context->log("به‌روزرسانی بازه $range");
 
         $response = $client->updateValues($spreadsheetId, $range, $rows, $inputOption);
 
         return NodeResult::of([
-            'success'         => true,
-            'spreadsheet_id'  => $spreadsheetId,
-            'range'           => $range,
-            'updated_range'   => (string) data_get($response, 'updatedRange', ''),
-            'updated_rows'    => (int) data_get($response, 'updatedRows', count($rows)),
+            'success' => true,
+            'spreadsheet_id' => $spreadsheetId,
+            'range' => $range,
+            'updated_range' => (string) data_get($response, 'updatedRange', ''),
+            'updated_rows' => (int) data_get($response, 'updatedRows', count($rows)),
             'updated_columns' => (int) data_get($response, 'updatedColumns', 0),
-            'updated_cells'   => (int) data_get($response, 'updatedCells', 0),
-            'values'          => $rows,
-            'row_count'       => count($rows),
+            'updated_cells' => (int) data_get($response, 'updatedCells', 0),
+            'values' => $rows,
+            'row_count' => count($rows),
         ]);
     }
 
@@ -253,15 +253,15 @@ class GoogleSheetsNode implements NodeContract
     {
         $range = GoogleSheetsConfig::rangeFor($context, 'clear_range', 'A2:Z1000');
 
-        $context->log("پاک‌کردن بازه {$range}");
+        $context->log("پاک‌کردن بازه $range");
 
         $response = $client->clearValues($spreadsheetId, $range);
 
         return NodeResult::of([
-            'success'        => true,
+            'success' => true,
             'spreadsheet_id' => $spreadsheetId,
-            'range'          => $range,
-            'cleared_range'  => (string) data_get($response, 'clearedRange', ''),
+            'range' => $range,
+            'cleared_range' => (string) data_get($response, 'clearedRange', ''),
         ]);
     }
 

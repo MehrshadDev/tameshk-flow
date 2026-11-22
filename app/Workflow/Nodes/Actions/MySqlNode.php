@@ -25,222 +25,239 @@ class MySqlNode implements NodeContract
             outputs: ['main'],
             configSchema: [
                 'credential_id' => [
-                    'type'            => 'credential',
+                    'type' => 'credential',
                     'credential_type' => 'mysql',
-                    'label'           => 'اعتبارنامه MySQL',
-                    'required'        => true,
+                    'label' => 'اعتبارنامه MySQL',
+                    'required' => true,
                 ],
                 'operation' => [
-                    'type'     => 'select',
-                    'label'    => 'عملیات (Operation)',
-                    'options'  => [
-                        ['value' => 'delete', 'label' => 'حذف جدول یا ردیف‌ها (Delete table or rows)'],
-                        ['value' => 'execute_query', 'label' => 'اجرای کوئری SQL (Execute a SQL query)'],
-                        ['value' => 'insert', 'label' => 'درج ردیف در جدول (Insert rows in a table)'],
-                        ['value' => 'upsert', 'label' => 'درج یا بروزرسانی ردیف‌ها (Insert or update rows in a table)'],
-                        ['value' => 'select', 'label' => 'انتخاب ردیف‌ها از جدول (Select rows from a table)'],
-                        ['value' => 'update', 'label' => 'بروزرسانی ردیف‌ها در جدول (Update rows in a table)'],
+                    'type' => 'select',
+                    'label' => 'عملیات (Operation)',
+                    'options' => [
+                        ['value' => 'select', 'label' => 'انتخاب ردیف‌ها از جدول (Select Rows)'],
+                        ['value' => 'insert', 'label' => 'درج ردیف در جدول (Insert Rows)'],
+                        ['value' => 'update', 'label' => 'بروزرسانی ردیف‌ها (Update Rows)'],
+                        ['value' => 'upsert', 'label' => 'درج یا بروزرسانی ردیف‌ها (Upsert)'],
+                        ['value' => 'delete', 'label' => 'حذف جدول یا ردیف‌ها (Delete / Truncate / Drop)'],
+                        ['value' => 'execute_query', 'label' => 'اجرای کوئری SQL (Execute SQL Query)'],
                     ],
-                    'default'  => 'select',
+                    'default' => 'select',
                     'required' => true,
                 ],
 
                 'table' => [
-                    'type'        => 'dynamic_select',
-                    'source'      => 'mysql_tables',
-                    'label'       => 'نام جدول (Table)',
-                    'required'    => true,
+                    'type' => 'dynamic_select',
+                    'source' => 'mysql_tables',
+                    'label' => 'نام جدول (Table)',
+                    'required' => true,
                     'placeholder' => 'users',
-                    'depends_on'  => [
+                    'depends_on' => [
                         'operation' => ['select', 'insert', 'update', 'upsert', 'delete'],
                     ],
                 ],
 
                 'delete_command' => [
-                    'type'       => 'select',
-                    'label'      => 'نوع دستور حذف (Command)',
-                    'options'    => [
+                    'type' => 'select',
+                    'label' => 'نوع دستور حذف (Command)',
+                    'options' => [
                         ['value' => 'delete', 'label' => 'حذف ردیف‌های منطبق با شرط (Delete Rows)'],
                         ['value' => 'truncate', 'label' => 'خالی کردن کامل جدول (Truncate Table)'],
                         ['value' => 'drop', 'label' => 'حذف کامل جدول از دیتابیس (Drop Table)'],
                     ],
-                    'default'    => 'delete',
-                    'required'   => true,
+                    'default' => 'delete',
+                    'required' => true,
                     'depends_on' => ['operation' => 'delete'],
                 ],
 
                 'query' => [
-                    'type'        => 'code',
-                    'label'       => 'کوئری SQL (SQL Query)',
-                    'required'    => true,
-                    'default'     => "SELECT * FROM users WHERE id = ? LIMIT 10;",
-                    'placeholder' => "SELECT * FROM orders WHERE status = ? LIMIT 50;",
-                    'help'        => 'برای امنیت کامل در برابر SQL Injection، به جای قرار دادن مستقیم متغیرها در متن کوئری، از علامت ? استفاده کنید و مقادیر را در فیلد پارامترها وارد نمایید.',
-                    'depends_on'  => ['operation' => 'execute_query'],
+                    'type' => 'code',
+                    'label' => 'کوئری SQL (استفاده از ? برای پارامترها)',
+                    'required' => true,
+                    'default' => 'SELECT * FROM users WHERE id = ? LIMIT 10;',
+                    'placeholder' => 'SELECT * FROM orders WHERE status = ? LIMIT 50;',
+                    'depends_on' => ['operation' => 'execute_query'],
                 ],
                 'query_params' => [
-                    'type'        => 'textarea',
-                    'label'       => 'پارامترهای کوئری (Query Parameters - اختیاری)',
+                    'type' => 'textarea',
+                    'label' => 'پارامترهای جایگزین ? (اختیاری)',
                     'placeholder' => '["paid", 100] یا {{ input.id }}',
-                    'help'        => 'آرایه JSON یا مقادیر جداشده با کاما که به ترتیب جایگزین علامت‌های ? در کوئری می‌شوند.',
-                    'depends_on'  => ['operation' => 'execute_query'],
+                    'depends_on' => ['operation' => 'execute_query'],
                 ],
 
                 'data_mode' => [
-                    'type'       => 'select',
-                    'label'      => 'نحوه ورود داده‌های ستون‌ها (Data Mode)',
-                    'options'    => [
+                    'type' => 'select',
+                    'label' => 'نحوه ورود داده‌های ستون‌ها',
+                    'options' => [
                         ['value' => 'manual', 'label' => 'نگاشت دستی ستون‌ها (Define Below)'],
                         ['value' => 'json', 'label' => 'آرایه یا آبجکت JSON'],
                     ],
-                    'default'    => 'manual',
-                    'required'   => true,
+                    'default' => 'manual',
+                    'required' => true,
                     'depends_on' => [
                         'operation' => ['insert', 'update', 'upsert'],
                     ],
                 ],
                 'columns_data' => [
-                    'type'       => 'set_fields',
-                    'label'      => 'ستون‌ها و مقادیر (Columns & Values)',
-                    'default'    => [],
-                    'help'       => 'نام هر ستون جدول و مقدار متناظر آن را وارد کنید (می‌توانید فیلدهای ورودی را به اینجا بکشید).',
+                    'type' => 'set_fields',
+                    'label' => 'ستون‌ها و مقادیر (Columns & Values)',
+                    'default' => [],
                     'depends_on' => [
                         'operation' => ['insert', 'update', 'upsert'],
                         'data_mode' => 'manual',
                     ],
                 ],
                 'json_data' => [
-                    'type'        => 'code',
-                    'label'       => 'داده‌های JSON (JSON Object / Rows)',
-                    'default'     => "{\n  \"name\": \"Ali\",\n  \"email\": \"ali@example.com\"\n}",
+                    'type' => 'code',
+                    'label' => 'داده‌های JSON (JSON Object / Rows)',
+                    'default' => "{\n  \"name\": \"Ali\",\n  \"email\": \"ali@example.com\"\n}",
                     'placeholder' => "{\n  \"name\": \"Ali\",\n  \"email\": \"ali@example.com\"\n}",
-                    'depends_on'  => [
+                    'depends_on' => [
                         'operation' => ['insert', 'update', 'upsert'],
                         'data_mode' => 'json',
                     ],
                 ],
                 'update_columns' => [
-                    'type'        => 'text',
-                    'label'       => 'ستون‌های قابل بروزرسانی در صورت تکراری بودن (اختیاری)',
-                    'placeholder' => 'name, email, status (خالی = همه ستون‌های ارسالی)',
-                    'help'        => 'در صورت برخورد با کلید یکتای تکراری (ON DUPLICATE KEY)، کدام ستون‌ها آپدیت شوند؟ با کاما جدا کنید.',
-                    'depends_on'  => ['operation' => 'upsert'],
+                    'type' => 'text',
+                    'label' => 'ستون‌های قابل بروزرسانی (اختیاری - جداشده با کاما)',
+                    'placeholder' => 'name, email, status (خالی = همه ستون‌ها)',
+                    'depends_on' => ['operation' => 'upsert'],
                 ],
 
                 'combinator' => [
-                    'type'       => 'select',
-                    'label'      => 'ترکیب شروط (Combine Conditions)',
-                    'options'    => [
+                    'type' => 'select',
+                    'label' => 'ترکیب شروط (Combine Conditions)',
+                    'options' => [
                         ['value' => 'and', 'label' => 'برقرار بودن همه شروط (AND)'],
                         ['value' => 'or', 'label' => 'برقرار بودن حداقل یک شرط (OR)'],
                     ],
-                    'default'    => 'and',
+                    'default' => 'and',
                     'depends_on' => [
-                        'operation' => ['select', 'update', 'delete'],
+                        'operation' => ['select', 'update'],
                     ],
                 ],
                 'conditions' => [
-                    'type'       => 'conditions',
-                    'label'      => 'شروط فیلتر ردیف‌ها (Where Conditions)',
-                    'default'    => [],
-                    'help'       => 'در «مقدار اول» نام ستون جدول (مثلاً id یا email) و در «مقدار دوم» مقدار مورد نظر را وارد کنید.',
+                    'type' => 'conditions',
+                    'label' => 'شروط فیلتر ردیف‌ها (Where Conditions)',
+                    'default' => [],
                     'depends_on' => [
-                        'operation' => ['select', 'update', 'delete'],
+                        'operation' => ['select', 'update'],
+                    ],
+                ],
+                'delete_combinator' => [
+                    'type' => 'select',
+                    'label' => 'ترکیب شروط (Combine Conditions)',
+                    'options' => [
+                        ['value' => 'and', 'label' => 'برقرار بودن همه شروط (AND)'],
+                        ['value' => 'or', 'label' => 'برقرار بودن حداقل یک شرط (OR)'],
+                    ],
+                    'default' => 'and',
+                    'depends_on' => [
+                        'operation' => 'delete',
+                        'delete_command' => 'delete',
+                    ],
+                ],
+                'delete_conditions' => [
+                    'type' => 'conditions',
+                    'label' => 'شروط فیلتر ردیف‌ها (Where Conditions)',
+                    'default' => [],
+                    'depends_on' => [
+                        'operation' => 'delete',
+                        'delete_command' => 'delete',
                     ],
                 ],
 
                 'select_columns' => [
-                    'type'        => 'text',
-                    'label'       => 'ستون‌های خروجی (Output Columns)',
-                    'default'     => '*',
+                    'type' => 'text',
+                    'label' => 'ستون‌های خروجی (Output Columns)',
+                    'default' => '*',
                     'placeholder' => 'id, name, email, created_at',
-                    'advanced'    => true,
-                    'depends_on'  => ['operation' => 'select'],
+                    'advanced' => true,
+                    'depends_on' => ['operation' => 'select'],
                 ],
                 'sort_column' => [
-                    'type'        => 'text',
-                    'label'       => 'مرتب‌سازی بر اساس ستون (Order By)',
+                    'type' => 'text',
+                    'label' => 'مرتب‌سازی بر اساس ستون (Order By)',
                     'placeholder' => 'id',
-                    'advanced'    => true,
-                    'depends_on'  => ['operation' => 'select'],
+                    'advanced' => true,
+                    'depends_on' => ['operation' => 'select'],
                 ],
                 'sort_direction' => [
-                    'type'       => 'select',
-                    'label'      => 'جهت مرتب‌سازی (Sort Direction)',
-                    'options'    => [
+                    'type' => 'select',
+                    'label' => 'جهت مرتب‌سازی (Sort Direction)',
+                    'options' => [
                         ['value' => 'ASC', 'label' => 'صعودی (ASC)'],
                         ['value' => 'DESC', 'label' => 'نزولی (DESC)'],
                     ],
-                    'default'    => 'DESC',
-                    'advanced'   => true,
+                    'default' => 'DESC',
+                    'advanced' => true,
                     'depends_on' => ['operation' => 'select'],
                 ],
                 'limit' => [
-                    'type'       => 'number',
-                    'label'      => 'حداکثر تعداد ردیف (Limit)',
-                    'default'    => 100,
-                    'min'        => 1,
-                    'max'        => 1000,
-                    'integer'    => true,
-                    'advanced'   => true,
+                    'type' => 'number',
+                    'label' => 'حداکثر تعداد ردیف (Limit)',
+                    'default' => 100,
+                    'min' => 1,
+                    'max' => 1000,
+                    'integer' => true,
+                    'advanced' => true,
                     'depends_on' => [
                         'operation' => ['select', 'update', 'delete'],
                     ],
                 ],
                 'offset' => [
-                    'type'       => 'number',
-                    'label'      => 'پرش از ابتدای نتایج (Offset)',
-                    'default'    => 0,
-                    'min'        => 0,
-                    'max'        => 1000000,
-                    'integer'    => true,
-                    'advanced'   => true,
+                    'type' => 'number',
+                    'label' => 'پرش از ابتدای نتایج (Offset)',
+                    'default' => 0,
+                    'min' => 0,
+                    'max' => 1000000,
+                    'integer' => true,
+                    'advanced' => true,
                     'depends_on' => ['operation' => 'select'],
                 ],
                 'ignore_errors' => [
-                    'type'       => 'boolean',
-                    'label'      => 'نادیده گرفتن خطاهای تکراری (INSERT IGNORE)',
-                    'default'    => false,
-                    'advanced'   => true,
+                    'type' => 'boolean',
+                    'label' => 'نادیده گرفتن خطاهای تکراری (INSERT IGNORE)',
+                    'default' => false,
+                    'advanced' => true,
                     'depends_on' => ['operation' => 'insert'],
                 ],
             ],
             presets: [
                 [
-                    'key'         => 'delete_rows',
-                    'name'        => 'Delete table or rows',
+                    'key' => 'delete_rows',
+                    'name' => 'Delete table or rows',
                     'description' => 'حذف ردیف‌های منطبق با شرط، خالی کردن (Truncate) یا حذف کامل جدول (Drop).',
-                    'config'      => ['operation' => 'delete', 'delete_command' => 'delete'],
+                    'config' => ['operation' => 'delete', 'delete_command' => 'delete'],
                 ],
                 [
-                    'key'         => 'execute_query',
-                    'name'        => 'Execute a SQL query',
+                    'key' => 'execute_query',
+                    'name' => 'Execute a SQL query',
                     'description' => 'اجرای مستقیم کوئری SQL پارامتریک روی پایگاه داده MySQL.',
-                    'config'      => ['operation' => 'execute_query'],
+                    'config' => ['operation' => 'execute_query'],
                 ],
                 [
-                    'key'         => 'insert_rows',
-                    'name'        => 'Insert rows in a table',
+                    'key' => 'insert_rows',
+                    'name' => 'Insert rows in a table',
                     'description' => 'درج یک یا چند ردیف جدید در جدول پایگاه داده MySQL.',
-                    'config'      => ['operation' => 'insert'],
+                    'config' => ['operation' => 'insert'],
                 ],
                 [
-                    'key'         => 'upsert_rows',
-                    'name'        => 'Insert or update rows in a table',
+                    'key' => 'upsert_rows',
+                    'name' => 'Insert or update rows in a table',
                     'description' => 'درج ردیف جدید یا بروزرسانی خودکار آن در صورت تکراری بودن کلید یکتا (Upsert).',
-                    'config'      => ['operation' => 'upsert'],
+                    'config' => ['operation' => 'upsert'],
                 ],
                 [
-                    'key'         => 'select_rows',
-                    'name'        => 'Select rows from a table',
+                    'key' => 'select_rows',
+                    'name' => 'Select rows from a table',
                     'description' => 'جستجو، فیلتر و دریافت ردیف‌ها از جدول پایگاه داده MySQL.',
-                    'config'      => ['operation' => 'select'],
+                    'config' => ['operation' => 'select'],
                 ],
                 [
-                    'key'         => 'update_rows',
-                    'name'        => 'Update rows in a table',
+                    'key' => 'update_rows',
+                    'name' => 'Update rows in a table',
                     'description' => 'بروزرسانی مقادیر ستون‌ها برای ردیف‌های منطبق با شرط در جدول.',
-                    'config'      => ['operation' => 'update'],
+                    'config' => ['operation' => 'update'],
                 ],
             ],
             color: 'sky',
@@ -259,13 +276,13 @@ class MySqlNode implements NodeContract
         $operation = (string) ($context->config['operation'] ?? 'select');
 
         return match ($operation) {
-            'select'        => $this->handleSelect($context, $client),
-            'insert'        => $this->handleInsert($context, $client),
-            'update'        => $this->handleUpdate($context, $client),
-            'upsert'        => $this->handleUpsert($context, $client),
-            'delete'        => $this->handleDelete($context, $client),
+            'select' => $this->handleSelect($context, $client),
+            'insert' => $this->handleInsert($context, $client),
+            'update' => $this->handleUpdate($context, $client),
+            'upsert' => $this->handleUpsert($context, $client),
+            'delete' => $this->handleDelete($context, $client),
             'execute_query' => $this->handleExecuteQuery($context, $client),
-            default         => throw NodeExecutionException::because("عملیات MySQL نامعتبر است: $operation"),
+            default => throw NodeExecutionException::because("عملیات MySQL نامعتبر است: $operation"),
         };
     }
 
@@ -334,8 +351,11 @@ class MySqlNode implements NodeContract
     {
         $table = $this->requireTable($context);
         $command = (string) ($context->config['delete_command'] ?? 'delete');
-        $conditions = is_array($context->config['conditions'] ?? null) ? $context->config['conditions'] : [];
-        $combinator = (string) ($context->config['combinator'] ?? 'and');
+
+        $rawConditions = $context->config['delete_conditions'] ?? $context->config['conditions'] ?? [];
+        $conditions = is_array($rawConditions) ? $rawConditions : [];
+        $combinator = (string) ($context->config['delete_combinator'] ?? $context->config['combinator'] ?? 'and');
+
         $limit = isset($context->config['limit']) && is_numeric($context->config['limit'])
             ? (int) $context->config['limit']
             : null;
@@ -425,12 +445,12 @@ class MySqlNode implements NodeContract
         }
 
         return match ($type) {
-            'number'  => is_numeric($value) ? ($value + 0) : 0,
+            'number' => is_numeric($value) ? ($value + 0) : 0,
             'boolean' => is_bool($value)
                 ? ($value ? 1 : 0)
                 : (in_array(strtolower(trim((string) $value)), ['true', '1', 'yes', 'on'], true) ? 1 : 0),
             'array', 'object' => is_string($value) ? $value : json_encode($value, JSON_UNESCAPED_UNICODE),
-            default   => (string) $value,
+            default => (string) $value,
         };
     }
 

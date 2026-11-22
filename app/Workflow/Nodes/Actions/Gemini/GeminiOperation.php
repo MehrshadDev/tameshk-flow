@@ -22,22 +22,28 @@ abstract class GeminiOperation implements GeminiOperationContract
         return $value;
     }
 
-    protected function model(NodeContext $context, string $key = 'model'): string
+    protected function model(NodeContext $context, string ...$keys): string
     {
-        return $this->ensure(
-            $this->str($context, $key),
-            'مدل هوش مصنوعی انتخاب نشده است. لطفاً ابتدا یک مدل را از لیست انتخاب کنید.'
-        );
+        $candidates = array_unique([...$keys, 'model', 'model_multimodal']);
+
+        foreach ($candidates as $key) {
+            $value = $this->str($context, $key);
+            if ($value !== '') {
+                return $value;
+            }
+        }
+
+        throw NodeExecutionException::because('مدل هوش مصنوعی انتخاب نشده است. لطفاً ابتدا یک مدل را از لیست انتخاب کنید.');
     }
 
     protected function textResult(array $answer, string $model, array $extra = []): NodeResult
     {
         return NodeResult::of([
-            'text'     => $answer['text'],
+            'text' => $answer['text'],
             'response' => $answer['text'],
-            'model'    => $model,
+            'model' => $model,
             ...$extra,
-            'raw'      => $answer['raw'],
+            'raw' => $answer['raw'],
         ]);
     }
 }

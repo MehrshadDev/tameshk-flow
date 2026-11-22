@@ -2,7 +2,6 @@ import type { Edge, XYPosition } from '@xyflow/react';
 import {
     createFlowNode,
     createNoteNode,
-    getUniqueLabel,
     type FlowNodeData,
 } from '@canvas/lib/graph';
 import {
@@ -102,8 +101,8 @@ export const createNodeSlice: Slice<NodeSlice> = (set, get) => ({
                 nodes,
                 src
                     ? {
-                        x: src.position.x + (fromAgent ? AGENT_WIDTH + 64 : 240),
-                        y: src.position.y + (fromAgent ? 4 : 0),
+                        x: src.position.x + (fromAgent ? AGENT_WIDTH + 80 : 160),
+                        y: src.position.y,
                     }
                     : position ?? { x: 100, y: 100 },
             );
@@ -197,11 +196,6 @@ export const createNodeSlice: Slice<NodeSlice> = (set, get) => ({
     updateNode: (id, data) =>
         set((state) => {
             const nextData = { ...data };
-
-            if (typeof data.label === 'string') {
-                nextData.label = getUniqueLabel(data.label, state.nodes, id);
-            }
-
             const targetNode = state.nodes.find((n) => n.id === id);
             const updatedNodes = state.nodes.map((node) =>
                 node.id === id ? { ...node, data: { ...node.data, ...nextData } } : node,

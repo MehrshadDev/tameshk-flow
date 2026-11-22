@@ -24,15 +24,15 @@ import type { ConfigField } from '@canvas/types/graph';
 
 const MIN_SIDE_WIDTH = 280;
 const MAX_SIDE_WIDTH = 820;
-const MIN_CENTER_WIDTH = 360;
+const MIN_CENTER_WIDTH = 380;
 
-const LEFT_STORAGE_KEY = 'tameshk_studio_left_w_v2';
-const RIGHT_STORAGE_KEY = 'tameshk_studio_right_w_v2';
-const TRIGGER_RIGHT_STORAGE_KEY = 'tameshk_studio_trigger_right_w_v2';
+const LEFT_STORAGE_KEY = 'tameshk_studio_left_w_v3';
+const RIGHT_STORAGE_KEY = 'tameshk_studio_right_w_v3';
+const TRIGGER_RIGHT_STORAGE_KEY = 'tameshk_studio_trigger_right_w_v3';
 
 const getDefaultSideWidth = (isSingleSide: boolean): number => {
     const modalWidth = Math.min(1680, window.innerWidth - 16);
-    const ratio = isSingleSide ? 0.48 : 0.35;
+    const ratio = isSingleSide ? 0.47 : 0.335;
     const preferred = Math.round(modalWidth * ratio);
     const maxSafe = isSingleSide
         ? Math.max(MIN_SIDE_WIDTH, Math.min(MAX_SIDE_WIDTH, modalWidth - MIN_CENTER_WIDTH - 16))
@@ -545,7 +545,7 @@ function NodeStudio({ nodeId }: { nodeId: string }) {
                     )}
 
                     <section
-                        className={`min-h-0 min-w-0 flex-1 flex-col bg-surface-raised md:min-w-90 ${
+                        className={`min-h-0 min-w-0 flex-1 flex-col bg-surface-raised md:min-w-95 ${
                             activeTab === 'parameters' ? 'flex' : 'hidden md:flex'
                         }`}
                         dir="rtl"

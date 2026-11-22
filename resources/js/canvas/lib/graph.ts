@@ -9,9 +9,14 @@ export type FlowNodeData = {
 
 export type FlowNode = Node<FlowNodeData, 'workflow' | 'note'>;
 
-export const getUniqueLabel = (baseName: string, existingNodes: FlowNode[], excludeId?: string): string => {
+export const getUniqueLabel = (
+    baseName: string,
+    existingNodes: FlowNode[],
+    excludeId?: string,
+    stripTrailingNumber = true,
+): string => {
     const trimmed = baseName.trim();
-    const cleanBase = trimmed.replace(/\s+\d+$/, '');
+    const cleanBase = stripTrailingNumber ? trimmed.replace(/\s+\d+$/, '') : trimmed;
     const otherNodes = existingNodes.filter((n) => n.id !== excludeId);
     const existingLabels = new Set(otherNodes.map((n) => n.data.label.trim().toLowerCase()));
 
@@ -19,12 +24,13 @@ export const getUniqueLabel = (baseName: string, existingNodes: FlowNode[], excl
         return cleanBase;
     }
 
+    const rootBase = trimmed.replace(/\s+\d+$/, '');
     let counter = 1;
-    while (existingLabels.has(`${cleanBase.toLowerCase()} ${counter}`)) {
+    while (existingLabels.has(`${rootBase.toLowerCase()} ${counter}`)) {
         counter++;
     }
 
-    return `${cleanBase} ${counter}`;
+    return `${rootBase} ${counter}`;
 };
 
 export const toFlowNode = (node: ServerNode): FlowNode => ({

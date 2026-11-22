@@ -64,15 +64,15 @@ function FolderCard({
         <button
             type="button"
             onClick={onClick}
-            className="group flex w-full items-center justify-between gap-3.5 rounded-2xl border border-line-border/60 bg-surface-card p-3.5 text-start transition duration-150 shadow-xs hover:border-line-border hover:bg-surface-raised hover:shadow-md active:scale-[0.99]"
+            className="group flex h-20 w-full items-center justify-between gap-3.5 rounded-2xl border border-line-border/60 bg-surface-card px-3.5 text-start shadow-xs transition duration-150 hover:border-line-border hover:bg-surface-raised hover:shadow-md active:scale-[0.99]"
         >
-            <div className="flex min-w-0 items-center gap-3.5">
+            <div className="flex min-w-0 flex-1 items-center gap-3.5">
                 <div
                     className={`flex size-10 shrink-0 items-center justify-center rounded-xl transition-transform group-hover:scale-105 ${meta.iconClass}`}
                 >
                     <Icon name={meta.icon} className="size-5" />
                 </div>
-                <div className="min-w-0">
+                <div className="min-w-0 flex-1">
                     <div className="flex items-center gap-1.5">
                         <span className="block truncate text-xs font-bold text-content-main transition-colors group-hover:text-primary">
                             {meta.title}
@@ -83,7 +83,7 @@ function FolderCard({
                             </span>
                         )}
                     </div>
-                    <p className="mt-0.5 truncate text-[11px] leading-4 text-content-muted">
+                    <p className="mt-1 truncate text-[11px] leading-4 text-content-muted">
                         {meta.description}
                     </p>
                 </div>
@@ -107,28 +107,30 @@ function NodeCard({ entry, onSelect }: { entry: Entry; onSelect: (entry: Entry) 
         <button
             type="button"
             onClick={() => onSelect(entry)}
-            className="group relative flex w-full items-center gap-3.5 overflow-hidden rounded-2xl border border-line-border/60 bg-surface-card p-3 text-start shadow-xs transition duration-150 hover:-translate-y-px hover:border-primary/40 hover:shadow-lg active:translate-y-0 active:scale-[0.99]"
+            className="group relative flex h-20 w-full items-center justify-between gap-3.5 overflow-hidden rounded-2xl border border-line-border/60 bg-surface-card px-3.5 text-start shadow-xs transition duration-150 hover:-translate-y-px hover:border-primary/40 hover:shadow-lg active:translate-y-0 active:scale-[0.99]"
         >
-            <div
-                className={`flex size-11 shrink-0 items-center justify-center rounded-xl shadow-inner transition-transform duration-150 group-hover:scale-105 ${iconStyle}`}
-            >
-                <Icon name={displayIcon} className="size-6" />
-            </div>
-
-            <div className="min-w-0 flex-1">
-                <div className="flex items-center gap-1.5">
-                    <span className="block truncate text-xs font-bold text-content-main transition-colors group-hover:text-primary">
-                        {preset?.name ?? definition.name}
-                    </span>
-                    {isTrigger && (
-                        <span className="shrink-0 text-amber-500">
-                            <Icon name="bolt" className="size-3.5" />
-                        </span>
-                    )}
+            <div className="flex min-w-0 flex-1 items-center gap-3.5">
+                <div
+                    className={`flex size-10 shrink-0 items-center justify-center rounded-xl shadow-inner transition-transform duration-150 group-hover:scale-105 ${iconStyle}`}
+                >
+                    <Icon name={displayIcon} className="size-5" />
                 </div>
-                <p className="mt-1 line-clamp-2 text-[11px] leading-5 text-content-muted">
-                    {preset?.description ?? definition.description}
-                </p>
+
+                <div className="min-w-0 flex-1">
+                    <div className="flex items-center gap-1.5">
+                        <span className="block truncate text-xs font-bold text-content-main transition-colors group-hover:text-primary">
+                            {preset?.name ?? definition.name}
+                        </span>
+                        {isTrigger && (
+                            <span className="shrink-0 text-amber-500">
+                                <Icon name="bolt" className="size-3.5" />
+                            </span>
+                        )}
+                    </div>
+                    <p className="mt-1 truncate text-[11px] leading-4 text-content-muted">
+                        {preset?.description ?? definition.description}
+                    </p>
+                </div>
             </div>
 
             <Icon

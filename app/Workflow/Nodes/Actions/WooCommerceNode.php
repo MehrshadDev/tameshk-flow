@@ -25,140 +25,148 @@ class WooCommerceNode implements NodeContract
             outputs: ['main'],
             configSchema: [
                 'credential_id' => [
-                    'type'            => 'credential',
+                    'type' => 'credential',
                     'credential_type' => 'woocommerce',
-                    'label'           => 'اعتبارنامه فروشگاه ووکامرس',
-                    'required'        => true,
+                    'label' => 'اعتبارنامه فروشگاه ووکامرس',
+                    'required' => true,
                 ],
                 'resource' => [
-                    'type'     => 'select',
-                    'label'    => 'بخش (Resource)',
-                    'options'  => [
-                        ['value' => 'order', 'label' => 'Order (سفارش‌ها)'],
-                        ['value' => 'product', 'label' => 'Product (محصولات)'],
-                        ['value' => 'customer', 'label' => 'Customer (مشتریان)'],
+                    'type' => 'select',
+                    'label' => 'بخش (Resource)',
+                    'options' => [
+                        ['value' => 'order', 'label' => 'سفارش‌ها (Order)'],
+                        ['value' => 'product', 'label' => 'محصولات (Product)'],
+                        ['value' => 'customer', 'label' => 'مشتریان (Customer)'],
                     ],
-                    'default'  => 'order',
+                    'default' => 'order',
                     'required' => true,
                 ],
 
                 'operation_customer' => [
-                    'type'       => 'select',
-                    'label'      => 'عملیات مشتری (Operation)',
-                    'options'    => [
-                        ['value' => 'create', 'label' => 'Create a customer (ایجاد مشتری جدید)'],
-                        ['value' => 'delete', 'label' => 'Delete a customer (حذف مشتری)'],
-                        ['value' => 'get', 'label' => 'Get a customer (دریافت اطلاعات مشتری)'],
-                        ['value' => 'get_many', 'label' => 'Get many customers (دریافت لیست مشتریان)'],
-                        ['value' => 'update', 'label' => 'Update a customer (ویرایش اطلاعات مشتری)'],
+                    'type' => 'select',
+                    'label' => 'عملیات مشتری',
+                    'options' => [
+                        ['value' => 'create', 'label' => 'ایجاد مشتری جدید (Create)'],
+                        ['value' => 'get', 'label' => 'دریافت اطلاعات مشتری (Get)'],
+                        ['value' => 'get_many', 'label' => 'دریافت لیست مشتریان (Get Many)'],
+                        ['value' => 'update', 'label' => 'ویرایش مشتری (Update)'],
+                        ['value' => 'delete', 'label' => 'حذف مشتری (Delete)'],
                     ],
-                    'default'    => 'create',
-                    'required'   => true,
+                    'default' => 'create',
+                    'required' => true,
                     'depends_on' => ['resource' => 'customer'],
                 ],
                 'operation_order' => [
-                    'type'       => 'select',
-                    'label'      => 'عملیات سفارش (Operation)',
-                    'options'    => [
-                        ['value' => 'create', 'label' => 'Create an order (ثبت سفارش جدید)'],
-                        ['value' => 'delete', 'label' => 'Delete an order (حذف سفارش)'],
-                        ['value' => 'get', 'label' => 'Get an order (دریافت جزئیات سفارش)'],
-                        ['value' => 'get_many', 'label' => 'Get many orders (دریافت لیست سفارش‌ها)'],
-                        ['value' => 'update', 'label' => 'Update an order (ویرایش و تغییر وضعیت سفارش)'],
+                    'type' => 'select',
+                    'label' => 'عملیات سفارش',
+                    'options' => [
+                        ['value' => 'get', 'label' => 'دریافت جزئیات سفارش (Get)'],
+                        ['value' => 'get_many', 'label' => 'دریافت لیست سفارش‌ها (Get Many)'],
+                        ['value' => 'create', 'label' => 'ثبت سفارش جدید (Create)'],
+                        ['value' => 'update', 'label' => 'ویرایش و تغییر وضعیت سفارش (Update)'],
+                        ['value' => 'delete', 'label' => 'حذف سفارش (Delete)'],
                     ],
-                    'default'    => 'get',
-                    'required'   => true,
+                    'default' => 'get',
+                    'required' => true,
                     'depends_on' => ['resource' => 'order'],
                 ],
                 'operation_product' => [
-                    'type'       => 'select',
-                    'label'      => 'عملیات محصول (Operation)',
-                    'options'    => [
-                        ['value' => 'create', 'label' => 'Create a product (ایجاد محصول جدید)'],
-                        ['value' => 'delete', 'label' => 'Delete a product (حذف محصول)'],
-                        ['value' => 'get', 'label' => 'Get a product (دریافت اطلاعات محصول)'],
-                        ['value' => 'get_many', 'label' => 'Get many products (دریافت لیست محصولات)'],
-                        ['value' => 'update', 'label' => 'Update a product (به‌روزرسانی قیمت، موجودی و محصول)'],
+                    'type' => 'select',
+                    'label' => 'عملیات محصول',
+                    'options' => [
+                        ['value' => 'get_many', 'label' => 'دریافت لیست محصولات (Get Many)'],
+                        ['value' => 'get', 'label' => 'دریافت اطلاعات محصول (Get)'],
+                        ['value' => 'create', 'label' => 'ایجاد محصول جدید (Create)'],
+                        ['value' => 'update', 'label' => 'بروزرسانی قیمت، موجودی و محصول (Update)'],
+                        ['value' => 'delete', 'label' => 'حذف محصول (Delete)'],
                     ],
-                    'default'    => 'get_many',
-                    'required'   => true,
+                    'default' => 'get_many',
+                    'required' => true,
                     'depends_on' => ['resource' => 'product'],
                 ],
 
                 'customer_id' => [
-                    'type'        => 'text',
-                    'label'       => 'شناسه مشتری (Customer ID)',
-                    'required'    => true,
-                    'placeholder' => 'مثلاً: {{ input.id }}',
-                    'depends_on'  => [
-                        'resource'           => 'customer',
+                    'type' => 'text',
+                    'label' => 'شناسه مشتری (Customer ID)',
+                    'required' => true,
+                    'placeholder' => '{{ input.id }}',
+                    'depends_on' => [
+                        'resource' => 'customer',
                         'operation_customer' => ['get', 'delete', 'update'],
                     ],
                 ],
                 'customer_email' => [
-                    'type'        => 'text',
-                    'label'       => 'ایمیل مشتری (Email)',
-                    'required'    => true,
+                    'type' => 'text',
+                    'label' => 'ایمیل مشتری (Email)',
+                    'required' => true,
                     'placeholder' => 'customer@example.com یا {{ input.email }}',
-                    'depends_on'  => [
-                        'resource'           => 'customer',
+                    'depends_on' => [
+                        'resource' => 'customer',
                         'operation_customer' => 'create',
                     ],
                 ],
                 'customer_first_name' => [
-                    'type'        => 'text',
-                    'label'       => 'نام (First Name)',
+                    'type' => 'text',
+                    'label' => 'نام (First Name)',
                     'placeholder' => '{{ input.first_name }}',
-                    'depends_on'  => [
-                        'resource'           => 'customer',
+                    'depends_on' => [
+                        'resource' => 'customer',
                         'operation_customer' => ['create', 'update'],
                     ],
                 ],
                 'customer_last_name' => [
-                    'type'        => 'text',
-                    'label'       => 'نام خانوادگی (Last Name)',
+                    'type' => 'text',
+                    'label' => 'نام خانوادگی (Last Name)',
                     'placeholder' => '{{ input.last_name }}',
-                    'depends_on'  => [
-                        'resource'           => 'customer',
+                    'depends_on' => [
+                        'resource' => 'customer',
                         'operation_customer' => ['create', 'update'],
                     ],
                 ],
                 'customer_phone' => [
-                    'type'        => 'text',
-                    'label'       => 'شماره موبایل / تلفن (Phone)',
+                    'type' => 'text',
+                    'label' => 'شماره تماس (Phone)',
                     'placeholder' => '09120000000 یا {{ input.phone }}',
-                    'depends_on'  => [
-                        'resource'           => 'customer',
+                    'depends_on' => [
+                        'resource' => 'customer',
                         'operation_customer' => ['create', 'update'],
+                    ],
+                ],
+                'customer_search' => [
+                    'type' => 'text',
+                    'label' => 'عبارت جستجو (Search)',
+                    'placeholder' => 'جستجوی نام، ایمیل یا نام کاربری...',
+                    'depends_on' => [
+                        'resource' => 'customer',
+                        'operation_customer' => 'get_many',
                     ],
                 ],
 
                 'order_id' => [
-                    'type'        => 'text',
-                    'label'       => 'شناسه سفارش (Order ID)',
-                    'required'    => true,
-                    'placeholder' => 'مثلاً: {{ input.id }}',
-                    'depends_on'  => [
-                        'resource'        => 'order',
+                    'type' => 'text',
+                    'label' => 'شناسه سفارش (Order ID)',
+                    'required' => true,
+                    'placeholder' => '{{ input.id }}',
+                    'depends_on' => [
+                        'resource' => 'order',
                         'operation_order' => ['get', 'delete', 'update'],
                     ],
                 ],
                 'order_line_items' => [
-                    'type'        => 'textarea',
-                    'label'       => 'اقلام سفارش (Line Items)',
-                    'required'    => true,
-                    'default'     => "[\n  {\"product_id\": 100, \"quantity\": 1}\n]",
-                    'placeholder' => '[{"product_id": 100, "quantity": 2}] یا 100:2, 105:1',
-                    'help'        => 'آرایه JSON از اقلام سفارش یا فرمت خلاصه «شناسه_محصول:تعداد» (مثل 100:2) وارد کنید.',
-                    'depends_on'  => [
-                        'resource'        => 'order',
+                    'type' => 'textarea',
+                    'label' => 'اقلام سفارش (Line Items)',
+                    'required' => true,
+                    'default' => "[\n  {\"product_id\": 100, \"quantity\": 1}\n]",
+                    'placeholder' => '[{"product_id": 100, "quantity": 2}] یا 100:2',
+                    'depends_on' => [
+                        'resource' => 'order',
                         'operation_order' => 'create',
                     ],
                 ],
                 'order_status' => [
-                    'type'       => 'select',
-                    'label'      => 'وضعیت سفارش (Order Status)',
-                    'options'    => [
+                    'type' => 'select',
+                    'label' => 'وضعیت سفارش (Status)',
+                    'options' => [
                         ['value' => 'pending', 'label' => 'در انتظار پرداخت (pending)'],
                         ['value' => 'processing', 'label' => 'در حال انجام (processing)'],
                         ['value' => 'on-hold', 'label' => 'در انتظار بررسی (on-hold)'],
@@ -167,17 +175,17 @@ class WooCommerceNode implements NodeContract
                         ['value' => 'refunded', 'label' => 'مستردشده (refunded)'],
                         ['value' => 'failed', 'label' => 'ناموفق (failed)'],
                     ],
-                    'default'    => 'processing',
-                    'required'   => true,
+                    'default' => 'processing',
+                    'required' => true,
                     'depends_on' => [
-                        'resource'        => 'order',
+                        'resource' => 'order',
                         'operation_order' => ['create', 'update'],
                     ],
                 ],
                 'order_status_filter' => [
-                    'type'       => 'select',
-                    'label'      => 'فیلتر وضعیت سفارش',
-                    'options'    => [
+                    'type' => 'select',
+                    'label' => 'فیلتر وضعیت سفارش',
+                    'options' => [
                         ['value' => 'any', 'label' => 'همه وضعیت‌ها (any)'],
                         ['value' => 'pending', 'label' => 'در انتظار پرداخت (pending)'],
                         ['value' => 'processing', 'label' => 'در حال انجام (processing)'],
@@ -187,488 +195,505 @@ class WooCommerceNode implements NodeContract
                         ['value' => 'refunded', 'label' => 'مستردشده (refunded)'],
                         ['value' => 'failed', 'label' => 'ناموفق (failed)'],
                     ],
-                    'default'    => 'any',
+                    'default' => 'any',
                     'depends_on' => [
-                        'resource'        => 'order',
+                        'resource' => 'order',
+                        'operation_order' => 'get_many',
+                    ],
+                ],
+                'order_search' => [
+                    'type' => 'text',
+                    'label' => 'عبارت جستجو (Search)',
+                    'placeholder' => 'جستجو در سفارش‌ها...',
+                    'depends_on' => [
+                        'resource' => 'order',
                         'operation_order' => 'get_many',
                     ],
                 ],
                 'billing_first_name' => [
-                    'type'        => 'text',
-                    'label'       => 'نام مشتری (Billing First Name)',
+                    'type' => 'text',
+                    'label' => 'نام مشتری (First Name)',
                     'placeholder' => '{{ input.first_name }}',
-                    'depends_on'  => [
-                        'resource'        => 'order',
+                    'depends_on' => [
+                        'resource' => 'order',
                         'operation_order' => 'create',
                     ],
                 ],
                 'billing_last_name' => [
-                    'type'        => 'text',
-                    'label'       => 'نام خانوادگی مشتری (Billing Last Name)',
+                    'type' => 'text',
+                    'label' => 'نام خانوادگی مشتری (Last Name)',
                     'placeholder' => '{{ input.last_name }}',
-                    'depends_on'  => [
-                        'resource'        => 'order',
+                    'depends_on' => [
+                        'resource' => 'order',
                         'operation_order' => 'create',
                     ],
                 ],
                 'billing_phone' => [
-                    'type'        => 'text',
-                    'label'       => 'شماره تماس مشتری (Billing Phone)',
+                    'type' => 'text',
+                    'label' => 'شماره تماس مشتری (Phone)',
                     'placeholder' => '09120000000 یا {{ input.phone }}',
-                    'depends_on'  => [
-                        'resource'        => 'order',
+                    'depends_on' => [
+                        'resource' => 'order',
                         'operation_order' => 'create',
                     ],
                 ],
 
                 'product_id' => [
-                    'type'        => 'text',
-                    'label'       => 'شناسه محصول (Product ID)',
-                    'required'    => true,
-                    'placeholder' => 'مثلاً: {{ input.id }}',
-                    'depends_on'  => [
-                        'resource'          => 'product',
+                    'type' => 'text',
+                    'label' => 'شناسه محصول (Product ID)',
+                    'required' => true,
+                    'placeholder' => '{{ input.id }}',
+                    'depends_on' => [
+                        'resource' => 'product',
                         'operation_product' => ['get', 'delete', 'update'],
                     ],
                 ],
                 'product_name' => [
-                    'type'        => 'text',
-                    'label'       => 'نام محصول (Product Name)',
-                    'required'    => true,
+                    'type' => 'text',
+                    'label' => 'نام محصول (Product Name)',
+                    'required' => true,
                     'placeholder' => 'نام محصول را وارد کنید',
-                    'depends_on'  => [
-                        'resource'          => 'product',
+                    'depends_on' => [
+                        'resource' => 'product',
                         'operation_product' => 'create',
                     ],
                 ],
                 'product_type' => [
-                    'type'       => 'select',
-                    'label'      => 'نوع محصول (Product Type)',
-                    'options'    => [
+                    'type' => 'select',
+                    'label' => 'نوع محصول (Type)',
+                    'options' => [
                         ['value' => 'simple', 'label' => 'محصول ساده (simple)'],
                         ['value' => 'variable', 'label' => 'محصول متغیر (variable)'],
-                        ['value' => 'external', 'label' => 'محصول خارجی/وابسته (external)'],
+                        ['value' => 'external', 'label' => 'محصول خارجی (external)'],
                         ['value' => 'grouped', 'label' => 'محصول گروهی (grouped)'],
                     ],
-                    'default'    => 'simple',
+                    'default' => 'simple',
                     'depends_on' => [
-                        'resource'          => 'product',
+                        'resource' => 'product',
                         'operation_product' => 'create',
                     ],
                 ],
                 'regular_price' => [
-                    'type'        => 'text',
-                    'label'       => 'قیمت اصلی (Regular Price)',
-                    'placeholder' => 'مثلاً: 250000 یا {{ input.price }}',
-                    'depends_on'  => [
-                        'resource'          => 'product',
+                    'type' => 'text',
+                    'label' => 'قیمت اصلی (Regular Price)',
+                    'placeholder' => '250000 یا {{ input.price }}',
+                    'depends_on' => [
+                        'resource' => 'product',
                         'operation_product' => ['create', 'update'],
                     ],
                 ],
                 'sale_price' => [
-                    'type'        => 'text',
-                    'label'       => 'قیمت فروش ویژه / حراج (Sale Price)',
-                    'placeholder' => 'مثلاً: 199000',
-                    'depends_on'  => [
-                        'resource'          => 'product',
+                    'type' => 'text',
+                    'label' => 'قیمت فروش ویژه (Sale Price)',
+                    'placeholder' => '199000',
+                    'depends_on' => [
+                        'resource' => 'product',
                         'operation_product' => 'update',
                     ],
                 ],
                 'stock_quantity' => [
-                    'type'        => 'text',
-                    'label'       => 'تعداد موجودی انبار (Stock Quantity)',
-                    'placeholder' => 'مثلاً: 15 یا {{ input.stock }}',
-                    'depends_on'  => [
-                        'resource'          => 'product',
+                    'type' => 'text',
+                    'label' => 'موجودی انبار (Stock Quantity)',
+                    'placeholder' => '15 یا {{ input.stock }}',
+                    'depends_on' => [
+                        'resource' => 'product',
                         'operation_product' => 'update',
                     ],
                 ],
                 'product_description' => [
-                    'type'        => 'textarea',
-                    'label'       => 'توضیحات محصول (Description)',
-                    'placeholder' => 'توضیحات کامل محصول (HTML یا متن)',
-                    'depends_on'  => [
-                        'resource'          => 'product',
+                    'type' => 'textarea',
+                    'label' => 'توضیحات محصول (Description)',
+                    'placeholder' => 'توضیحات کامل محصول',
+                    'depends_on' => [
+                        'resource' => 'product',
                         'operation_product' => 'create',
+                    ],
+                ],
+                'product_search' => [
+                    'type' => 'text',
+                    'label' => 'عبارت جستجو (Search)',
+                    'placeholder' => 'جستجوی نام یا توضیحات محصول...',
+                    'depends_on' => [
+                        'resource' => 'product',
+                        'operation_product' => 'get_many',
                     ],
                 ],
 
                 'search' => [
-                    'type'        => 'text',
-                    'label'       => 'عبارت جستجو (Search)',
-                    'placeholder' => 'جستجو بر اساس نام، کد، ایمیل یا متن...',
-                    'depends_on'  => [
-                        'resource' => ['customer', 'order', 'product'],
+                    'type' => 'text',
+                    'label' => 'عبارت جستجو (Search)',
+                    'advanced' => true,
+                    'depends_on' => [
+                        'resource' => 'none',
                     ],
                 ],
-
                 'customer_username' => [
-                    'type'        => 'text',
-                    'label'       => 'نام کاربری مشتری (Username)',
+                    'type' => 'text',
+                    'label' => 'نام کاربری مشتری (Username)',
                     'placeholder' => 'username',
-                    'advanced'    => true,
-                    'depends_on'  => [
-                        'resource'           => 'customer',
+                    'advanced' => true,
+                    'depends_on' => [
+                        'resource' => 'customer',
                         'operation_customer' => 'create',
                     ],
                 ],
                 'customer_password' => [
-                    'type'        => 'password',
-                    'label'       => 'رمز عبور مشتری (Password)',
-                    'advanced'    => true,
-                    'depends_on'  => [
-                        'resource'           => 'customer',
+                    'type' => 'password',
+                    'label' => 'رمز عبور مشتری (Password)',
+                    'advanced' => true,
+                    'depends_on' => [
+                        'resource' => 'customer',
                         'operation_customer' => 'create',
                     ],
                 ],
                 'customer_email_optional' => [
-                    'type'        => 'text',
-                    'label'       => 'تغییر ایمیل مشتری (Email)',
+                    'type' => 'text',
+                    'label' => 'تغییر ایمیل مشتری (Email)',
                     'placeholder' => 'new@example.com',
-                    'advanced'    => true,
-                    'depends_on'  => [
-                        'resource'           => 'customer',
+                    'advanced' => true,
+                    'depends_on' => [
+                        'resource' => 'customer',
                         'operation_customer' => 'update',
                     ],
                 ],
                 'customer_role' => [
-                    'type'       => 'select',
-                    'label'      => 'فیلتر نقش کاربری (Role)',
-                    'options'    => [
+                    'type' => 'select',
+                    'label' => 'فیلتر نقش کاربری (Role)',
+                    'options' => [
                         ['value' => 'all', 'label' => 'همه نقش‌ها (all)'],
                         ['value' => 'customer', 'label' => 'مشتری (customer)'],
                         ['value' => 'subscriber', 'label' => 'مشترک (subscriber)'],
                     ],
-                    'default'    => 'all',
-                    'advanced'   => true,
+                    'default' => 'all',
+                    'advanced' => true,
                     'depends_on' => [
-                        'resource'           => 'customer',
+                        'resource' => 'customer',
                         'operation_customer' => 'get_many',
                     ],
                 ],
 
                 'order_customer_id' => [
-                    'type'        => 'text',
-                    'label'       => 'شناسه مشتری ووکامرس (Customer ID)',
+                    'type' => 'text',
+                    'label' => 'شناسه مشتری ووکامرس (Customer ID)',
                     'placeholder' => '0 برای مهمان یا شناسه عددی کاربر',
-                    'advanced'    => true,
-                    'depends_on'  => [
-                        'resource'        => 'order',
+                    'advanced' => true,
+                    'depends_on' => [
+                        'resource' => 'order',
                         'operation_order' => ['create', 'get_many'],
                     ],
                 ],
                 'order_set_paid' => [
-                    'type'       => 'boolean',
-                    'label'      => 'علامت‌گذاری به عنوان پرداخت‌شده (Set Paid)',
-                    'default'    => false,
-                    'advanced'   => true,
+                    'type' => 'boolean',
+                    'label' => 'علامت‌گذاری به عنوان پرداخت‌شده (Set Paid)',
+                    'default' => false,
+                    'advanced' => true,
                     'depends_on' => [
-                        'resource'        => 'order',
+                        'resource' => 'order',
                         'operation_order' => ['create', 'update'],
                     ],
                 ],
                 'customer_note' => [
-                    'type'        => 'textarea',
-                    'label'       => 'یادداشت مشتری / توضیحات سفارش (Customer Note)',
+                    'type' => 'textarea',
+                    'label' => 'یادداشت مشتری (Customer Note)',
                     'placeholder' => 'توضیحات سفارش یا پیام مشتری',
-                    'advanced'    => true,
-                    'depends_on'  => [
-                        'resource'        => 'order',
+                    'advanced' => true,
+                    'depends_on' => [
+                        'resource' => 'order',
                         'operation_order' => ['create', 'update'],
                     ],
                 ],
                 'coupon_code' => [
-                    'type'        => 'text',
-                    'label'       => 'کد تخفیف (Coupon Code)',
-                    'placeholder' => 'مثلاً: OFF20',
-                    'advanced'    => true,
-                    'depends_on'  => [
-                        'resource'        => 'order',
+                    'type' => 'text',
+                    'label' => 'کد تخفیف (Coupon Code)',
+                    'placeholder' => 'OFF20',
+                    'advanced' => true,
+                    'depends_on' => [
+                        'resource' => 'order',
                         'operation_order' => 'create',
                     ],
                 ],
                 'billing_email' => [
-                    'type'        => 'text',
-                    'label'       => 'ایمیل صورتحساب (Billing Email)',
+                    'type' => 'text',
+                    'label' => 'ایمیل صورتحساب (Billing Email)',
                     'placeholder' => 'customer@example.com',
-                    'advanced'    => true,
-                    'depends_on'  => [
-                        'resource'        => 'order',
+                    'advanced' => true,
+                    'depends_on' => [
+                        'resource' => 'order',
                         'operation_order' => ['create', 'update'],
                     ],
                 ],
                 'address_line' => [
-                    'type'        => 'text',
-                    'label'       => 'آدرس پستی (Address)',
+                    'type' => 'text',
+                    'label' => 'آدرس پستی (Address)',
                     'placeholder' => 'خیابان، پلاک، واحد',
-                    'advanced'    => true,
-                    'depends_on'  => [
+                    'advanced' => true,
+                    'depends_on' => [
                         'resource' => ['customer', 'order'],
                     ],
                 ],
                 'city' => [
-                    'type'        => 'text',
-                    'label'       => 'شهر (City)',
+                    'type' => 'text',
+                    'label' => 'شهر (City)',
                     'placeholder' => 'تهران',
-                    'advanced'    => true,
-                    'depends_on'  => [
+                    'advanced' => true,
+                    'depends_on' => [
                         'resource' => ['customer', 'order'],
                     ],
                 ],
                 'state' => [
-                    'type'        => 'text',
-                    'label'       => 'استان (State)',
+                    'type' => 'text',
+                    'label' => 'استان (State)',
                     'placeholder' => 'THR',
-                    'advanced'    => true,
-                    'depends_on'  => [
+                    'advanced' => true,
+                    'depends_on' => [
                         'resource' => ['customer', 'order'],
                     ],
                 ],
                 'postcode' => [
-                    'type'        => 'text',
-                    'label'       => 'کد پستی (Postcode)',
+                    'type' => 'text',
+                    'label' => 'کد پستی (Postcode)',
                     'placeholder' => '1234567890',
-                    'advanced'    => true,
-                    'depends_on'  => [
+                    'advanced' => true,
+                    'depends_on' => [
                         'resource' => ['customer', 'order'],
                     ],
                 ],
 
                 'product_name_optional' => [
-                    'type'        => 'text',
-                    'label'       => 'نام جدید محصول (Product Name)',
+                    'type' => 'text',
+                    'label' => 'نام جدید محصول (Product Name)',
                     'placeholder' => 'نام جدید محصول',
-                    'advanced'    => true,
-                    'depends_on'  => [
-                        'resource'          => 'product',
+                    'advanced' => true,
+                    'depends_on' => [
+                        'resource' => 'product',
                         'operation_product' => 'update',
                     ],
                 ],
                 'sale_price_create' => [
-                    'type'        => 'text',
-                    'label'       => 'قیمت فروش ویژه / حراج (Sale Price)',
-                    'placeholder' => 'مثلاً: 199000',
-                    'advanced'    => true,
-                    'depends_on'  => [
-                        'resource'          => 'product',
+                    'type' => 'text',
+                    'label' => 'قیمت فروش ویژه (Sale Price)',
+                    'placeholder' => '199000',
+                    'advanced' => true,
+                    'depends_on' => [
+                        'resource' => 'product',
                         'operation_product' => 'create',
                     ],
                 ],
                 'stock_quantity_create' => [
-                    'type'        => 'text',
-                    'label'       => 'تعداد موجودی انبار (Stock Quantity)',
-                    'placeholder' => 'مثلاً: 15',
-                    'advanced'    => true,
-                    'depends_on'  => [
-                        'resource'          => 'product',
+                    'type' => 'text',
+                    'label' => 'موجودی انبار (Stock Quantity)',
+                    'placeholder' => '15',
+                    'advanced' => true,
+                    'depends_on' => [
+                        'resource' => 'product',
                         'operation_product' => 'create',
                     ],
                 ],
                 'short_description' => [
-                    'type'        => 'textarea',
-                    'label'       => 'توضیحات کوتاه محصول (Short Description)',
+                    'type' => 'textarea',
+                    'label' => 'توضیحات کوتاه محصول (Short Description)',
                     'placeholder' => 'خلاصه ویژگی‌های محصول',
-                    'advanced'    => true,
-                    'depends_on'  => [
-                        'resource'          => 'product',
+                    'advanced' => true,
+                    'depends_on' => [
+                        'resource' => 'product',
                         'operation_product' => ['create', 'update'],
                     ],
                 ],
                 'sku' => [
-                    'type'        => 'text',
-                    'label'       => 'کد محصول / شناسه انبار (SKU)',
-                    'placeholder' => 'مثلاً: PRD-101',
-                    'advanced'    => true,
-                    'depends_on'  => [
-                        'resource'          => 'product',
+                    'type' => 'text',
+                    'label' => 'کد محصول (SKU)',
+                    'placeholder' => 'PRD-101',
+                    'advanced' => true,
+                    'depends_on' => [
+                        'resource' => 'product',
                         'operation_product' => ['create', 'update', 'get_many'],
                     ],
                 ],
                 'stock_status' => [
-                    'type'       => 'select',
-                    'label'      => 'وضعیت موجودی (Stock Status)',
-                    'options'    => [
+                    'type' => 'select',
+                    'label' => 'وضعیت موجودی (Stock Status)',
+                    'options' => [
                         ['value' => 'instock', 'label' => 'موجود در انبار (instock)'],
                         ['value' => 'outofstock', 'label' => 'ناموجود (outofstock)'],
                         ['value' => 'onbackorder', 'label' => 'پیش‌خرید (onbackorder)'],
                     ],
-                    'default'    => 'instock',
-                    'advanced'   => true,
+                    'default' => 'instock',
+                    'advanced' => true,
                     'depends_on' => [
-                        'resource'          => 'product',
+                        'resource' => 'product',
                         'operation_product' => ['create', 'update', 'get_many'],
                     ],
                 ],
                 'product_status' => [
-                    'type'       => 'select',
-                    'label'      => 'وضعیت انتشار محصول (Status)',
-                    'options'    => [
+                    'type' => 'select',
+                    'label' => 'وضعیت انتشار محصول (Status)',
+                    'options' => [
                         ['value' => 'publish', 'label' => 'منتشرشده (publish)'],
                         ['value' => 'draft', 'label' => 'پیش‌نویس (draft)'],
                         ['value' => 'pending', 'label' => 'در انتظار بازبینی (pending)'],
                         ['value' => 'private', 'label' => 'خصوصی (private)'],
                     ],
-                    'default'    => 'publish',
-                    'advanced'   => true,
+                    'default' => 'publish',
+                    'advanced' => true,
                     'depends_on' => [
-                        'resource'          => 'product',
+                        'resource' => 'product',
                         'operation_product' => ['create', 'update'],
                     ],
                 ],
                 'image_urls' => [
-                    'type'        => 'textarea',
-                    'label'       => 'آدرس تصاویر محصول (Image URLs)',
-                    'placeholder' => 'https://example.com/image1.jpg, https://example.com/image2.jpg',
-                    'advanced'    => true,
-                    'depends_on'  => [
-                        'resource'          => 'product',
+                    'type' => 'textarea',
+                    'label' => 'آدرس تصاویر محصول (Image URLs)',
+                    'placeholder' => 'https://example.com/image1.jpg',
+                    'advanced' => true,
+                    'depends_on' => [
+                        'resource' => 'product',
                         'operation_product' => ['create', 'update'],
                     ],
                 ],
                 'category_ids' => [
-                    'type'        => 'text',
-                    'label'       => 'شناسه دسته‌بندی‌ها (Category IDs با کاما)',
-                    'placeholder' => 'مثلاً: 15, 22',
-                    'advanced'    => true,
-                    'depends_on'  => [
-                        'resource'          => 'product',
+                    'type' => 'text',
+                    'label' => 'شناسه دسته‌بندی‌ها (Category IDs با کاما)',
+                    'placeholder' => '15, 22',
+                    'advanced' => true,
+                    'depends_on' => [
+                        'resource' => 'product',
                         'operation_product' => ['create', 'update', 'get_many'],
                     ],
                 ],
                 'on_sale' => [
-                    'type'       => 'boolean',
-                    'label'      => 'فقط محصولات حراجی (On Sale)',
-                    'default'    => false,
-                    'advanced'   => true,
+                    'type' => 'boolean',
+                    'label' => 'فقط محصولات حراجی (On Sale)',
+                    'default' => false,
+                    'advanced' => true,
                     'depends_on' => [
-                        'resource'          => 'product',
+                        'resource' => 'product',
                         'operation_product' => 'get_many',
                     ],
                 ],
 
                 'limit' => [
-                    'type'     => 'number',
-                    'label'    => 'حداکثر تعداد نتایج (Limit)',
-                    'default'  => 20,
-                    'min'      => 1,
-                    'max'      => 100,
-                    'integer'  => true,
+                    'type' => 'number',
+                    'label' => 'حداکثر تعداد نتایج (Limit)',
+                    'default' => 20,
+                    'min' => 1,
+                    'max' => 100,
+                    'integer' => true,
                     'advanced' => true,
                 ],
                 'page' => [
-                    'type'     => 'number',
-                    'label'    => 'شماره صفحه (Page)',
-                    'default'  => 1,
-                    'min'      => 1,
-                    'max'      => 1000,
-                    'integer'  => true,
+                    'type' => 'number',
+                    'label' => 'شماره صفحه (Page)',
+                    'default' => 1,
+                    'min' => 1,
+                    'max' => 1000,
+                    'integer' => true,
                     'advanced' => true,
                 ],
                 'force_delete' => [
-                    'type'     => 'boolean',
-                    'label'    => 'حذف دائمی بدون انتقال به زباله‌دان (Force Delete)',
-                    'default'  => true,
+                    'type' => 'boolean',
+                    'label' => 'حذف دائمی بدون انتقال به زباله‌دان (Force Delete)',
+                    'default' => true,
                     'advanced' => true,
                 ],
                 'extra_json' => [
-                    'type'        => 'code',
-                    'label'       => 'فیلدهای سفارشی بیشتر ووکامرس (JSON)',
+                    'type' => 'code',
+                    'label' => 'فیلدهای سفارشی بیشتر ووکامرس (JSON)',
                     'placeholder' => "{\n  \"meta_data\": [\n    {\"key\": \"_custom_key\", \"value\": \"مقدار\"}\n  ]\n}",
-                    'advanced'    => true,
+                    'advanced' => true,
                 ],
             ],
             presets: [
                 [
-                    'key'         => 'customer_create',
-                    'name'        => 'Create a customer',
+                    'key' => 'customer_create',
+                    'name' => 'Create a customer',
                     'description' => 'ایجاد حساب مشتری جدید در ووکامرس به همراه اطلاعات تماس و آدرس.',
-                    'config'      => ['resource' => 'customer', 'operation_customer' => 'create'],
+                    'config' => ['resource' => 'customer', 'operation_customer' => 'create'],
                 ],
                 [
-                    'key'         => 'customer_delete',
-                    'name'        => 'Delete a customer',
+                    'key' => 'customer_delete',
+                    'name' => 'Delete a customer',
                     'description' => 'حذف یک مشتری از فروشگاه ووکامرس با شناسه کاربری.',
-                    'config'      => ['resource' => 'customer', 'operation_customer' => 'delete'],
+                    'config' => ['resource' => 'customer', 'operation_customer' => 'delete'],
                 ],
                 [
-                    'key'         => 'customer_get',
-                    'name'        => 'Get a customer',
+                    'key' => 'customer_get',
+                    'name' => 'Get a customer',
                     'description' => 'دریافت مشخصات کامل یک مشتری با شناسه او.',
-                    'config'      => ['resource' => 'customer', 'operation_customer' => 'get'],
+                    'config' => ['resource' => 'customer', 'operation_customer' => 'get'],
                 ],
                 [
-                    'key'         => 'customer_get_many',
-                    'name'        => 'Get many customers',
+                    'key' => 'customer_get_many',
+                    'name' => 'Get many customers',
                     'description' => 'جستجو و دریافت لیست مشتریان فروشگاه ووکامرس.',
-                    'config'      => ['resource' => 'customer', 'operation_customer' => 'get_many'],
+                    'config' => ['resource' => 'customer', 'operation_customer' => 'get_many'],
                 ],
                 [
-                    'key'         => 'customer_update',
-                    'name'        => 'Update a customer',
+                    'key' => 'customer_update',
+                    'name' => 'Update a customer',
                     'description' => 'ویرایش نام، شماره تماس، آدرس و مشخصات مشتری در ووکامرس.',
-                    'config'      => ['resource' => 'customer', 'operation_customer' => 'update'],
+                    'config' => ['resource' => 'customer', 'operation_customer' => 'update'],
                 ],
 
                 [
-                    'key'         => 'order_create',
-                    'name'        => 'Create an order',
+                    'key' => 'order_create',
+                    'name' => 'Create an order',
                     'description' => 'ثبت سفارش جدید در ووکامرس به همراه اقلام، وضعیت و مشخصات مشتری.',
-                    'config'      => ['resource' => 'order', 'operation_order' => 'create'],
+                    'config' => ['resource' => 'order', 'operation_order' => 'create'],
                 ],
                 [
-                    'key'         => 'order_delete',
-                    'name'        => 'Delete an order',
+                    'key' => 'order_delete',
+                    'name' => 'Delete an order',
                     'description' => 'حذف یک سفارش از فروشگاه ووکامرس با شناسه سفارش.',
-                    'config'      => ['resource' => 'order', 'operation_order' => 'delete'],
+                    'config' => ['resource' => 'order', 'operation_order' => 'delete'],
                 ],
                 [
-                    'key'         => 'order_get',
-                    'name'        => 'Get an order',
+                    'key' => 'order_get',
+                    'name' => 'Get an order',
                     'description' => 'دریافت جزئیات کامل یک سفارش، اقلام و وضعیت پرداخت با شناسه سفارش.',
-                    'config'      => ['resource' => 'order', 'operation_order' => 'get'],
+                    'config' => ['resource' => 'order', 'operation_order' => 'get'],
                 ],
                 [
-                    'key'         => 'order_get_many',
-                    'name'        => 'Get many orders',
+                    'key' => 'order_get_many',
+                    'name' => 'Get many orders',
                     'description' => 'دریافت و فیلتر لیست سفارش‌های فروشگاه بر اساس وضعیت، مشتری یا جستجو.',
-                    'config'      => ['resource' => 'order', 'operation_order' => 'get_many'],
+                    'config' => ['resource' => 'order', 'operation_order' => 'get_many'],
                 ],
                 [
-                    'key'         => 'order_update',
-                    'name'        => 'Update an order',
+                    'key' => 'order_update',
+                    'name' => 'Update an order',
                     'description' => 'تغییر وضعیت سفارش (مثلاً به تکمیل‌شده) یا ویرایش اطلاعات سفارش.',
-                    'config'      => ['resource' => 'order', 'operation_order' => 'update'],
+                    'config' => ['resource' => 'order', 'operation_order' => 'update'],
                 ],
 
                 [
-                    'key'         => 'product_create',
-                    'name'        => 'Create a product',
+                    'key' => 'product_create',
+                    'name' => 'Create a product',
                     'description' => 'ایجاد محصول جدید در فروشگاه ووکامرس با قیمت، موجودی، تصویر و دسته‌بندی.',
-                    'config'      => ['resource' => 'product', 'operation_product' => 'create'],
+                    'config' => ['resource' => 'product', 'operation_product' => 'create'],
                 ],
                 [
-                    'key'         => 'product_delete',
-                    'name'        => 'Delete a product',
+                    'key' => 'product_delete',
+                    'name' => 'Delete a product',
                     'description' => 'حذف یک محصول از فروشگاه ووکامرس با شناسه محصول.',
-                    'config'      => ['resource' => 'product', 'operation_product' => 'delete'],
+                    'config' => ['resource' => 'product', 'operation_product' => 'delete'],
                 ],
                 [
-                    'key'         => 'product_get',
-                    'name'        => 'Get a product',
+                    'key' => 'product_get',
+                    'name' => 'Get a product',
                     'description' => 'دریافت اطلاعات، قیمت و موجودی یک محصول با شناسه آن.',
-                    'config'      => ['resource' => 'product', 'operation_product' => 'get'],
+                    'config' => ['resource' => 'product', 'operation_product' => 'get'],
                 ],
                 [
-                    'key'         => 'product_get_many',
-                    'name'        => 'Get many products',
+                    'key' => 'product_get_many',
+                    'name' => 'Get many products',
                     'description' => 'جستجو و دریافت لیست محصولات فروشگاه بر اساس نام، کد محصول (SKU) یا وضعیت موجودی.',
-                    'config'      => ['resource' => 'product', 'operation_product' => 'get_many'],
+                    'config' => ['resource' => 'product', 'operation_product' => 'get_many'],
                 ],
                 [
-                    'key'         => 'product_update',
-                    'name'        => 'Update a product',
+                    'key' => 'product_update',
+                    'name' => 'Update a product',
                     'description' => 'به‌روزرسانی سریع قیمت، قیمت حراج، موجودی انبار و مشخصات محصول در ووکامرس.',
-                    'config'      => ['resource' => 'product', 'operation_product' => 'update'],
+                    'config' => ['resource' => 'product', 'operation_product' => 'update'],
                 ],
             ],
             color: 'violet',
@@ -688,9 +713,9 @@ class WooCommerceNode implements NodeContract
 
         return match ($resource) {
             'customer' => $this->handleCustomer($context, $client),
-            'order'    => $this->handleOrder($context, $client),
-            'product'  => $this->handleProduct($context, $client),
-            default    => throw NodeExecutionException::because("بخش ووکامرس نامعتبر است: $resource"),
+            'order' => $this->handleOrder($context, $client),
+            'product' => $this->handleProduct($context, $client),
+            default => throw NodeExecutionException::because("بخش ووکامرس نامعتبر است: $resource"),
         };
     }
 
@@ -712,7 +737,8 @@ class WooCommerceNode implements NodeContract
 
             'get_many' => (function () use ($context, $client) {
                 $query = $this->paginationQuery($context);
-                if (($search = $this->str($context, 'search')) !== '') {
+                $search = $this->str($context, 'customer_search') ?: $this->str($context, 'search');
+                if ($search !== '') {
                     $query['search'] = $search;
                 }
                 if (($role = $this->str($context, 'customer_role', 'all')) !== '' && $role !== 'all') {
@@ -775,10 +801,12 @@ class WooCommerceNode implements NodeContract
                 if (($status = $this->str($context, 'order_status_filter', 'any')) !== '' && $status !== 'any') {
                     $query['status'] = $status;
                 }
-                if (($search = $this->str($context, 'search')) !== '') {
+                $search = $this->str($context, 'order_search') ?: $this->str($context, 'search');
+                if ($search !== '') {
                     $query['search'] = $search;
                 }
-                if (($customerId = $this->str($context, 'order_customer_id')) !== '' && is_numeric($customerId)) {
+                $customerId = $this->normalizeDigits($this->str($context, 'order_customer_id'));
+                if ($customerId !== '' && is_numeric($customerId)) {
                     $query['customer'] = (int) $customerId;
                 }
 
@@ -789,7 +817,7 @@ class WooCommerceNode implements NodeContract
                 $lineItems = $this->parseLineItems($this->str($context, 'order_line_items'));
 
                 $payload = [
-                    'status'     => $this->str($context, 'order_status', 'processing'),
+                    'status' => $this->str($context, 'order_status', 'processing'),
                     'line_items' => $lineItems,
                 ];
 
@@ -797,7 +825,8 @@ class WooCommerceNode implements NodeContract
                     $payload['set_paid'] = $this->bool($context, 'order_set_paid', false);
                 }
 
-                if (($customerId = $this->str($context, 'order_customer_id')) !== '' && is_numeric($customerId)) {
+                $customerId = $this->normalizeDigits($this->str($context, 'order_customer_id'));
+                if ($customerId !== '' && is_numeric($customerId)) {
                     $payload['customer_id'] = (int) $customerId;
                 }
 
@@ -868,7 +897,8 @@ class WooCommerceNode implements NodeContract
 
             'get_many' => (function () use ($context, $client) {
                 $query = $this->paginationQuery($context);
-                if (($search = $this->str($context, 'search')) !== '') {
+                $search = $this->str($context, 'product_search') ?: $this->str($context, 'search');
+                if ($search !== '') {
                     $query['search'] = $search;
                 }
                 if (($sku = $this->str($context, 'sku')) !== '') {
@@ -877,7 +907,7 @@ class WooCommerceNode implements NodeContract
                 if (($stockStatus = $this->str($context, 'stock_status')) !== '') {
                     $query['stock_status'] = $stockStatus;
                 }
-                if (($cats = $this->str($context, 'category_ids')) !== '') {
+                if (($cats = $this->normalizeDigits($this->str($context, 'category_ids'))) !== '') {
                     $firstCat = trim((preg_split('/[,،]+/', $cats) ?: [])[0] ?? '');
                     if ($firstCat !== '' && is_numeric($firstCat)) {
                         $query['category'] = (int) $firstCat;
@@ -942,12 +972,12 @@ class WooCommerceNode implements NodeContract
 
         $billing = array_filter([
             'first_name' => $firstName,
-            'last_name'  => $lastName,
-            'phone'      => $phone,
-            'address_1'  => $address,
-            'city'       => $city,
-            'state'      => $state,
-            'postcode'   => $postcode,
+            'last_name' => $lastName,
+            'phone' => $phone,
+            'address_1' => $address,
+            'city' => $city,
+            'state' => $state,
+            'postcode' => $postcode,
         ], fn ($v) => $v !== '');
 
         if ($billing !== []) {
@@ -965,13 +995,13 @@ class WooCommerceNode implements NodeContract
     {
         return array_filter([
             'first_name' => $this->str($context, 'billing_first_name'),
-            'last_name'  => $this->str($context, 'billing_last_name'),
-            'phone'      => $this->str($context, 'billing_phone'),
-            'email'      => $this->str($context, 'billing_email'),
-            'address_1'  => $this->str($context, 'address_line'),
-            'city'       => $this->str($context, 'city'),
-            'state'      => $this->str($context, 'state'),
-            'postcode'   => $this->str($context, 'postcode'),
+            'last_name' => $this->str($context, 'billing_last_name'),
+            'phone' => $this->str($context, 'billing_phone'),
+            'email' => $this->str($context, 'billing_email'),
+            'address_1' => $this->str($context, 'address_line'),
+            'city' => $this->str($context, 'city'),
+            'state' => $this->str($context, 'state'),
+            'postcode' => $this->str($context, 'postcode'),
         ], fn ($v) => $v !== '');
     }
 
@@ -1003,7 +1033,7 @@ class WooCommerceNode implements NodeContract
         }
 
         $stockKey = $isCreate ? 'stock_quantity_create' : 'stock_quantity';
-        $stockRaw = $this->str($context, $stockKey);
+        $stockRaw = $this->normalizeDigits($this->str($context, $stockKey));
         if ($stockRaw !== '' && is_numeric($stockRaw)) {
             $payload['manage_stock'] = true;
             $payload['stock_quantity'] = (int) $stockRaw;
@@ -1020,7 +1050,7 @@ class WooCommerceNode implements NodeContract
             }
         }
 
-        if (($catIds = $this->str($context, 'category_ids')) !== '') {
+        if (($catIds = $this->normalizeDigits($this->str($context, 'category_ids'))) !== '') {
             $ids = array_values(array_filter(
                 array_map('trim', preg_split('/[,،]+/', $catIds) ?: []),
                 fn ($id) => is_numeric($id) && (int) $id > 0
@@ -1052,7 +1082,7 @@ class WooCommerceNode implements NodeContract
         }
 
         $items = [];
-        $parts = preg_split('/[\r\n,،]+/', $raw) ?: [];
+        $parts = preg_split('/[\r\n,،]+/', $this->normalizeDigits($raw)) ?: [];
 
         foreach ($parts as $part) {
             $part = trim($part);
@@ -1065,7 +1095,7 @@ class WooCommerceNode implements NodeContract
             if (is_numeric($prodId) && (int) $prodId > 0) {
                 $items[] = [
                     'product_id' => (int) $prodId,
-                    'quantity'   => max(1, (int) ($qty ?: 1)),
+                    'quantity' => max(1, (int) ($qty ?: 1)),
                 ];
             }
         }
@@ -1098,7 +1128,7 @@ class WooCommerceNode implements NodeContract
     {
         return [
             'per_page' => max(1, min(100, (int) ($context->config['limit'] ?? 20))),
-            'page'     => max(1, (int) ($context->config['page'] ?? 1)),
+            'page' => max(1, (int) ($context->config['page'] ?? 1)),
         ];
     }
 
@@ -1117,7 +1147,7 @@ class WooCommerceNode implements NodeContract
         return NodeResult::of([
             'count' => count($list),
             'items' => $list,
-            'rows'  => $list,
+            'rows' => $list,
             'first' => $list[0] ?? null,
         ]);
     }
@@ -1136,7 +1166,7 @@ class WooCommerceNode implements NodeContract
 
     private function requireId(NodeContext $context, string $key, string $message): int
     {
-        $raw = $this->str($context, $key);
+        $raw = $this->normalizeDigits($this->str($context, $key));
 
         if ($raw === '' || ! is_numeric($raw) || (int) $raw <= 0) {
             throw NodeExecutionException::because($message);
@@ -1151,14 +1181,18 @@ class WooCommerceNode implements NodeContract
             return null;
         }
 
-        $normalized = strtr($value, [
+        $normalized = str_replace([',', '٬', ' '], '', $this->normalizeDigits($value));
+
+        return is_numeric($normalized) ? $normalized : null;
+    }
+
+    private function normalizeDigits(string $value): string
+    {
+        return strtr($value, [
             '۰' => '0', '۱' => '1', '۲' => '2', '۳' => '3', '۴' => '4',
             '۵' => '5', '۶' => '6', '۷' => '7', '۸' => '8', '۹' => '9',
             '٠' => '0', '١' => '1', '٢' => '2', '٣' => '3', '٤' => '4',
             '٥' => '5', '٦' => '6', '٧' => '7', '٨' => '8', '٩' => '9',
-            ',' => '', '٬' => '', ' ' => '',
         ]);
-
-        return is_numeric($normalized) ? $normalized : null;
     }
 }
