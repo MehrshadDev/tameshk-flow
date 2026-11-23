@@ -2,8 +2,11 @@
 
 namespace App\Workflow\Nodes\Triggers;
 
+use App\Models\Credential;
+use App\Models\Node;
+use App\Models\Workflow;
 use App\Workflow\Contracts\NodeContract;
-use App\Workflow\Contracts\PublishableTriggerContract;
+use App\Workflow\Contracts\PollingTriggerContract;
 use App\Workflow\DTOs\NodeContext;
 use App\Workflow\DTOs\NodeDefinition;
 use App\Workflow\DTOs\NodeResult;
@@ -14,7 +17,7 @@ use App\Workflow\Support\GoogleSheetsConfig;
 use Illuminate\Support\Facades\Cache;
 use Throwable;
 
-abstract class GoogleSheetsTriggerNode implements NodeContract, PublishableTriggerContract
+abstract class GoogleSheetsTriggerNode implements NodeContract, PollingTriggerContract
 {
     private const LISTEN_SECONDS = 60;
     private const POLL_INTERVAL = 3;
@@ -66,6 +69,47 @@ abstract class GoogleSheetsTriggerNode implements NodeContract, PublishableTrigg
         );
     }
 
+    public function poll(Workflow $workflow, Node $trigger, ?Credential $credential): array
+    {
+        if (! $credential) {
+            return [];
+        }
+
+        $config = is_array($trigger->config) ? $trigger->config : [];
+        $client = new GoogleSheetsClient($credential);
+        $spreadsheetId = GoogleSheetsConfig::resolveSpreadsheet($config);
+        $range = GoogleSheetsConfig::rangeFor($config, null, self::RANGE);
+        $cacheKey = $this->cacheKey($workflow->id, $trigger->id, $spreadsheetId, $range);
+
+        $snapshot = $this->snapshot($client, $spreadsheetId, $range);
+        $baseline = Cache::get($cacheKey);
+
+        if (! is_array($baseline)) {
+            Cache::put($cacheKey, $this->state($snapshot), now()->addDays(14));
+
+            return [];
+        }
+
+        $change = $this->detect($baseline, $snapshot, static::watch());
+
+        if ($change === null) {
+            Cache::put($cacheKey, $baseline, now()->addDays(14));
+
+            return [];
+        }
+
+        Cache::put($cacheKey, $this->state($snapshot), now()->addDays(14));
+        $payload = $this->formatPayload($config, $snapshot, $change, $spreadsheetId, $range);
+
+        if ($payload['count'] === 0) {
+            return [];
+        }
+
+        $credential->markAsUsed();
+
+        return [$payload];
+    }
+
     public function execute(NodeContext $context): NodeResult
     {
         $input = is_array($context->input) ? $context->input : [];
@@ -85,7 +129,7 @@ abstract class GoogleSheetsTriggerNode implements NodeContract, PublishableTrigg
         $range = GoogleSheetsConfig::rangeFor($context, null, self::RANGE);
         $watch = static::watch();
 
-        $cacheKey = 'sheets_trigger_' . $context->run->workflow_id . '_' . $context->node->id . '_' . md5($spreadsheetId . '|' . $range);
+        $cacheKey = $this->cacheKey($context->run->workflow_id, $context->node->id, $spreadsheetId, $range);
         $cancelKey = "cancel_workflow_run_{$context->run->id}";
         $deadline = microtime(true) + self::LISTEN_SECONDS;
         $baseline = Cache::get($cacheKey);
@@ -102,7 +146,7 @@ abstract class GoogleSheetsTriggerNode implements NodeContract, PublishableTrigg
 
                 if (! is_array($baseline)) {
                     $baseline = $snapshot;
-                    Cache::put($cacheKey, $this->state($baseline), now()->addDay());
+                    Cache::put($cacheKey, $this->state($baseline), now()->addDays(14));
 
                     sleep(self::POLL_INTERVAL);
                     continue;
@@ -111,9 +155,11 @@ abstract class GoogleSheetsTriggerNode implements NodeContract, PublishableTrigg
                 $change = $this->detect($baseline, $snapshot, $watch);
 
                 if ($change !== null) {
-                    Cache::put($cacheKey, $this->state($snapshot), now()->addDay());
+                    Cache::put($cacheKey, $this->state($snapshot), now()->addDays(14));
 
-                    return $this->format($context, $snapshot, $change, $spreadsheetId, $range);
+                    return NodeResult::of(
+                        $this->formatPayload($context->config, $snapshot, $change, $spreadsheetId, $range)
+                    );
                 }
 
                 sleep(self::POLL_INTERVAL);
@@ -125,6 +171,11 @@ abstract class GoogleSheetsTriggerNode implements NodeContract, PublishableTrigg
         } catch (Throwable $e) {
             throw NodeExecutionException::because('خطا در بررسی شیت: ' . $e->getMessage());
         }
+    }
+
+    private function cacheKey(int $workflowId, int $nodeId, string $spreadsheetId, string $range): string
+    {
+        return "sheets_trigger_{$workflowId}_{$nodeId}_" . md5("$spreadsheetId|$range");
     }
 
     private function snapshot(GoogleSheetsClient $client, string $spreadsheetId, string $range): array
@@ -178,10 +229,15 @@ abstract class GoogleSheetsTriggerNode implements NodeContract, PublishableTrigg
         return null;
     }
 
-    private function format(NodeContext $context, array $snapshot, array $change, string $spreadsheetId, string $range): NodeResult
-    {
+    private function formatPayload(
+        array $config,
+        array $snapshot,
+        array $change,
+        string $spreadsheetId,
+        string $range,
+    ): array {
         $values = $snapshot['values'];
-        $withHeader = ((string) ($context->config['has_header'] ?? '1')) === '1';
+        $withHeader = ((string) ($config['has_header'] ?? '1')) === '1';
         $headers = $withHeader ? GoogleSheetsConfig::normalizeRow($values[0] ?? []) : [];
         $rows = [];
 
@@ -202,7 +258,7 @@ abstract class GoogleSheetsTriggerNode implements NodeContract, PublishableTrigg
 
         $first = $rows[0] ?? null;
 
-        return NodeResult::of([
+        return [
             'event'          => $change['type'],
             'spreadsheet_id' => $spreadsheetId,
             'range'          => $range,
@@ -211,6 +267,6 @@ abstract class GoogleSheetsTriggerNode implements NodeContract, PublishableTrigg
             'row'            => $first,
             'row_number'     => isset($change['indexes'][0]) ? $change['indexes'][0] + 1 : null,
             'count'          => count($rows),
-        ]);
+        ];
     }
 }

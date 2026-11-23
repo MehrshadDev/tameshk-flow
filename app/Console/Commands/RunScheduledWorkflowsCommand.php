@@ -2,31 +2,38 @@
 
 namespace App\Console\Commands;
 
+use App\Credentials\CredentialResolver;
 use App\Jobs\RunWorkflowJob;
 use App\Models\Node;
 use App\Subscriptions\SubscriptionManager;
-use App\Workflow\Nodes\Triggers\ScheduleTriggerNode;
-use Carbon\Carbon;
+use App\Workflow\Contracts\PollingTriggerContract;
+use App\Workflow\Registry\NodeRegistry;
 use Illuminate\Console\Command;
-use Illuminate\Support\Facades\Cache;
+use Throwable;
 
 class RunScheduledWorkflowsCommand extends Command
 {
     protected $signature = 'workflow:run-scheduled';
 
-    protected $description = 'Check and dispatch published workflows with Schedule Trigger that are due.';
+    protected $description = 'Poll and dispatch all published workflows with scheduled or polling triggers.';
 
-    public function handle(SubscriptionManager $subscriptions): int
-    {
+    public function handle(
+        NodeRegistry $registry,
+        CredentialResolver $credentials,
+        SubscriptionManager $subscriptions,
+    ): int {
         if ($subscriptions->isSaasEnabled()) {
             $subscriptions->expireOverdueSubscriptions();
         }
 
-        $now = Carbon::now();
-        $minuteKey = $now->format('YmdHi');
+        $pollingTypes = $registry->pollingTypes();
+
+        if ($pollingTypes === []) {
+            return self::SUCCESS;
+        }
 
         $triggers = Node::query()
-            ->where('type', 'trigger.schedule')
+            ->whereIn('type', $pollingTypes)
             ->whereHas('workflow', fn ($query) => $query
                 ->whereNotNull('published_at')
                 ->where('is_active', true))
@@ -46,27 +53,44 @@ class RunScheduledWorkflowsCommand extends Command
                 continue;
             }
 
-            $config = $trigger->config ?? [];
-
-            if (! ScheduleTriggerNode::isDue($config, $now)) {
+            if (! $registry->has($trigger->type)) {
                 continue;
             }
 
-            $lockKey = "schedule_trigger_ran_{$workflow->id}_$minuteKey";
+            $executor = $registry->make($trigger->type);
 
-            if (! Cache::add($lockKey, true, now()->addMinutes(2))) {
+            if (! $executor instanceof PollingTriggerContract) {
                 continue;
             }
 
-            RunWorkflowJob::dispatchSync(
-                $workflow->id,
-                ScheduleTriggerNode::buildPayload($config),
-            );
+            $config = is_array($trigger->config) ? $trigger->config : [];
+            $credentialId = (int) ($config['credential_id'] ?? 0);
+            $credential = $credentialId > 0
+                ? $credentials->find($credentialId, $workflow->user_id)
+                : null;
 
-            $dispatched++;
+            try {
+                $payloads = $executor->poll($workflow, $trigger, $credential);
+            } catch (Throwable $e) {
+                report($e);
+                continue;
+            }
+
+            foreach ($payloads as $payload) {
+                if (! is_array($payload)) {
+                    continue;
+                }
+
+                if (! $subscriptions->hasRunQuota($workflow->user)) {
+                    break;
+                }
+
+                RunWorkflowJob::dispatchSync($workflow->id, $payload);
+                $dispatched++;
+            }
         }
 
-        $this->info("Dispatched $dispatched scheduled workflows.");
+        $this->info("Dispatched $dispatched polling workflow runs.");
 
         return self::SUCCESS;
     }

@@ -2,8 +2,11 @@
 
 namespace App\Workflow\Nodes\Triggers;
 
+use App\Models\Credential;
+use App\Models\Node;
+use App\Models\Workflow;
 use App\Workflow\Contracts\NodeContract;
-use App\Workflow\Contracts\PublishableTriggerContract;
+use App\Workflow\Contracts\PollingTriggerContract;
 use App\Workflow\DTOs\NodeContext;
 use App\Workflow\DTOs\NodeDefinition;
 use App\Workflow\DTOs\NodeResult;
@@ -13,7 +16,7 @@ use App\Workflow\Support\GmailClient;
 use Illuminate\Support\Facades\Cache;
 use Throwable;
 
-class GmailTriggerNode implements NodeContract, PublishableTriggerContract
+class GmailTriggerNode implements NodeContract, PollingTriggerContract
 {
     private const LISTEN_SECONDS = 60;
     private const POLL_INTERVAL = 3;
@@ -56,6 +59,64 @@ class GmailTriggerNode implements NodeContract, PublishableTriggerContract
             ],
             color: 'rose',
         );
+    }
+
+    public function poll(Workflow $workflow, Node $trigger, ?Credential $credential): array
+    {
+        if (! $credential) {
+            return [];
+        }
+
+        $config = is_array($trigger->config) ? $trigger->config : [];
+        $query = trim((string) ($config['query'] ?? 'is:unread label:INBOX'));
+        $autoMarkRead = ((string) ($config['mark_read'] ?? '0')) === '1';
+        $publishedAtMs = $workflow->published_at ? ($workflow->published_at->getTimestamp() * 1000) : 0;
+
+        $client = new GmailClient($credential);
+        $list = $client->listMessages($query, 10);
+        $messages = array_reverse((array) ($list['messages'] ?? []));
+        $events = [];
+
+        foreach ($messages as $item) {
+            $messageId = trim((string) ($item['id'] ?? ''));
+
+            if ($messageId === '') {
+                continue;
+            }
+
+            $seenKey = "gmail_poll_msg_{$workflow->id}_{$trigger->id}_{$messageId}";
+
+            if (Cache::has($seenKey)) {
+                continue;
+            }
+
+            $fullMessage = $client->getMessage($messageId);
+            $internalDateMs = (int) ($fullMessage['internalDate'] ?? 0);
+
+            if ($publishedAtMs > 0 && $internalDateMs > 0 && $internalDateMs < $publishedAtMs) {
+                Cache::put($seenKey, true, now()->addDays(14));
+                continue;
+            }
+
+            if (! Cache::add($seenKey, true, now()->addDays(14))) {
+                continue;
+            }
+
+            if ($autoMarkRead) {
+                try {
+                    $client->modifyMessage($messageId, [], ['UNREAD']);
+                } catch (Throwable) {
+                }
+            }
+
+            $events[] = $fullMessage;
+        }
+
+        if ($events !== []) {
+            $credential->markAsUsed();
+        }
+
+        return $events;
     }
 
     public function execute(NodeContext $context): NodeResult

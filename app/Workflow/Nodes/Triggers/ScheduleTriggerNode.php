@@ -2,8 +2,11 @@
 
 namespace App\Workflow\Nodes\Triggers;
 
+use App\Models\Credential;
+use App\Models\Node;
+use App\Models\Workflow;
 use App\Workflow\Contracts\NodeContract;
-use App\Workflow\Contracts\PublishableTriggerContract;
+use App\Workflow\Contracts\PollingTriggerContract;
 use App\Workflow\DTOs\NodeContext;
 use App\Workflow\DTOs\NodeDefinition;
 use App\Workflow\DTOs\NodeResult;
@@ -12,9 +15,10 @@ use App\Workflow\Exceptions\NodeExecutionException;
 use Carbon\Carbon;
 use Cron\CronExpression;
 use DateTimeZone;
+use Illuminate\Support\Facades\Cache;
 use Throwable;
 
-class ScheduleTriggerNode implements NodeContract, PublishableTriggerContract
+class ScheduleTriggerNode implements NodeContract, PollingTriggerContract
 {
     public static function definition(): NodeDefinition
     {
@@ -142,6 +146,24 @@ class ScheduleTriggerNode implements NodeContract, PublishableTriggerContract
             ],
             color: 'emerald',
         );
+    }
+
+    public function poll(Workflow $workflow, Node $trigger, ?Credential $credential): array
+    {
+        $now = Carbon::now();
+        $config = is_array($trigger->config) ? $trigger->config : [];
+
+        if (! self::isDue($config, $now)) {
+            return [];
+        }
+
+        $lockKey = "schedule_trigger_ran_{$workflow->id}_{$now->format('YmdHi')}";
+
+        if (! Cache::add($lockKey, true, now()->addMinutes(2))) {
+            return [];
+        }
+
+        return [self::buildPayload($config)];
     }
 
     public static function cronError(array $config): ?string

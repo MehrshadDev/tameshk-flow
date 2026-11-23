@@ -27,11 +27,12 @@ final class GoogleSheetsConfig
         ];
     }
 
-    public static function resolveSpreadsheet(NodeContext $context): string
+    public static function resolveSpreadsheet(NodeContext|array $source): string
     {
+        $config = self::extractConfig($source);
         $value = trim((string) (
-            $context->config['spreadsheet_id']
-            ?? $context->config['spreadsheet_url']
+            $config['spreadsheet_id']
+            ?? $config['spreadsheet_url']
             ?? ''
         ));
 
@@ -42,11 +43,12 @@ final class GoogleSheetsConfig
         return GoogleSheetsClient::spreadsheetId($value);
     }
 
-    public static function resolveSheet(NodeContext $context): string
+    public static function resolveSheet(NodeContext|array $source): string
     {
+        $config = self::extractConfig($source);
         $value = trim((string) (
-            $context->config['sheet']
-            ?? $context->config['sheet_ref']
+            $config['sheet']
+            ?? $config['sheet_ref']
             ?? ''
         ));
 
@@ -57,14 +59,15 @@ final class GoogleSheetsConfig
         return $value;
     }
 
-    public static function rangeFor(NodeContext $context, ?string $key, string $default): string
+    public static function rangeFor(NodeContext|array $source, ?string $key, string $default): string
     {
-        $sheet = self::resolveSheet($context);
+        $config = self::extractConfig($source);
+        $sheet = self::resolveSheet($config);
         $parts = explode('!', $sheet, 2);
         $sheetName = trim($parts[0], "'");
         $embedded = $parts[1] ?? '';
 
-        $range = $key !== null ? trim((string) ($context->config[$key] ?? '')) : '';
+        $range = $key !== null ? trim((string) ($config[$key] ?? '')) : '';
 
         if ($range === '') {
             $range = $embedded !== '' ? $embedded : $default;
@@ -107,5 +110,10 @@ final class GoogleSheetsConfig
         }
 
         return $result;
+    }
+
+    private static function extractConfig(NodeContext|array $source): array
+    {
+        return $source instanceof NodeContext ? $source->config : $source;
     }
 }

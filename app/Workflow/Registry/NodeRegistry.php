@@ -3,15 +3,14 @@
 namespace App\Workflow\Registry;
 
 use App\Workflow\Contracts\NodeContract;
+use App\Workflow\Contracts\PollingTriggerContract;
 use App\Workflow\DTOs\NodeDefinition;
 use InvalidArgumentException;
 
 final class NodeRegistry
 {
-    /** @var array<string, class-string<NodeContract>> */
     private array $nodes = [];
 
-    /** @param array<class-string<NodeContract>> $nodeClasses */
     public function __construct(array $nodeClasses = [])
     {
         foreach ($nodeClasses as $class) {
@@ -34,7 +33,6 @@ final class NodeRegistry
         return isset($this->nodes[$type]);
     }
 
-    /** @return class-string<NodeContract> */
     public function resolve(string $type): string
     {
         if (! $this->has($type)) {
@@ -49,7 +47,19 @@ final class NodeRegistry
         return app($this->resolve($type));
     }
 
-    /** @return array<string, NodeDefinition> */
+    public function pollingTypes(): array
+    {
+        $types = [];
+
+        foreach ($this->nodes as $type => $class) {
+            if (is_subclass_of($class, PollingTriggerContract::class)) {
+                $types[] = $type;
+            }
+        }
+
+        return $types;
+    }
+
     public function definitions(): array
     {
         $result = [];
@@ -59,7 +69,6 @@ final class NodeRegistry
         return $result;
     }
 
-    /** @return array<int, array> */
     public function definitionsByCategory(): array
     {
         $grouped = [];
