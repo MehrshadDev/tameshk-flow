@@ -10,7 +10,9 @@
     $activeDef = $selectedType !== '' ? ($types[$selectedType] ?? null) : null;
     $schema = $activeDef['schema'] ?? [];
     $isOAuthType = in_array($selectedType, ['gmail', 'google'], true);
-    $callbackUrl = url('/oauth/google/callback');
+    $callbackUrl = config('services.google.oauth_redirect_uri')
+        ? rtrim((string) config('services.google.oauth_redirect_uri'), '/')
+        : rtrim((string) (config('app.url') ?: url('/')), '/') . route('oauth.google.callback', [], false);
     $modalTitle = $editingId
         ? 'ویرایش اعتبارنامه — ' . ($activeDef['name'] ?? '')
         : ($activeDef ? 'افزودن ' . $activeDef['name'] : 'انتخاب سرویس اعتبارنامه');
@@ -80,7 +82,8 @@
 
             @foreach ($schema as $fieldKey => $field)
                 @php
-                    $isSecret = ($field['type'] ?? 'text') === 'password';
+                    $fieldType = $field['type'] ?? 'text';
+                    $isSecret = $fieldType === 'password';
                     $label = $field['label'] ?? $fieldKey;
                     $placeholder = $editingId && $isSecret
                         ? 'بدون تغییر (برای تغییر، مقدار جدید وارد کنید)'
@@ -88,15 +91,39 @@
                 @endphp
 
                 <div>
-                    <x-ui.input
-                        :name="'formData.' . $fieldKey"
-                        :type="$isSecret ? 'password' : 'text'"
-                        :label="$label"
-                        :placeholder="$placeholder"
-                        value="{{ $this->formData[$fieldKey] ?? '' }}"
-                        wire:model="formData.{{ $fieldKey }}"
-                        autocomplete="new-password"
-                    />
+                    @if ($fieldType === 'select')
+                        @php
+                            $selectOptions = array_map(
+                                fn ($opt) => is_array($opt)
+                                    ? ['value' => (string) ($opt['value'] ?? ''), 'label' => (string) ($opt['label'] ?? ($opt['value'] ?? ''))]
+                                    : ['value' => (string) $opt, 'label' => (string) $opt],
+                                $field['options'] ?? []
+                            );
+                        @endphp
+                        <label dir="auto" class="mb-1.5 block text-start text-sm font-medium text-content-main">
+                            {{ $label }}
+                        </label>
+                        <x-ui.select
+                            :options="$selectOptions"
+                            :selected="$this->formData[$fieldKey] ?? ($field['default'] ?? '')"
+                            :wire-model="'formData.' . $fieldKey"
+                            :searchable="false"
+                            :full-width="true"
+                        />
+                        @error('formData.' . $fieldKey)
+                        <p class="mt-1.5 text-xs text-primary">{{ $message }}</p>
+                        @enderror
+                    @else
+                        <x-ui.input
+                            :name="'formData.' . $fieldKey"
+                            :type="$isSecret ? 'password' : 'text'"
+                            :label="$label"
+                            :placeholder="$placeholder"
+                            value="{{ $this->formData[$fieldKey] ?? '' }}"
+                            wire:model="formData.{{ $fieldKey }}"
+                            autocomplete="new-password"
+                        />
+                    @endif
                     @if (! empty($field['help']))
                         <p dir="auto" class="mt-1.5 text-start text-[11px] leading-5 text-content-muted/80">{{ $field['help'] }}</p>
                     @endif

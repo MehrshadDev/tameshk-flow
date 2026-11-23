@@ -16,6 +16,11 @@ final class TriggerEndpoints
         return $this->base() . route('webhooks.chat.show', ['token' => $workflow->webhook_token], false);
     }
 
+    public function form(Workflow $workflow): string
+    {
+        return $this->base() . route('webhooks.form.show', ['token' => $workflow->webhook_token], false);
+    }
+
     public function telegram(Workflow $workflow): string
     {
         return $this->base() . route('webhooks.telegram', ['token' => $workflow->webhook_token], false);
@@ -54,6 +59,15 @@ final class TriggerEndpoints
                     'mode' => 'production',
                     'url' => $this->chat($workflow),
                     'hint' => 'این آدرس را می‌توانید در سایت، اپلیکیشن یا هر جای دیگری استفاده کنید.',
+                ],
+            ],
+            'trigger.form' => [
+                [
+                    'key' => 'form',
+                    'label' => 'آدرس فرم عمومی',
+                    'mode' => 'production',
+                    'url' => $this->form($workflow),
+                    'hint' => 'این آدرس را می‌توانید در سایت، شبکه‌های اجتماعی یا هر جای دیگری قرار دهید.',
                 ],
             ],
             'trigger.webhook' => [

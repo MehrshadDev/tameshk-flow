@@ -45,7 +45,7 @@ class WebhookTriggerNode implements NodeContract, PublishableTriggerContract
             return 'مسیر سفارشی فقط می‌تواند شامل حروف انگلیسی، اعداد، خط تیره (-)، زیرخط (_) و اسلش (/) باشد.';
         }
 
-        if (preg_match('#^[^/]+/(chat|telegram)$#i', $path)) {
+        if (preg_match('#^[^/]+/(chat|telegram|woocommerce|form)$#i', $path)) {
             return 'این مسیر در سیستم رزرو شده است. لطفاً مسیر دیگری انتخاب کنید.';
         }
 

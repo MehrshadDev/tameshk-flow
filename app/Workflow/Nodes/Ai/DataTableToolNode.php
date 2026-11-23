@@ -44,8 +44,7 @@ class DataTableToolNode implements NodeContract, ToolContract
                     'required' => true,
                 ],
                 'default_table' => [
-                    'type'        => 'dynamic_select',
-                    'source'      => 'data_tables',
+                    'type'        => 'text',
                     'label'       => 'جدول پیش‌فرض (اختیاری)',
                     'required'    => false,
                     'placeholder' => 'در صورت خالی بودن، ایجنت خودش جدول را انتخاب می‌کند',

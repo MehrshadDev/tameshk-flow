@@ -36,7 +36,7 @@ export function TriggerEndpointList({ nodeType, config }: TriggerEndpointListPro
     const copy = async (url: string) => {
         try {
             await navigator.clipboard.writeText(url);
-            addToast('آدرس وب‌هوک کپی شد.', 'success', 2000);
+            addToast('آدرس کپی شد.', 'success', 2000);
         } catch {
             addToast('کپی آدرس انجام نشد.', 'error', 3000);
         }
@@ -84,7 +84,7 @@ export function TriggerEndpointList({ nodeType, config }: TriggerEndpointListPro
                             needsLive ? 'bg-emerald-500/10 text-emerald-500' : 'bg-amber-500/10 text-amber-500'
                         }`}
                     >
-                        {needsLive ? 'محیط انتشار' : 'محیط تست'}
+                        {needsLive ? 'محیط انتشار' : 'آماده تست و انتشار'}
                     </span>
                 )}
             </div>
@@ -111,7 +111,7 @@ export function TriggerEndpointList({ nodeType, config }: TriggerEndpointListPro
                         <Icon name="copy" className="size-3.5" />
                     </span>
 
-                    {active && nodeType === 'trigger.chat' && (
+                    {active && (nodeType === 'trigger.chat' || nodeType === 'trigger.form') && (
                         <a
                             href={fullUrl}
                             target="_blank"

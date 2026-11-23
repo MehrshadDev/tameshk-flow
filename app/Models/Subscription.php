@@ -139,9 +139,9 @@ class Subscription extends Model
         }
 
         $total = $this->totalCycleDays();
-        $elapsed = $this->elapsedDays();
+        $remaining = $this->remainingDays() ?? 0;
 
-        return max(0, min($total, $total - $elapsed));
+        return max(0, min($total, $remaining));
     }
 
     public function graceRemainingDays(): int

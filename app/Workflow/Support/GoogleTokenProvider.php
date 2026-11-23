@@ -10,8 +10,6 @@ use Throwable;
 
 final class GoogleTokenProvider
 {
-    private const TOKEN_URL = 'https://oauth2.googleapis.com/token';
-
     public function __construct(private readonly Credential $credential)
     {
     }
@@ -38,8 +36,10 @@ final class GoogleTokenProvider
             throw NodeExecutionException::because('اطلاعات Client ID یا Client Secret در اعتبارنامه موجود نیست.');
         }
 
+        $oauthBase = rtrim((string) config('services.google.oauth_base_url', 'https://oauth2.googleapis.com'), '/');
+
         try {
-            $response = Http::asForm()->timeout(20)->post(self::TOKEN_URL, [
+            $response = Http::asForm()->timeout(20)->post($oauthBase . '/token', [
                 'client_id' => $clientId,
                 'client_secret' => $clientSecret,
                 'refresh_token' => $refreshToken,
@@ -54,12 +54,17 @@ final class GoogleTokenProvider
             throw NodeExecutionException::because('تمدید نشست گوگل ناموفق بود: ' . $errorDesc);
         }
 
-        $tokenPayload = $response->json();
+        $tokenPayload = (array) $response->json();
         $newAccessToken = data_get($tokenPayload, 'access_token');
+
+        if (empty($newAccessToken)) {
+            throw NodeExecutionException::because('توکن جدید از گوگل دریافت نشد.');
+        }
+
         $expiresIn = (int) data_get($tokenPayload, 'expires_in', 3500);
 
         $data['access_token'] = $newAccessToken;
-        $data['expires_at'] = now()->addSeconds($expiresIn - 60)->toIso8601String();
+        $data['expires_at'] = now()->addSeconds(max(60, $expiresIn - 60))->toIso8601String();
 
         $this->credential->update(['data' => $data]);
 

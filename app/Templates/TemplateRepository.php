@@ -3,6 +3,7 @@
 namespace App\Templates;
 
 use App\Docs\DocumentationRepository;
+use App\Templates\Catalog\ContactFormAutoReplyTemplate;
 use App\Templates\Catalog\TelegramAiSupportBotTemplate;
 use App\Templates\Catalog\WooCommerceOrderTelegramTableTemplate;
 use App\Templates\DTOs\WorkflowTemplate;
@@ -14,6 +15,7 @@ final class TemplateRepository
     private const CATALOG = [
         WooCommerceOrderTelegramTableTemplate::class,
         TelegramAiSupportBotTemplate::class,
+        ContactFormAutoReplyTemplate::class,
     ];
 
     private static ?array $cache = null;

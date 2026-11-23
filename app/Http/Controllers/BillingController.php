@@ -121,11 +121,6 @@ class BillingController extends Controller
                 ]);
         }
 
-        Payment::query()
-            ->where('user_id', $user->id)
-            ->where('status', 'pending')
-            ->delete();
-
         if ($amount === 0 && $discount !== null) {
             return $this->completeFreeDiscountCheckout($request, $plan, $billingCycle, $rawDiscountCode);
         }
@@ -229,7 +224,7 @@ class BillingController extends Controller
                 }
 
                 if ($success !== '1') {
-                    $payment->delete();
+                    $payment->update(['status' => 'failed']);
 
                     return $this->redirectAfterCallback('error', $this->gateway->translateCallbackStatus($status));
                 }
@@ -237,7 +232,9 @@ class BillingController extends Controller
                 try {
                     $verified = $this->gateway->verify($payment->amount, $trackId, (string) $payment->public_id);
                 } catch (PaymentException $e) {
-                    $payment->update(['status' => 'failed']);
+                    if (! $e->isTransient) {
+                        $payment->update(['status' => 'failed']);
+                    }
 
                     return $this->redirectAfterCallback('error', $e->getMessage());
                 }
@@ -301,6 +298,17 @@ class BillingController extends Controller
         try {
             return DB::transaction(function () use ($request, $plan, $billingCycle, $rawDiscountCode) {
                 $user = User::query()->whereKey($request->user()->id)->lockForUpdate()->firstOrFail();
+
+                $check = $this->subscriptions->canPurchase($user, $plan, $billingCycle);
+
+                if (! $check['allowed']) {
+                    return redirect()
+                        ->route('app.billing.index')
+                        ->with('payment_result', [
+                            'status' => 'error',
+                            'message' => $check['reason'],
+                        ]);
+                }
 
                 $discountCheck = $this->subscriptions->validateDiscountCode(
                     user: $user,

@@ -15,10 +15,6 @@ use Throwable;
 
 class GoogleOAuthController extends Controller
 {
-    private const AUTH_URL = 'https://accounts.google.com/o/oauth2/v2/auth';
-    private const TOKEN_URL = 'https://oauth2.googleapis.com/token';
-    private const USERINFO_URL = 'https://www.googleapis.com/oauth2/v3/userinfo';
-
     private const SCOPES = [
         'gmail' => [
             'https://mail.google.com/',
@@ -58,11 +54,11 @@ class GoogleOAuthController extends Controller
             'type' => $credential->type,
         ]));
 
-        $redirectUri = $this->getRedirectUri();
+        $authBase = rtrim((string) config('services.google.auth_base_url', 'https://accounts.google.com'), '/');
 
         $params = http_build_query([
             'client_id' => $clientId,
-            'redirect_uri' => $redirectUri,
+            'redirect_uri' => $this->getRedirectUri(),
             'response_type' => 'code',
             'scope' => implode(' ', $scopes),
             'access_type' => 'offline',
@@ -70,28 +66,33 @@ class GoogleOAuthController extends Controller
             'state' => $state,
         ]);
 
-        return redirect()->away(self::AUTH_URL . '?' . $params);
+        return redirect()->away($authBase . '/o/oauth2/v2/auth?' . $params);
     }
 
     public function callback(Request $request): Response
     {
         $code = (string) $request->query('code');
         $state = (string) $request->query('state');
+        $type = 'gmail';
+        $credentialId = 0;
+        $userId = 0;
 
-        if (empty($code) || empty($state)) {
-            return response(
-                $this->popupResponse(false, 'کد اعتبارسنجی گوگل دریافت نشد یا لغو شد.', 'gmail')
-            );
+        if ($state !== '') {
+            try {
+                $payload = json_decode(Crypt::decryptString($state), true);
+                $credentialId = (int) ($payload['credential_id'] ?? 0);
+                $userId = (int) ($payload['user_id'] ?? 0);
+                $type = (string) ($payload['type'] ?? 'gmail');
+            } catch (Throwable) {
+                return response(
+                    $this->popupResponse(false, 'توکن امنیتی State نامعتبر است.', $type)
+                );
+            }
         }
 
-        try {
-            $payload = json_decode(Crypt::decryptString($state), true);
-            $credentialId = (int) ($payload['credential_id'] ?? 0);
-            $userId = (int) ($payload['user_id'] ?? 0);
-            $type = (string) ($payload['type'] ?? 'gmail');
-        } catch (Throwable) {
+        if ($code === '' || $state === '') {
             return response(
-                $this->popupResponse(false, 'توکن امنیتی State نامعتبر است.', 'gmail')
+                $this->popupResponse(false, 'کد اعتبارسنجی گوگل دریافت نشد یا لغو شد.', $type)
             );
         }
 
@@ -107,12 +108,12 @@ class GoogleOAuthController extends Controller
         }
 
         $type = $credential->type;
-
         $clientId = $credential->get('client_id');
         $clientSecret = $credential->get('client_secret');
+        $oauthBase = rtrim((string) config('services.google.oauth_base_url', 'https://oauth2.googleapis.com'), '/');
 
         try {
-            $tokenRes = Http::asForm()->timeout(20)->post(self::TOKEN_URL, [
+            $tokenRes = Http::asForm()->timeout(20)->post($oauthBase . '/token', [
                 'code' => $code,
                 'client_id' => $clientId,
                 'client_secret' => $clientSecret,
@@ -126,23 +127,33 @@ class GoogleOAuthController extends Controller
         }
 
         if ($tokenRes->failed()) {
-            $desc = data_get($tokenRes->json(), 'error_description', $tokenRes->body());
+            $desc = (string) data_get($tokenRes->json(), 'error_description', $tokenRes->body());
+
             return response(
                 $this->popupResponse(false, 'دریافت توکن گوگل با خطا مواجه شد: ' . $desc, $type)
             );
         }
 
-        $tokenData = $tokenRes->json();
+        $tokenData = (array) $tokenRes->json();
         $accessToken = data_get($tokenData, 'access_token');
+
+        if (empty($accessToken)) {
+            return response(
+                $this->popupResponse(false, 'توکن دسترسی گوگل دریافت نشد.', $type)
+            );
+        }
+
         $refreshToken = data_get($tokenData, 'refresh_token', $credential->get('refresh_token'));
         $expiresIn = (int) data_get($tokenData, 'expires_in', 3600);
 
         $credentialData = $credential->data ?? [];
         $credentialData['access_token'] = $accessToken;
+
         if (! empty($refreshToken)) {
             $credentialData['refresh_token'] = $refreshToken;
         }
-        $credentialData['expires_at'] = now()->addSeconds($expiresIn - 60)->toIso8601String();
+
+        $credentialData['expires_at'] = now()->addSeconds(max(60, $expiresIn - 60))->toIso8601String();
 
         $credential->update(['data' => $credentialData]);
 
@@ -167,6 +178,7 @@ class GoogleOAuthController extends Controller
         if ($type === 'gmail') {
             try {
                 $profile = (new GmailClient($credential))->getProfile();
+
                 return (string) data_get($profile, 'emailAddress', '');
             } catch (Throwable) {
                 return '';
@@ -175,7 +187,8 @@ class GoogleOAuthController extends Controller
 
         try {
             $token = (new GoogleSheetsClient($credential))->getValidAccessToken();
-            $response = Http::withToken($token)->timeout(10)->get(self::USERINFO_URL);
+            $apiBase = rtrim((string) config('services.google.api_base_url', 'https://www.googleapis.com'), '/');
+            $response = Http::withToken($token)->timeout(10)->get($apiBase . '/oauth2/v3/userinfo');
 
             if ($response->successful()) {
                 return (string) data_get($response->json(), 'email', '');
@@ -188,8 +201,8 @@ class GoogleOAuthController extends Controller
 
     private function getRedirectUri(): string
     {
-        if ($configured = config('services.google.redirect_uri')) {
-            return rtrim($configured, '/');
+        if ($configured = config('services.google.oauth_redirect_uri')) {
+            return rtrim((string) $configured, '/');
         }
 
         $base = rtrim((string) (config('app.url') ?: url('/')), '/');
@@ -202,6 +215,14 @@ class GoogleOAuthController extends Controller
         $statusStr = $success ? 'success' : 'error';
         $eventType = $type === 'gmail' ? 'GMAIL_OAUTH_RESULT' : 'GOOGLE_OAUTH_RESULT';
         $title = $type === 'gmail' ? 'اتصال حساب جیمیل' : 'اتصال حساب گوگل';
+
+        $safeTitle = htmlspecialchars($title, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
+        $safeMessage = htmlspecialchars($message, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
+        $jsPayload = json_encode([
+            'type' => $eventType,
+            'status' => $statusStr,
+            'message' => $message,
+        ], JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP);
 
         return <<<HTML
 <!DOCTYPE html>
@@ -217,13 +238,13 @@ class GoogleOAuthController extends Controller
 </head>
 <body>
 <div class="box">
-    <h3>{$title}</h3>
-    <p class="msg">{$message}</p>
+    <h3>$safeTitle</h3>
+    <p class="msg">$safeMessage</p>
     <p style="font-size: 0.8rem; opacity: 0.6; margin-top: 1.5rem;">این پنجره به‌صورت خودکار بسته می‌شود...</p>
 </div>
 <script>
     if (window.opener) {
-        window.opener.postMessage({ type: '{$eventType}', status: '{$statusStr}', message: '{$message}' }, '*');
+        window.opener.postMessage($jsPayload, '*');
         setTimeout(() => window.close(), 1500);
     }
 </script>

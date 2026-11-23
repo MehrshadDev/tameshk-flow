@@ -15,6 +15,7 @@ final class NodeConfigValidator
     private const MAX_PAIRS = 50;
     private const MAX_CONDITIONS = 50;
     private const MAX_SWITCH_RULES = 20;
+    private const MAX_FORM_FIELDS = 30;
 
     public function nodeMessages(Node $node, NodeDefinition $definition, Collection $credentials): array
     {
@@ -127,6 +128,7 @@ final class NodeConfigValidator
             'multiselect'  => $complete ? $this->checkMultiSelect($field, $value) : null,
             'keyvalue'     => $this->checkKeyValue($value),
             'set_fields'   => $this->checkSetFields($value),
+            'form_fields'  => $this->checkFormFields($value),
             'credential'   => $complete ? $this->checkCredential($field, $value, $credentials) : null,
             'model_select' => $this->checkModelSelect($value),
             'conditions'   => $this->checkConditions($value),
@@ -140,6 +142,37 @@ final class NodeConfigValidator
         return is_bool($value) || in_array($value, [0, 1, '0', '1', 'true', 'false'], true)
             ? null
             : 'مقدار نامعتبر است.';
+    }
+
+    private function checkFormFields(mixed $value): ?string
+    {
+        if (! is_array($value) || ! array_is_list($value) || count($value) > self::MAX_FORM_FIELDS) {
+            return 'فهرست فیلدهای فرم نامعتبر است.';
+        }
+
+        $allowedTypes = ['text', 'email', 'tel', 'number', 'textarea', 'select'];
+
+        foreach ($value as $item) {
+            if (! is_array($item)) {
+                return 'یکی از فیلدهای فرم نامعتبر است.';
+            }
+
+            $name = (string) ($item['name'] ?? '');
+            $label = (string) ($item['label'] ?? '');
+            $type = (string) ($item['type'] ?? 'text');
+            $placeholder = (string) ($item['placeholder'] ?? '');
+            $options = (string) ($item['options'] ?? '');
+
+            if (mb_strlen($name) > 100 || mb_strlen($label) > 100 || mb_strlen($placeholder) > 200 || mb_strlen($options) > 1000) {
+                return 'مقدار یکی از فیلدهای فرم بیش از حد طولانی است.';
+            }
+
+            if (! in_array($type, $allowedTypes, true)) {
+                return 'نوع یکی از فیلدهای فرم نامعتبر است.';
+            }
+        }
+
+        return null;
     }
 
     private function checkSetFields(mixed $value): ?string

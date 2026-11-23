@@ -54,12 +54,16 @@ final class ZibalGateway
         } catch (Throwable $e) {
             $detail = config('app.debug') ? ' (' . $e->getMessage() . ')' : '';
 
-            throw PaymentException::because('امکان برقراری ارتباط با درگاه پرداخت زیبال وجود ندارد. لطفاً اتصال اینترنت را بررسی کنید.' . $detail);
+            throw PaymentException::transient('امکان برقراری ارتباط با درگاه پرداخت زیبال وجود ندارد. لطفاً اتصال اینترنت را بررسی کنید.' . $detail);
         }
 
         $json = (array) $response->json();
         $result = (int) data_get($json, 'result', 0);
         $trackId = trim((string) data_get($json, 'trackId', ''));
+
+        if ($response->serverError()) {
+            throw PaymentException::transient('درگاه پرداخت زیبال موقتاً در دسترس نیست. لطفاً چند لحظه بعد دوباره تلاش کنید.');
+        }
 
         if ($response->failed() || $result !== 100 || $trackId === '' || ! ctype_digit($trackId)) {
             throw PaymentException::because($this->translateResultError($result));
@@ -89,7 +93,11 @@ final class ZibalGateway
         } catch (Throwable $e) {
             $detail = config('app.debug') ? ' (' . $e->getMessage() . ')' : '';
 
-            throw PaymentException::because('خطا در استعلام وضعیت پرداخت از زیبال. در صورت کسر وجه، مبلغ ظرف ۷۲ ساعت به حساب شما بازمی‌گردد.' . $detail);
+            throw PaymentException::transient('خطا در استعلام وضعیت پرداخت از زیبال. لطفاً صفحه را مجدداً بارگذاری کنید؛ در صورت کسر وجه و عدم تایید، مبلغ ظرف ۷۲ ساعت به حساب شما بازمی‌گردد.' . $detail);
+        }
+
+        if ($response->serverError()) {
+            throw PaymentException::transient('پاسخی از سرور زیبال دریافت نشد. لطفاً صفحه را مجدداً بارگذاری کنید.');
         }
 
         $json = (array) $response->json();
@@ -107,7 +115,10 @@ final class ZibalGateway
         $expectedRials = $this->normalizeAmount($amountInTomans);
         $verifiedAmount = (int) data_get($json, 'amount', 0);
 
-        if ($verifiedAmount > 0 && $verifiedAmount !== $expectedRials) {
+        if (
+            ($result === 100 && $verifiedAmount !== $expectedRials)
+            || ($result === 201 && $verifiedAmount > 0 && $verifiedAmount !== $expectedRials)
+        ) {
             throw PaymentException::because('مبلغ پرداخت‌شده با مبلغ فاکتور مطابقت ندارد.');
         }
 

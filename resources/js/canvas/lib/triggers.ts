@@ -1,4 +1,4 @@
-const NON_TESTABLE_TRIGGERS = ['trigger.chat'];
+const NON_TESTABLE_TRIGGERS = ['trigger.chat', 'trigger.form'];
 
 const INSTANT_TRIGGERS = ['trigger.manual', 'trigger.schedule'];
 
@@ -13,6 +13,8 @@ export const isListeningTrigger = (nodeType: string): boolean =>
 export const isScheduleTrigger = (nodeType: string): boolean => nodeType === 'trigger.schedule';
 
 export const isWebhookTrigger = (nodeType: string): boolean => nodeType === 'trigger.webhook';
+
+export const isFormTrigger = (nodeType: string): boolean => nodeType === 'trigger.form';
 
 export const isTelegramTrigger = (nodeType: string): boolean => nodeType === 'trigger.telegram';
 

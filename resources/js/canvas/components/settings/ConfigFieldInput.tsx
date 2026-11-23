@@ -2,6 +2,7 @@ import { useRef, useState } from 'react';
 import { ConditionsEditor } from '@canvas/components/settings/ConditionsEditor';
 import { CredentialSelect } from '@canvas/components/settings/CredentialSelect';
 import { inputClass } from '@canvas/components/settings/fieldStyles';
+import { FormFieldsEditor } from '@canvas/components/settings/FormFieldsEditor';
 import { KeyValueEditor } from '@canvas/components/settings/KeyValueEditor';
 import { SetFieldsEditor } from '@canvas/components/settings/SetFieldsEditor';
 import { SwitchRulesEditor } from '@canvas/components/settings/SwitchRulesEditor';
@@ -323,6 +324,10 @@ export function ConfigFieldInput(props: ConfigFieldInputProps) {
     const fxColor = isExpression && hasText && hasIncomingRun
         ? (isValid ? 'text-emerald-500' : 'text-primary')
         : 'text-content-muted/70';
+
+    if (field.type === 'form_fields') {
+        return <FormFieldsEditor value={value} onChange={onChange} />;
+    }
 
     if (field.type === 'switch_rules') {
         return (

@@ -11,6 +11,7 @@ use App\Models\Workflow;
 use App\Workflow\Contracts\WebhookTriggerContract;
 use App\Workflow\Exceptions\QuotaExceededException;
 use App\Workflow\Exceptions\WorkflowPublishException;
+use App\Workflow\Publishing\TriggerEndpoints;
 use App\Workflow\Registry\NodeRegistry;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
@@ -200,11 +201,28 @@ final class SubscriptionManager
                     $latestPaidPayment = $activeSub->payments()
                         ->where('status', 'paid')
                         ->latest('id')
-                        ->first(['amount']);
+                        ->first(['amount', 'discount_amount']);
 
-                    $cycleValue = $latestPaidPayment !== null
-                        ? (int) $latestPaidPayment->amount
-                        : $currentPlan->priceFor($activeSub->billing_cycle);
+                    if ($latestPaidPayment === null) {
+                        $cycleValue = $currentPlan->priceFor($activeSub->billing_cycle);
+                    } else {
+                        $wasProratedUpgrade = $activeSub->starts_at !== null
+                            && $user->subscriptions()
+                                ->where('status', 'canceled')
+                                ->whereKeyNot($activeSub->id)
+                                ->whereBetween('canceled_at', [
+                                    $activeSub->starts_at->copy()->subMinutes(2),
+                                    $activeSub->starts_at->copy()->addMinutes(2),
+                                ])
+                                ->exists();
+
+                        $cycleValue = $wasProratedUpgrade
+                            ? max(
+                                (int) $latestPaidPayment->amount,
+                                max(0, $currentPlan->priceFor($activeSub->billing_cycle) - (int) $latestPaidPayment->discount_amount)
+                            )
+                            : (int) $latestPaidPayment->amount;
+                    }
 
                     if ($cycleValue > 0) {
                         if ($candidateUnusedDays >= $totalDays) {
@@ -254,9 +272,6 @@ final class SubscriptionManager
         ];
     }
 
-    /**
-     * @return array{valid: bool, message: ?string, discount: ?DiscountCode, quote: array}
-     */
     public function validateDiscountCode(
         User $user,
         Plan $targetPlan,
@@ -482,8 +497,8 @@ final class SubscriptionManager
             return true;
         }
 
-        $this->syncUsageCycle($user);
         $max = $this->maxMonthlyRuns($user);
+        $this->syncUsageCycle($user);
 
         if ($max === null) {
             return true;
@@ -563,7 +578,7 @@ final class SubscriptionManager
     public function activateSubscription(User $user, Plan $plan, string $billingCycle): Subscription
     {
         $days = $billingCycle === 'yearly' ? 365 : 30;
-        $maxCapDays = $billingCycle === 'yearly' ? 375 : 60;
+        $maxCapDays = $days + Subscription::renewalWindowDays() + 1;
 
         return DB::transaction(function () use ($user, $plan, $billingCycle, $days, $maxCapDays) {
             $lockedUser = User::query()->whereKey($user->id)->lockForUpdate()->firstOrFail();
@@ -669,6 +684,10 @@ final class SubscriptionManager
             $this->pauseAllActiveWorkflowsOnExpiry($affectedUser);
         }
 
+        if ($user && in_array($user->id, $affectedUserIds, true)) {
+            $user->refresh();
+        }
+
         return $expiredSubs->count();
     }
 
@@ -700,6 +719,7 @@ final class SubscriptionManager
     private function pauseWorkflowsCollection(User $user, Collection $workflows): int
     {
         $registry = app(NodeRegistry::class);
+        $endpoints = app(TriggerEndpoints::class);
         $paused = 0;
 
         foreach ($workflows as $workflow) {
@@ -714,7 +734,10 @@ final class SubscriptionManager
 
                     if ($credential) {
                         try {
-                            $executor->unregisterWebhook($credential);
+                            $executor->unregisterWebhook(
+                                $credential,
+                                $endpoints->forTriggerType($workflow, $trigger->type),
+                            );
                         } catch (Throwable $e) {
                             report($e);
                         }
@@ -733,9 +756,9 @@ final class SubscriptionManager
 
     public function usageSummary(User $user): array
     {
+        $plan = $this->resolvePlan($user);
         $this->syncUsageCycle($user);
 
-        $plan = $this->resolvePlan($user);
         $activeSub = $user->activeSubscription()->with('plan')->first();
 
         $runsUsed = (int) $user->runs_used;

@@ -8,6 +8,9 @@ import { lazy, Suspense, useEffect } from 'react';
 const ChatFloatingWidget = lazy(() =>
     import('@canvas/components/chat/ChatFloatingWidget').then((m) => ({ default: m.ChatFloatingWidget })),
 );
+const FormFloatingWidget = lazy(() =>
+    import('@canvas/components/form/FormFloatingWidget').then((m) => ({ default: m.FormFloatingWidget })),
+);
 const LogsFloatingWidget = lazy(() =>
     import('@canvas/components/logs/LogsFloatingWidget').then((m) => ({ default: m.LogsFloatingWidget })),
 );
@@ -84,6 +87,7 @@ export function App({ workflowId, backUrl }: AppProps) {
 
             <Suspense fallback={null}>
                 {status === 'ready' && <ChatFloatingWidget />}
+                {status === 'ready' && <FormFloatingWidget />}
                 {status === 'ready' && <LogsFloatingWidget />}
                 {nodePanelOpen && <NodeSettingsPanel />}
                 {exitPromptOpen && <UnsavedChangesModal backUrl={backUrl} />}

@@ -39,12 +39,19 @@ class WorkflowRunner
     public function run(Workflow $workflow, array $triggerData = [], ?callable $onNodeStatus = null): WorkflowRun
     {
         $workflow->loadMissing('user');
+        $workflow->load('nodes', 'edges');
+
+        $graph = new WorkflowGraph($workflow);
+        $triggerNodes = $graph->triggerNodes();
+
+        if ($triggerNodes->isEmpty()) {
+            throw new RuntimeException('Workflow has no trigger node.');
+        }
 
         if ($workflow->user) {
             $this->subscriptions->consumeRunQuota($workflow->user);
         }
 
-        $workflow->load('nodes', 'edges');
         $this->nodeOutputsByName = [];
 
         $run = WorkflowRun::create([
@@ -56,13 +63,6 @@ class WorkflowRunner
         ]);
 
         try {
-            $graph = new WorkflowGraph($workflow);
-            $triggerNodes = $graph->triggerNodes();
-
-            if ($triggerNodes->isEmpty()) {
-                throw new RuntimeException('Workflow has no trigger node.');
-            }
-
             $queue = $triggerNodes
                 ->map(fn (Node $node) => [$node, $triggerData])
                 ->all();

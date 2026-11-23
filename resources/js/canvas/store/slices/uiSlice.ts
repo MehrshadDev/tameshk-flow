@@ -5,12 +5,15 @@ import type { Slice } from './types';
 export type UiSlice = {
     panel: Panel;
     exitPromptOpen: boolean;
+    isFormOpen: boolean;
     toasts: Toast[];
     openPicker: () => void;
     openNode: (id: string) => void;
     closePanel: () => void;
     openExitPrompt: () => void;
     closeExitPrompt: () => void;
+    toggleForm: () => void;
+    setFormOpen: (open: boolean) => void;
     addToast: (message: string, type?: 'error' | 'success' | 'info', duration?: number) => void;
     removeToast: (id: string) => void;
 };
@@ -18,6 +21,7 @@ export type UiSlice = {
 export const createUiSlice: Slice<UiSlice> = (set) => ({
     panel: null,
     exitPromptOpen: false,
+    isFormOpen: false,
     toasts: [],
 
     openPicker: () => set({ panel: { type: 'picker' } }),
@@ -29,6 +33,10 @@ export const createUiSlice: Slice<UiSlice> = (set) => ({
     openExitPrompt: () => set({ exitPromptOpen: true }),
 
     closeExitPrompt: () => set({ exitPromptOpen: false }),
+
+    toggleForm: () => set((state) => ({ isFormOpen: !state.isFormOpen })),
+
+    setFormOpen: (open: boolean) => set({ isFormOpen: open }),
 
     addToast: (message, type = 'error', duration = 20000) => {
         const id = crypto.randomUUID();

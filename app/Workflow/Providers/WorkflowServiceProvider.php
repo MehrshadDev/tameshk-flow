@@ -57,6 +57,7 @@ use App\Workflow\Nodes\Transform\ItemListsNode;
 use App\Workflow\Nodes\Transform\JsonTransformNode;
 use App\Workflow\Nodes\Transform\TextTransformNode;
 use App\Workflow\Nodes\Triggers\ChatTriggerNode;
+use App\Workflow\Nodes\Triggers\FormTriggerNode;
 use App\Workflow\Nodes\Triggers\GmailTriggerNode;
 use App\Workflow\Nodes\Triggers\GoogleSheetsRowAddedOrUpdatedTriggerNode;
 use App\Workflow\Nodes\Triggers\GoogleSheetsRowAddedTriggerNode;
@@ -82,6 +83,7 @@ class WorkflowServiceProvider extends ServiceProvider
                 ManualTriggerNode::class,
                 ScheduleTriggerNode::class,
                 WebhookTriggerNode::class,
+                FormTriggerNode::class,
                 ChatTriggerNode::class,
                 TelegramTriggerNode::class,
                 GmailTriggerNode::class,
