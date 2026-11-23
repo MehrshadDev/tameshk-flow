@@ -22,6 +22,7 @@ type ConfigFieldInputProps = {
     onChange: (value: unknown) => void;
     incomingData?: unknown;
     fullConfig?: Record<string, unknown>;
+    allowExpressions?: boolean;
 };
 
 const MATH_FUNCTIONS = new Set(['sqrt', 'abs', 'round', 'floor', 'ceil', 'sin', 'cos', 'min', 'max']);
@@ -260,15 +261,17 @@ function NumberField({ id, field, value, onChange }: ConfigFieldInputProps) {
 }
 
 export function ConfigFieldInput(props: ConfigFieldInputProps) {
-    const { id, field, value, onChange, incomingData, fullConfig } = props;
+    const { id, field, value, onChange, incomingData, fullConfig, allowExpressions = true } = props;
     const text = asString(value);
-    const hasExpressionSyntax = /\{\{.+?}}/.test(text);
+    const hasExpressionSyntax = allowExpressions && /\{\{.+?}}/.test(text);
     const [isExpressionMode, setIsExpressionMode] = useState<boolean>(() => hasExpressionSyntax);
-    const isExpression = isExpressionMode || hasExpressionSyntax;
+    const isExpression = allowExpressions && (isExpressionMode || hasExpressionSyntax);
     const hasText = text.trim() !== '';
     const controlRef = useRef<HTMLInputElement | HTMLTextAreaElement | null>(null);
 
     const insertExpression = (expr: string) => {
+        if (!allowExpressions) return;
+
         setIsExpressionMode(true);
         const el = controlRef.current;
 
@@ -315,11 +318,13 @@ export function ConfigFieldInput(props: ConfigFieldInputProps) {
             : (useMono ? 'font-mono' : ''))
         : '';
 
-    const dropHighlight = isOver
-        ? 'border-dashed! border-primary! bg-primary/[0.06]! ring-2! ring-primary/25!'
-        : isDragging
-            ? 'border-dashed! border-primary/55!'
-            : '';
+    const dropHighlight = !allowExpressions
+        ? ''
+        : isOver
+            ? 'border-dashed! border-primary! bg-primary/[0.06]! ring-2! ring-primary/25!'
+            : isDragging
+                ? 'border-dashed! border-primary/55!'
+                : '';
 
     const fxColor = isExpression && hasText && hasIncomingRun
         ? (isValid ? 'text-emerald-500' : 'text-primary')
@@ -443,13 +448,16 @@ export function ConfigFieldInput(props: ConfigFieldInputProps) {
         );
     }
 
-    const supportsExpressionToggle = field.type === 'text' || field.type === 'textarea' || field.type === 'code';
+    const supportsExpressionToggle =
+        allowExpressions && (field.type === 'text' || field.type === 'textarea' || field.type === 'code');
     const isMultiline = field.type === 'textarea' || field.type === 'code';
     const textareaRows = Math.min(10, Math.max(4, text.split('\n').length + 1));
 
     const fxPadding = isExpression
         ? 'pl-9 text-left'
         : (isRtl ? 'text-right' : 'text-left');
+
+    const activeDropProps = allowExpressions ? dropProps : {};
 
     return (
         <div className="space-y-1.5">
@@ -490,7 +498,7 @@ export function ConfigFieldInput(props: ConfigFieldInputProps) {
                 </div>
             )}
 
-            <div className="relative" {...dropProps}>
+            <div className="relative" {...activeDropProps}>
                 {isExpression && (
                     <span
                         className={`pointer-events-none absolute inset-y-0 left-0 z-10 flex pl-3 text-xs font-black italic leading-5 ${fxColor} ${

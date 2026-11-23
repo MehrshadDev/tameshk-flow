@@ -16,10 +16,10 @@ $run = function (string $command, string $name, int $expiresAt = 5) {
     })->name($name)->withoutOverlapping($expiresAt);
 };
 
-$run('workflow:run-scheduled', 'tameshk-workflow-runner', 5)
+$run('workflow:run-scheduled', 'tameshk-workflow-runner', 2)
     ->everyMinute();
 
-$run('queue:work --stop-when-empty --tries=3 --max-time=50', 'tameshk-queue-worker', 5)
+$run('queue:work --stop-when-empty --tries=3 --max-time=35 --memory=256 --timeout=180', 'tameshk-queue-worker', 3)
     ->everyMinute();
 
 $run('git-backup:run --periodic', 'tameshk-git-periodic-backup', 10)

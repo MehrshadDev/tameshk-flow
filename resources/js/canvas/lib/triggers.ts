@@ -1,6 +1,6 @@
 const NON_TESTABLE_TRIGGERS = ['trigger.chat', 'trigger.form'];
 
-const INSTANT_TRIGGERS = ['trigger.manual', 'trigger.schedule'];
+const INSTANT_TRIGGERS = ['trigger.manual', 'trigger.schedule', 'trigger.rss'];
 
 export const isTestableTrigger = (nodeType: string): boolean =>
     nodeType.startsWith('trigger.') && !NON_TESTABLE_TRIGGERS.includes(nodeType);
@@ -21,6 +21,8 @@ export const isTelegramTrigger = (nodeType: string): boolean => nodeType === 'tr
 export const isGmailTrigger = (nodeType: string): boolean => nodeType === 'trigger.gmail';
 
 export const isWooCommerceTrigger = (nodeType: string): boolean => nodeType === 'trigger.woocommerce';
+
+export const isRssTrigger = (nodeType: string): boolean => nodeType === 'trigger.rss';
 
 export const isSheetsTrigger = (nodeType: string): boolean =>
     nodeType === 'trigger.google_sheets_row_added' ||

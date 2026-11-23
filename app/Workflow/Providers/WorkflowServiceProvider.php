@@ -22,6 +22,7 @@ use App\Workflow\Nodes\Actions\GmailNode;
 use App\Workflow\Nodes\Actions\GoogleSheetsNode;
 use App\Workflow\Nodes\Actions\HttpRequestNode;
 use App\Workflow\Nodes\Actions\MySqlNode;
+use App\Workflow\Nodes\Actions\RssReadNode;
 use App\Workflow\Nodes\Actions\TelegramNode;
 use App\Workflow\Nodes\Actions\WooCommerceNode;
 use App\Workflow\Nodes\Ai\AiAgentNode;
@@ -39,6 +40,7 @@ use App\Workflow\Nodes\Ai\HttpToolNode;
 use App\Workflow\Nodes\Ai\MySqlToolNode;
 use App\Workflow\Nodes\Ai\OpenAiChatModelNode;
 use App\Workflow\Nodes\Ai\OpenRouterChatModelNode;
+use App\Workflow\Nodes\Ai\RssToolNode;
 use App\Workflow\Nodes\Ai\SimpleMemoryNode;
 use App\Workflow\Nodes\Ai\TelegramToolNode;
 use App\Workflow\Nodes\Ai\WebScraperToolNode;
@@ -63,6 +65,7 @@ use App\Workflow\Nodes\Triggers\GoogleSheetsRowAddedOrUpdatedTriggerNode;
 use App\Workflow\Nodes\Triggers\GoogleSheetsRowAddedTriggerNode;
 use App\Workflow\Nodes\Triggers\GoogleSheetsRowUpdatedTriggerNode;
 use App\Workflow\Nodes\Triggers\ManualTriggerNode;
+use App\Workflow\Nodes\Triggers\RssTriggerNode;
 use App\Workflow\Nodes\Triggers\ScheduleTriggerNode;
 use App\Workflow\Nodes\Triggers\TelegramTriggerNode;
 use App\Workflow\Nodes\Triggers\WebhookTriggerNode;
@@ -91,6 +94,7 @@ class WorkflowServiceProvider extends ServiceProvider
                 GoogleSheetsRowUpdatedTriggerNode::class,
                 GoogleSheetsRowAddedOrUpdatedTriggerNode::class,
                 WooCommerceTriggerNode::class,
+                RssTriggerNode::class,
                 EditFieldsNode::class,
                 ItemListsNode::class,
                 TextTransformNode::class,
@@ -104,6 +108,7 @@ class WorkflowServiceProvider extends ServiceProvider
                 DelayNode::class,
                 StopAndErrorNode::class,
                 HttpRequestNode::class,
+                RssReadNode::class,
                 GeminiNode::class,
                 TelegramNode::class,
                 GmailNode::class,
@@ -126,6 +131,7 @@ class WorkflowServiceProvider extends ServiceProvider
                 DataTableToolNode::class,
                 DataStoreToolNode::class,
                 HttpToolNode::class,
+                RssToolNode::class,
                 WebScraperToolNode::class,
                 WikipediaToolNode::class,
                 CalculatorToolNode::class,

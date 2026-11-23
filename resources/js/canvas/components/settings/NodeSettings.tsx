@@ -11,6 +11,7 @@ import { isSpecialHandle } from '@canvas/lib/handles';
 import { nodeAppearance } from '@canvas/lib/nodeStyles';
 import {
     isGmailTrigger,
+    isRssTrigger,
     isScheduleTrigger,
     isSheetsTrigger,
     isTelegramTrigger,
@@ -314,6 +315,7 @@ function NodeStudio({ nodeId }: { nodeId: string }) {
             isTelegramTrigger(node.data.nodeType) ||
             isGmailTrigger(node.data.nodeType) ||
             isWooCommerceTrigger(node.data.nodeType) ||
+            isRssTrigger(node.data.nodeType) ||
             isSheetsTrigger(node.data.nodeType));
 
     const activeTab = isTrigger && mobileTab === 'input' ? 'parameters' : mobileTab;
@@ -459,9 +461,11 @@ function NodeStudio({ nodeId }: { nodeId: string }) {
                                                     ? 'بررسی و دریافت ایمیل تستی'
                                                     : isWooCommerceTrigger(node.data.nodeType)
                                                         ? 'انتظار برای رویداد ووکامرس'
-                                                        : isSheetsTrigger(node.data.nodeType)
-                                                            ? 'بررسی تغییرات شیت'
-                                                            : 'تست این مرحله'}
+                                                        : isRssTrigger(node.data.nodeType)
+                                                            ? 'خواندن آخرین مطلب تستی'
+                                                            : isSheetsTrigger(node.data.nodeType)
+                                                                ? 'بررسی تغییرات شیت'
+                                                                : 'تست این مرحله'}
                                     </span>
                                 </button>
                             )
@@ -592,6 +596,7 @@ function NodeStudio({ nodeId }: { nodeId: string }) {
                                             value={node.data.config[key] ?? field.default ?? null}
                                             incomingData={isTrigger ? undefined : combinedIncomingContext}
                                             fullConfig={node.data.config}
+                                            allowExpressions={!isTrigger}
                                             onChange={(value) => setFieldValue(key, value)}
                                         />
                                     </FieldShell>
@@ -611,6 +616,7 @@ function NodeStudio({ nodeId }: { nodeId: string }) {
                                                     value={node.data.config[key] ?? field.default ?? null}
                                                     incomingData={isTrigger ? undefined : combinedIncomingContext}
                                                     fullConfig={node.data.config}
+                                                    allowExpressions={!isTrigger}
                                                     onChange={(value) => setFieldValue(key, value)}
                                                 />
                                             </div>
@@ -651,6 +657,7 @@ function NodeStudio({ nodeId }: { nodeId: string }) {
                                             value={node.data.config[key] ?? field.default ?? null}
                                             incomingData={isTrigger ? undefined : combinedIncomingContext}
                                             fullConfig={node.data.config}
+                                            allowExpressions={!isTrigger}
                                             onChange={(value) => setFieldValue(key, value)}
                                         />
                                     </div>

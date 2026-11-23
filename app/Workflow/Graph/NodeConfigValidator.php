@@ -4,6 +4,7 @@ namespace App\Workflow\Graph;
 
 use App\Models\Node;
 use App\Workflow\DTOs\NodeDefinition;
+use App\Workflow\Nodes\Triggers\RssTriggerNode;
 use App\Workflow\Nodes\Triggers\ScheduleTriggerNode;
 use App\Workflow\Nodes\Triggers\WebhookTriggerNode;
 use App\Workflow\Support\ConditionEvaluator;
@@ -35,6 +36,14 @@ final class NodeConfigValidator
 
             if ($cronError) {
                 $errors['cron_expression'] = $cronError;
+            }
+        }
+
+        if ($node->type === 'trigger.rss') {
+            $rssError = RssTriggerNode::feedUrlError($config);
+
+            if ($rssError) {
+                $errors['feed_url'] = $rssError;
             }
         }
 
