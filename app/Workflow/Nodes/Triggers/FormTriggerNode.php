@@ -181,16 +181,8 @@ class FormTriggerNode implements NodeContract, PublishableTriggerContract
         $now = Carbon::now('Asia/Tehran');
         $persianDate = DateTimeHelper::toPersianDate($now, 'yyyy/MM/dd HH:mm');
 
-        $firstText = '';
-        foreach ($submittedValues as $val) {
-            if (is_string($val) && trim($val) !== '') {
-                $firstText = trim($val);
-            }
-        }
-
         $payload = [
             ...$submittedValues,
-            'chatInput'    => (string) ($submittedValues['message'] ?? $firstText),
             'submitted_at' => $now->toIso8601String(),
             'persian_date' => $persianDate,
         ];

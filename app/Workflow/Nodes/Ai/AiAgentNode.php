@@ -38,8 +38,7 @@ class AiAgentNode implements NodeContract
                 'prompt' => [
                     'type'        => 'textarea',
                     'label'       => 'پرامپت کاربر',
-                    'default'     => '{{ input.chatInput }}',
-                    'placeholder' => '{{ input.chatInput }}',
+                    'placeholder' => 'متن پرامپت را وارد کنید یا فیلد مورد نظر را از داده‌های ورودی به اینجا بکشید...',
                     'required'    => true,
                 ],
                 'system_prompt' => [

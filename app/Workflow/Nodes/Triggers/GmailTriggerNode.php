@@ -120,17 +120,16 @@ class GmailTriggerNode implements NodeContract, PublishableTriggerContract
         $text = (string) ($msg['text'] ?? $msg['snippet'] ?? '');
 
         return NodeResult::of([
-            'id'        => $msg['id'] ?? '',
-            'threadId'  => $msg['threadId'] ?? '',
-            'from'      => $msg['from'] ?? '',
-            'to'        => $msg['to'] ?? '',
-            'subject'   => $msg['subject'] ?? '',
-            'date'      => $msg['date'] ?? '',
-            'snippet'   => $msg['snippet'] ?? '',
-            'text'      => $text,
-            'html'      => $msg['html'] ?? '',
-            'chatInput' => $text,
-            'raw'       => $msg['raw'] ?? $msg,
+            'id'       => $msg['id'] ?? '',
+            'threadId' => $msg['threadId'] ?? '',
+            'from'     => $msg['from'] ?? '',
+            'to'       => $msg['to'] ?? '',
+            'subject'  => $msg['subject'] ?? '',
+            'date'     => $msg['date'] ?? '',
+            'snippet'  => $msg['snippet'] ?? '',
+            'text'     => $text,
+            'html'     => $msg['html'] ?? '',
+            'raw'      => $msg['raw'] ?? $msg,
         ]);
     }
 }

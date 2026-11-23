@@ -316,20 +316,12 @@ class WooCommerceTriggerNode implements NodeContract, WebhookTriggerContract
 
         [$resource, $event] = array_pad(explode('.', $topic, 2), 2, 'created');
 
-        $summaryText = (string) (
-            $payload['name']
-            ?? $payload['code']
-            ?? $payload['email']
-            ?? (isset($payload['id'], $payload['total']) ? "Order #{$payload['id']} - {$payload['total']}" : ($payload['id'] ?? ''))
-        );
-
         return NodeResult::of([
-            'event'     => $topic,
-            'resource'  => $resource,
-            'action'    => $event,
+            'event'    => $topic,
+            'resource' => $resource,
+            'action'   => $event,
             ...$payload,
-            'chatInput' => $summaryText,
-            'raw'       => $payload,
+            'raw'      => $payload,
         ]);
     }
 }

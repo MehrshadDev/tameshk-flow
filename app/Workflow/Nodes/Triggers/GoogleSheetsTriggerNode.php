@@ -211,7 +211,6 @@ abstract class GoogleSheetsTriggerNode implements NodeContract, PublishableTrigg
             'row'            => $first,
             'row_number'     => isset($change['indexes'][0]) ? $change['indexes'][0] + 1 : null,
             'count'          => count($rows),
-            'chatInput'      => is_array($first) ? json_encode($first, JSON_UNESCAPED_UNICODE) : (string) ($first ?? ''),
         ]);
     }
 }
