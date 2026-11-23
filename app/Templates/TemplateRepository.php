@@ -3,26 +3,23 @@
 namespace App\Templates;
 
 use App\Docs\DocumentationRepository;
+use App\Templates\Catalog\TelegramAiSupportBotTemplate;
 use App\Templates\Catalog\WooCommerceOrderTelegramTableTemplate;
-use App\Templates\Contracts\WorkflowTemplateContract;
 use App\Templates\DTOs\WorkflowTemplate;
 use App\Templates\Enums\TemplateCategory;
 use ReflectionClass;
 
 final class TemplateRepository
 {
-    /** @var array<int, class-string<WorkflowTemplateContract>> */
     private const CATALOG = [
         WooCommerceOrderTelegramTableTemplate::class,
+        TelegramAiSupportBotTemplate::class,
     ];
 
-    /** @var array<string, WorkflowTemplate>|null */
     private static ?array $cache = null;
 
-    /** @var array<string, class-string<WorkflowTemplateContract>>|null */
     private static ?array $classMap = null;
 
-    /** @return array<int, WorkflowTemplate> */
     public static function all(): array
     {
         self::boot();
@@ -37,7 +34,6 @@ final class TemplateRepository
         return self::$cache[$slug] ?? null;
     }
 
-    /** @return array<int, array{category: TemplateCategory, count: int}> */
     public static function categoriesWithCounts(): array
     {
         $counts = [];
@@ -61,7 +57,6 @@ final class TemplateRepository
         return $result;
     }
 
-    /** @return array<int, array{key: string, name: string, icon: string, count: int}> */
     public static function appsWithCounts(): array
     {
         $apps = [];
@@ -84,7 +79,6 @@ final class TemplateRepository
         return array_values($apps);
     }
 
-    /** @return array<int, array<string, mixed>> */
     public static function relatedDocsFor(WorkflowTemplate $template): array
     {
         $docs = [];
@@ -99,7 +93,6 @@ final class TemplateRepository
         return $docs;
     }
 
-    /** @return array<int, WorkflowTemplate> */
     public static function relatedTemplatesFor(WorkflowTemplate $template, int $limit = 3): array
     {
         $picked = [];
