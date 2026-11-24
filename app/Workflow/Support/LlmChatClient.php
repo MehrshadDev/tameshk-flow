@@ -4,27 +4,21 @@ namespace App\Workflow\Support;
 
 use App\Models\Credential;
 use App\Workflow\Exceptions\NodeExecutionException;
+use Illuminate\Http\Client\PendingRequest;
 use Illuminate\Http\Client\Response;
 use Illuminate\Support\Facades\Http;
-use Illuminate\Http\Client\PendingRequest;
 use Throwable;
 
 final class LlmChatClient
 {
-    /**
-     * @param array<int, array{role: string, text?: string, tool_calls?: array, tool_call_id?: string, name?: string, content?: mixed}> $messages
-     * @param array<int, array{name: string, description: string, parameters: array}> $tools
-     * @return array{text: string, tool_calls: array<int, array{id: string, name: string, args: array}>, raw_assistant_message: array}
-     */
     public static function chat(
         Credential $credential,
-        string     $model,
-        array      $messages,
-        ?string    $systemPrompt = null,
-        float      $temperature = 0.4,
-        array      $tools = [],
-    ): array
-    {
+        string $model,
+        array $messages,
+        ?string $systemPrompt = null,
+        float $temperature = 0.4,
+        array $tools = [],
+    ): array {
         return match ($credential->type) {
             'gemini' => self::chatGemini($credential, $model, $messages, $systemPrompt, $temperature, $tools),
             'anthropic' => self::chatAnthropic($credential, $model, $messages, $systemPrompt, $temperature, $tools),
@@ -72,11 +66,11 @@ final class LlmChatClient
 
     private static function chatGemini(
         Credential $credential,
-        string     $model,
-        array      $messages,
-        ?string    $systemPrompt,
-        float      $temperature,
-        array      $tools,
+        string $model,
+        array $messages,
+        ?string $systemPrompt,
+        float $temperature,
+        array $tools,
     ): array {
         $baseUrl = rtrim((string) config('services.gemini.base_url', 'https://generativelanguage.googleapis.com'), '/');
         $prefix = str_ends_with($baseUrl, '/v1beta') ? $baseUrl : "$baseUrl/v1beta";
@@ -123,10 +117,12 @@ final class LlmChatClient
 
         foreach ((array) data_get($content, 'parts', []) as $part) {
             if (isset($part['functionCall'])) {
+                $rawArgs = (array) ($part['functionCall']['args'] ?? []);
+
                 $toolCalls[] = [
                     'id'   => 'call_' . uniqid(),
                     'name' => (string) ($part['functionCall']['name'] ?? ''),
-                    'args' => (array) ($part['functionCall']['args'] ?? []),
+                    'args' => array_filter($rawArgs, fn ($v) => $v !== null),
                 ];
             }
 
@@ -143,12 +139,12 @@ final class LlmChatClient
 
     private static function chatOpenAiCompatible(
         Credential $credential,
-        string     $model,
-        array      $messages,
-        ?string    $systemPrompt,
-        float      $temperature,
-        array      $tools,
-        string     $defaultBaseUrl,
+        string $model,
+        array $messages,
+        ?string $systemPrompt,
+        float $temperature,
+        array $tools,
+        string $defaultBaseUrl,
     ): array {
         $customBase = trim((string) $credential->get('base_url', ''));
         $baseUrl = rtrim($customBase !== '' ? $customBase : $defaultBaseUrl, '/');
@@ -199,27 +195,37 @@ final class LlmChatClient
         foreach ((array) ($message['tool_calls'] ?? []) as $call) {
             $arguments = data_get($call, 'function.arguments', '{}');
             $decoded = is_string($arguments) ? json_decode($arguments, true) : $arguments;
+            $cleanArgs = is_array($decoded) ? array_filter($decoded, fn ($v) => $v !== null) : [];
 
             $toolCalls[] = [
                 'id'   => (string) ($call['id'] ?? ('call_' . uniqid())),
                 'name' => (string) data_get($call, 'function.name', ''),
-                'args' => is_array($decoded) ? $decoded : [],
+                'args' => $cleanArgs,
             ];
+        }
+
+        $rawAssistant = [
+            'role'    => 'assistant',
+            'content' => $message['content'] ?? null,
+        ];
+
+        if (! empty($message['tool_calls'])) {
+            $rawAssistant['tool_calls'] = $message['tool_calls'];
         }
 
         return self::result((string) ($message['content'] ?? ''), $toolCalls, [
             'role'       => 'assistant',
-            'openai_raw' => $message,
+            'openai_raw' => $rawAssistant,
         ]);
     }
 
     private static function chatAnthropic(
         Credential $credential,
-        string     $model,
-        array      $messages,
-        ?string    $systemPrompt,
-        float      $temperature,
-        array      $tools,
+        string $model,
+        array $messages,
+        ?string $systemPrompt,
+        float $temperature,
+        array $tools,
     ): array {
         $payload = [
             'model'       => $model,
@@ -275,7 +281,7 @@ final class LlmChatClient
                 'tool_use' => $toolCalls[] = [
                     'id'   => (string) ($block['id'] ?? ('toolu_' . uniqid())),
                     'name' => (string) ($block['name'] ?? ''),
-                    'args' => (array) ($block['input'] ?? []),
+                    'args' => array_filter((array) ($block['input'] ?? []), fn ($v) => $v !== null),
                 ],
                 default    => null,
             };
@@ -301,8 +307,24 @@ final class LlmChatClient
             }
         }
 
-        if (($normalized['type'] ?? '') === 'object' && empty($normalized['properties'])) {
-            $normalized['properties'] = (object)[];
+        if (($normalized['type'] ?? '') === 'object') {
+            if (empty($normalized['properties']) || ! is_array($normalized['properties'])) {
+                $normalized['properties'] = (object) [];
+            } else {
+                $required = is_array($normalized['required'] ?? null) ? $normalized['required'] : [];
+
+                foreach ($normalized['properties'] as $propName => $propSchema) {
+                    if (
+                        is_array($propSchema)
+                        && ! in_array($propName, $required, true)
+                        && isset($propSchema['type'])
+                        && is_string($propSchema['type'])
+                        && $propSchema['type'] !== 'null'
+                    ) {
+                        $normalized['properties'][$propName]['type'] = [$propSchema['type'], 'null'];
+                    }
+                }
+            }
         }
 
         return $normalized;
@@ -311,7 +333,7 @@ final class LlmChatClient
     private static function describeHttpError(string $provider, Response $response): string
     {
         $status = $response->status();
-        $message = (string)(
+        $message = (string) (
             data_get($response->json(), 'error.message')
             ?? data_get($response->json(), 'message')
             ?? strip_tags($response->body())
