@@ -5,6 +5,7 @@ namespace App\Workflow\Support;
 use App\Models\Credential;
 use App\Workflow\Exceptions\NodeExecutionException;
 use Illuminate\Http\Client\Response;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Http;
 use Throwable;
 
@@ -83,20 +84,19 @@ final class GeminiClient
         $sampleCount = max(1, min(4, (int) ($options['number_of_images'] ?? 1)));
         $outputFormat = (string) ($options['output_format'] ?? 'image/png');
 
-        if ($selectedModel !== 'auto' && str_starts_with($selectedModel, 'imagen-')) {
-            return $this->generateWithImagen($selectedModel, $prompt, $sampleCount, $aspectRatio, $outputFormat);
-        }
+        if ($selectedModel !== '' && $selectedModel !== 'auto') {
+            if (str_starts_with($selectedModel, 'imagen-')) {
+                return $this->generateWithImagen($selectedModel, $prompt, $sampleCount, $aspectRatio, $outputFormat);
+            }
 
-        if ($selectedModel !== 'auto' && str_starts_with($selectedModel, 'gemini-')) {
             return $this->generateWithGeminiNative($selectedModel, [['text' => $prompt]], $outputFormat);
         }
 
-        $candidates = [
-            ['type' => 'gemini', 'model' => 'gemini-2.5-flash-image'],
-            ['type' => 'gemini', 'model' => 'gemini-3.1-flash-image-preview'],
-            ['type' => 'imagen', 'model' => 'imagen-4.0-generate-001'],
-            ['type' => 'imagen', 'model' => 'imagen-3.0-generate-002'],
-        ];
+        $candidates = $this->discoverImageModels(true);
+
+        if ($candidates === []) {
+            throw NodeExecutionException::because('هیچ مدل تصویرساز فعالی در حساب Google Gemini شما یافت نشد.');
+        }
 
         $lastError = null;
 
@@ -123,20 +123,21 @@ final class GeminiClient
         $outputFormat = (string) ($options['output_format'] ?? 'image/png');
         $parts = [$imagePart, ['text' => $prompt]];
 
-        if ($selectedModel !== 'auto' && str_starts_with($selectedModel, 'gemini-')) {
+        if ($selectedModel !== '' && $selectedModel !== 'auto') {
             return $this->generateWithGeminiNative($selectedModel, $parts, $outputFormat);
         }
 
-        $models = [
-            'gemini-2.5-flash-image',
-            'gemini-3.1-flash-image-preview',
-        ];
+        $candidates = $this->discoverImageModels(false);
+
+        if ($candidates === []) {
+            throw NodeExecutionException::because('هیچ مدل ویرایش تصویر فعالی در حساب Google Gemini شما یافت نشد.');
+        }
 
         $lastError = null;
 
-        foreach ($models as $model) {
+        foreach ($candidates as $candidate) {
             try {
-                return $this->generateWithGeminiNative($model, $parts, $outputFormat);
+                return $this->generateWithGeminiNative($candidate['model'], $parts, $outputFormat);
             } catch (Throwable $e) {
                 $lastError = $e;
             }
@@ -574,6 +575,74 @@ final class GeminiClient
         $clean = ltrim($clean, '/');
 
         return str_starts_with($clean, 'files/') ? $clean : "files/$clean";
+    }
+
+    private function discoverImageModels(bool $includeImagen): array
+    {
+        $cacheKey = 'gemini_live_image_models_v1_' . hash('sha256', $this->apiKey);
+        $all = Cache::get($cacheKey);
+
+        if (! is_array($all) || $all === []) {
+            $gemini = [];
+            $imagen = [];
+            $pageToken = null;
+
+            for ($page = 0; $page < 5; $page++) {
+                $query = ['pageSize' => 1000];
+
+                if ($pageToken !== null) {
+                    $query['pageToken'] = $pageToken;
+                }
+
+                $response = $this->call('GET', '/models', $query, 20);
+                $batch = (array) ($response['models'] ?? []);
+
+                foreach ($batch as $m) {
+                    if (! is_array($m)) {
+                        continue;
+                    }
+
+                    $id = str_replace('models/', '', (string) ($m['name'] ?? ''));
+                    $methods = (array) ($m['supportedGenerationMethods'] ?? []);
+
+                    if (
+                        str_starts_with($id, 'gemini-')
+                        && str_contains(strtolower($id), 'image')
+                        && in_array('generateContent', $methods, true)
+                    ) {
+                        $gemini[$id] = ['type' => 'gemini', 'model' => $id];
+                    } elseif (
+                        str_starts_with($id, 'imagen-')
+                        && in_array('predict', $methods, true)
+                    ) {
+                        $imagen[$id] = ['type' => 'imagen', 'model' => $id];
+                    }
+                }
+
+                $nextToken = trim((string) ($response['nextPageToken'] ?? ''));
+
+                if ($nextToken === '') {
+                    break;
+                }
+
+                $pageToken = $nextToken;
+            }
+
+            krsort($gemini);
+            krsort($imagen);
+
+            $all = array_merge(array_values($gemini), array_values($imagen));
+
+            if ($all !== []) {
+                Cache::put($cacheKey, $all, now()->addHours(2));
+            }
+        }
+
+        if ($includeImagen) {
+            return $all;
+        }
+
+        return array_values(array_filter($all, fn (array $item) => $item['type'] === 'gemini'));
     }
 
     private function generateWithImagen(

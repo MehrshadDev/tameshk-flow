@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Credentials\AiModelCatalogService;
 use App\Credentials\Exceptions\InvalidCredentialException;
 use App\Credentials\Registry\CredentialRegistry;
 use App\Http\Requests\StoreCredentialRequest;
@@ -10,16 +11,14 @@ use App\Http\Resources\CredentialResource;
 use App\Models\Credential;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Gate;
-use Illuminate\Support\Facades\Http;
 use Illuminate\Validation\ValidationException;
-use Throwable;
 
 class CredentialController extends Controller
 {
     public function __construct(
         private readonly CredentialRegistry $registry,
+        private readonly AiModelCatalogService $modelCatalog,
     ) {}
 
     public function index(Request $request): JsonResponse
@@ -119,162 +118,10 @@ class CredentialController extends Controller
             return response()->json(['data' => []], 400);
         }
 
+        $forceRefresh = request()->boolean('refresh');
+
         return response()->json([
-            'data' => match ($credential->type) {
-                'gemini'     => $this->geminiModels($apiKey),
-                'openai'     => $this->openAiModels(),
-                'anthropic'  => $this->anthropicModels(),
-                'deepseek'   => $this->deepSeekModels(),
-                'groq'       => $this->groqModels(),
-                'openrouter' => $this->openRouterModels(),
-                default      => [],
-            },
+            'data' => $this->modelCatalog->listForCredential($credential, $forceRefresh),
         ]);
-    }
-
-    private function geminiModels(string $apiKey): array
-    {
-        $cacheKey = 'gemini_text_models_v4_' . md5($apiKey);
-
-        return Cache::remember($cacheKey, now()->addHours(6), function () use ($apiKey) {
-            try {
-                $baseUrl = rtrim(config('services.gemini.base_url', 'https://generativelanguage.googleapis.com'), '/');
-                $endpoint = str_ends_with($baseUrl, '/v1beta')
-                    ? "$baseUrl/models"
-                    : "$baseUrl/v1beta/models";
-
-                $response = Http::withHeaders(['x-goog-api-key' => $apiKey])->timeout(10)->get($endpoint);
-
-                if ($response->successful()) {
-                    $rawModels = data_get($response->json(), 'models', []);
-
-                    $models = collect($rawModels)
-                        ->filter(fn ($m) => $this->isTextModel($m))
-                        ->sortBy(fn ($m) => str_contains($m['name'] ?? '', 'preview') ? 1 : 0)
-                        ->unique(fn ($m) => $this->shortLabel($m['displayName'] ?? ''))
-                        ->map(function ($m) {
-                            $id = str_replace('models/', '', $m['name'] ?? '');
-
-                            return [
-                                'value'       => $id,
-                                'label'       => $this->shortLabel($m['displayName'] ?? $id),
-                                'description' => $m['description'] ?? '',
-                            ];
-                        })
-                        ->sortByDesc('value')
-                        ->values()
-                        ->all();
-
-                    if (! empty($models)) {
-                        return $models;
-                    }
-                }
-            } catch (Throwable $e) {
-                report($e);
-            }
-
-            return $this->catalog([
-                ['gemini-4-argon', 'Gemini 4 Argon', 'جدیدترین و قدرتمندترین مدل پرچم‌دار گوگل برای استدلال پیچیده و ایجنت‌ها'],
-                ['gemini-3.8-flash', 'Gemini 3.8 Flash', 'مدل فوق‌سریع، هوشمند و بهینه برای کارهای روزمره و ایجنت‌ها'],
-                ['gemini-3.5-flash', 'Gemini 3.5 Flash', 'تعادل عالی سرعت و دقت برای پردازش‌های چندوجهی'],
-                ['gemini-3.5-flash-lite', 'Gemini 3.5 Flash-Lite', 'سریع‌ترین و اقتصادی‌ترین مدل برای پردازش‌های سبک و پرتعداد'],
-                ['gemini-3.1-pro-preview', 'Gemini 3.1 Pro', 'مدل پیشرفته برای استدلال عمیق، کدنویسی و تحلیل اسناد بزرگ'],
-            ]);
-        });
-    }
-
-    private function catalog(array $rows): array
-    {
-        return array_map(fn (array $row) => [
-            'value'       => $row[0],
-            'label'       => $row[1],
-            'description' => $row[2],
-        ], $rows);
-    }
-
-    private function openAiModels(): array
-    {
-        return $this->catalog([
-            ['gpt-6-astra', 'GPT-6 Astra', 'قدرتمندترین مدل پرچم‌دار OpenAI برای استدلال پیچیده، کدنویسی و ایجنت‌ها'],
-            ['gpt-6.1-sol', 'GPT-6.1 Sol', 'تعادل فوق‌العاده هوش و هزینه؛ بهترین انتخاب برای اکثر ورکفلوهای حرفه‌ای'],
-            ['gpt-6.1-terra', 'GPT-6.1 Terra', 'مدل سریع و دقیق برای نگارش طبیعی، تحلیل بصری و اجرای ابزارها'],
-            ['gpt-6-luna', 'GPT-6 Luna', 'سریع‌ترین و اقتصادی‌ترین مدل نسل ۶ برای پردازش‌های سبک و پرتعداد'],
-            ['gpt-5.6-sol', 'GPT-5.6 Sol', 'مدل پایدار نسل ۵ با دقت بالا در استدلال و تحلیل داده'],
-            ['gpt-5.5', 'GPT-5.5', 'مدل همه‌کاره و چندوجهی نسل ۵'],
-        ]);
-    }
-
-    private function anthropicModels(): array
-    {
-        return $this->catalog([
-            ['claude-fable-5-1', 'Claude Fable 5.1', 'پیشرفته‌ترین مدل Anthropic برای استدلال‌های بسیار سنگین و ایجنت‌های خودمختار'],
-            ['claude-opus-5-5', 'Claude Opus 5.5', 'مدل قدرتمند برای کدنویسی پیشرفته، تحلیل عمیق و وظایف چندمرحله‌ای'],
-            ['claude-sonnet-5-5', 'Claude Sonnet 5.5', 'بهترین ترکیب سرعت و هوش برای کار با ابزارها و ورکفلوهای عملیاتی'],
-            ['claude-haiku-5-5', 'Claude Haiku 5.5', 'سریع‌ترین و کم‌هزینه‌ترین مدل Claude برای پاسخ‌دهی آنی'],
-        ]);
-    }
-
-    private function deepSeekModels(): array
-    {
-        return $this->catalog([
-            ['deepseek-flash', 'DeepSeek V4.1 Flash', 'مدل نسل جدید، فوق‌سریع و بسیار هوشمند برای ایجنت‌ها، کدنویسی و فراخوانی ابزار'],
-            ['deepseek-chat', 'DeepSeek V4 Pro (Chat)', 'مدل پرچم‌دار DeepSeek برای مکالمه، کدنویسی و تحلیل‌های سنگین'],
-            ['deepseek-reasoner', 'DeepSeek R1 / Reasoner', 'مدل استدلال‌گر عمیق برای حل مسائل پیچیده ریاضی و منطقی'],
-        ]);
-    }
-
-    private function groqModels(): array
-    {
-        return $this->catalog([
-            ['gpt-oss-120b', 'OpenAI GPT-OSS 120B', 'مدل متن‌باز قدرتمند با سرعت اجرای فوق‌العاده روی تراشه‌های LPU'],
-            ['llama-3.3-70b-versatile', 'Llama 3.3 70B Versatile', 'مدل قدرتمند متا با سرعت بالا و پشتیبانی عالی از ابزارها'],
-            ['qwen-qwq-32b', 'Qwen QwQ 32B', 'مدل استدلال‌گر و چندزبانه قدرتمند (عالی برای زبان فارسی)'],
-            ['llama-3.1-8b-instant', 'Llama 3.1 8B Instant', 'پاسخ‌دهی آنی و فوق‌سریع برای پردازش‌های سبک'],
-        ]);
-    }
-
-    private function openRouterModels(): array
-    {
-        return $this->catalog([
-            ['openai/gpt-6.1-sol', 'OpenAI: GPT-6.1 Sol', 'بهترین تعادل هوش و قیمت از خانواده GPT-6'],
-            ['openai/gpt-6-astra', 'OpenAI: GPT-6 Astra', 'مدل پرچم‌دار OpenAI از طریق OpenRouter'],
-            ['openai/gpt-6-luna', 'OpenAI: GPT-6 Luna', 'مدل سریع و اقتصادی OpenAI'],
-            ['anthropic/claude-sonnet-5.5', 'Anthropic: Claude Sonnet 5.5', 'مدل محبوب و متوازن Claude 5.5'],
-            ['anthropic/claude-opus-5.5', 'Anthropic: Claude Opus 5.5', 'مدل قدرتمند کدنویسی و ایجنت Claude 5.5'],
-            ['google/gemini-4-argon', 'Google: Gemini 4 Argon', 'مدل پرچم‌دار نسل ۴ گوگل از طریق OpenRouter'],
-            ['google/gemini-3.8-flash', 'Google: Gemini 3.8 Flash', 'مدل سریع و بهینه گوگل'],
-            ['deepseek/deepseek-v4.1-flash', 'DeepSeek: V4.1 Flash', 'مدل پرطرفدار و اقتصادی DeepSeek V4.1'],
-        ]);
-    }
-
-    private function isTextModel(array $model): bool
-    {
-        if (! in_array('generateContent', $model['supportedGenerationMethods'] ?? [], true)) {
-            return false;
-        }
-
-        $id = str_replace('models/', '', $model['name'] ?? '');
-
-        if (! str_starts_with($id, 'gemini-')) {
-            return false;
-        }
-
-        if (preg_match('/^gemini-(1\.|2\.0)/i', $id)) {
-            return false;
-        }
-
-        return ! preg_match(
-            '/image|nano-banana|tts|transcribe|lyria|embed|aqa|deep-research|antigravity|robotics|computer-use|omni|customtools|live|audio/i',
-            $id
-        );
-    }
-
-    private function shortLabel(string $name): string
-    {
-        $name = preg_replace('/\s*\(.*?\)\s*/', ' ', $name);
-        $name = preg_replace('/\s+(\d{2}-\d{4}|\d{2}-\d{2}|\d{3})$/', '', trim($name));
-        $name = preg_replace('/\s+Preview$/i', '', trim($name));
-
-        return trim($name);
     }
 }

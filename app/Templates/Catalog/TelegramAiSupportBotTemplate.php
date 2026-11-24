@@ -34,7 +34,7 @@ final class TelegramAiSupportBotTemplate implements WorkflowTemplateContract
                 ],
                 [
                     'title' => 'انتخاب کلید OpenRouter و شخصی‌سازی اطلاعات کسب‌وکار',
-                    'description' => 'در نود OpenRouter Chat Model اعتبارنامه خود را انتخاب کنید و در نود AI Agent بخش «دستورالعمل‌های سیستمی» را با ساعت کاری، هزینه ارسال و قوانین کسب‌وکار خودتان جایگزین نمایید.',
+                    'description' => 'در نود OpenRouter Chat Model اعتبارنامه و مدل دلخواه خود را انتخاب کنید و در نود AI Agent بخش «دستورالعمل‌های سیستمی» را با ساعت کاری، هزینه ارسال و قوانین کسب‌وکار خودتان جایگزین نمایید.',
                 ],
                 [
                     'title' => 'انتشار و فعال‌سازی ربات',
@@ -122,7 +122,6 @@ final class TelegramAiSupportBotTemplate implements WorkflowTemplateContract
                     'type' => 'ai.model.openrouter',
                     'name' => 'مدل OpenRouter',
                     'config' => [
-                        'model' => 'openai/gpt-6.1-sol',
                         'temperature' => 0.3,
                     ],
                 ],

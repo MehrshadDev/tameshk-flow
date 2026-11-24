@@ -40,7 +40,6 @@ final class GeminiSchema
                     'default' => 'text',
                     'required' => true,
                 ],
-
                 'operation' => [
                     'type' => 'select',
                     'label' => 'عملیات',
@@ -120,7 +119,6 @@ final class GeminiSchema
                     'required' => true,
                     'depends_on' => ['resource' => 'video'],
                 ],
-
                 'model' => [
                     'type' => 'model_select',
                     'label' => 'مدل هوش مصنوعی',
@@ -143,17 +141,12 @@ final class GeminiSchema
                     ],
                 ],
                 'image_generation_model' => [
-                    'type' => 'select',
+                    'type' => 'text',
                     'label' => 'مدل تصویرساز',
-                    'options' => [
-                        ['value' => 'auto', 'label' => 'هوشمند (پیشنهادی)'],
-                        ['value' => 'gemini-3.1-flash-image-preview', 'label' => 'Gemini 3.1 Flash Image'],
-                        ['value' => 'gemini-2.5-flash-image', 'label' => 'Gemini 2.5 Flash Image'],
-                        ['value' => 'imagen-4.0-generate-001', 'label' => 'Imagen 4.0'],
-                        ['value' => 'imagen-3.0-generate-002', 'label' => 'Imagen 3.0'],
-                    ],
                     'default' => 'auto',
-                    'required' => true,
+                    'placeholder' => 'auto (انتخاب خودکار جدیدترین مدل فعال از API)',
+                    'help' => 'روی auto بگذارید تا به‌صورت خودکار جدیدترین مدل تصویرساز فعال حساب شما از API گوگل انتخاب شود.',
+                    'required' => false,
                     'depends_on' => [
                         'resource' => 'image',
                         'operation_image' => ['generate_image', 'edit_image'],
@@ -177,7 +170,6 @@ final class GeminiSchema
                         'operation_file_search' => 'query_store',
                     ],
                 ],
-
                 'image_input' => [
                     'type' => 'text',
                     'label' => 'فایل یا آدرس تصویر',
@@ -215,7 +207,6 @@ final class GeminiSchema
                         'operation_video' => ['analyze_video', 'download_video'],
                     ],
                 ],
-
                 'prompt' => [
                     'type' => 'textarea',
                     'label' => 'پرامپت (Prompt)',
@@ -240,7 +231,6 @@ final class GeminiSchema
                         'operation_video' => ['analyze_video', 'generate_video'],
                     ],
                 ],
-
                 'aspect_ratio' => [
                     'type' => 'select',
                     'label' => 'نسبت ابعاد (Aspect Ratio)',
@@ -257,7 +247,6 @@ final class GeminiSchema
                         'operation_image' => 'generate_image',
                     ],
                 ],
-
                 'store_display_name' => [
                     'type' => 'text',
                     'label' => 'نام مخزن (Display Name)',
@@ -335,7 +324,6 @@ final class GeminiSchema
                         'operation_file_search' => 'query_store',
                     ],
                 ],
-
                 'media_source' => [
                     'type' => 'text',
                     'label' => 'فایل یا آدرس مدیا',
@@ -351,7 +339,6 @@ final class GeminiSchema
                     'placeholder' => 'uploaded_file',
                     'depends_on' => ['resource' => 'media_file'],
                 ],
-
                 'system_instruction' => [
                     'type' => 'textarea',
                     'label' => 'دستورالعمل سیستمی (System Instruction)',
