@@ -100,9 +100,13 @@ class AiAgentNode implements NodeContract
             $guard->assertComplete($memoryNode, $context->run);
         }
 
+        $nodeOutputs = is_array($context->vars['nodes'] ?? null) ? $context->vars['nodes'] : [];
+
         $templateContext = [
             'input'   => $context->input,
             'trigger' => $context->run->trigger_data ?? [],
+            'nodes'   => $nodeOutputs,
+            ...$nodeOutputs,
         ];
 
         $memoryConfig = $hasMemory
@@ -256,6 +260,7 @@ class AiAgentNode implements NodeContract
                         config: $toolConfig,
                         input: $fnArgs,
                         run: $context->run,
+                        vars: $context->vars,
                         credentials: app(CredentialResolver::class),
                         onProgress: $context->onProgress,
                     );

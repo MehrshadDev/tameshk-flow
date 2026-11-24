@@ -421,6 +421,9 @@ class WorkflowRunner
                 config: $resolvedConfig,
                 input: $input,
                 run: $run,
+                vars: [
+                    'nodes' => $this->nodeOutputsByName,
+                ],
                 credentials: $this->credentials,
                 onProgress: $onNodeStatus,
             );

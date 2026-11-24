@@ -76,7 +76,14 @@ class DataTableToolNode implements NodeContract, ToolContract
 
     public function toolDescription(array $config): string
     {
-        return trim((string) ($config['tool_description'] ?? 'خواندن و ثبت ردیف در جداول داده داخلی'));
+        $base = trim((string) ($config['tool_description'] ?? 'خواندن و ثبت ردیف در جداول داده داخلی'));
+        $defaultTable = trim((string) ($config['default_table'] ?? ''));
+
+        if ($defaultTable !== '') {
+            return $base . " (جدول مقصد به‌صورت خودکار روی «{$defaultTable}» تنظیم شده است.)";
+        }
+
+        return $base;
     }
 
     public function toolParameters(array $config): array
@@ -93,20 +100,22 @@ class DataTableToolNode implements NodeContract, ToolContract
                 'type'        => 'STRING',
                 'description' => "نوع عملیات: $actions",
             ],
-            'table' => [
+        ];
+
+        if (! $hasDefaultTable) {
+            $properties['table'] = [
                 'type'        => 'STRING',
-                'description' => $hasDefaultTable
-                    ? 'نام جدول (اختیاری؛ در صورت خالی بودن از جدول پیش‌فرض استفاده می‌شود)'
-                    : 'نام جدول مورد نظر',
-            ],
-            'filter_column' => [
-                'type'        => 'STRING',
-                'description' => 'نام ستون برای فیلتر کردن (مثلاً id یا phone یا email) در عملیات get_rows، update_row یا delete_row',
-            ],
-            'filter_value' => [
-                'type'        => 'STRING',
-                'description' => 'مقدار مورد نظر برای جستجو در ستون filter_column',
-            ],
+                'description' => 'نام جدول مورد نظر',
+            ];
+        }
+
+        $properties['filter_column'] = [
+            'type'        => 'STRING',
+            'description' => 'نام ستون برای فیلتر کردن (مثلاً id یا phone یا email) در عملیات get_rows، update_row یا delete_row',
+        ];
+        $properties['filter_value'] = [
+            'type'        => 'STRING',
+            'description' => 'مقدار مورد نظر برای جستجو در ستون filter_column',
         ];
 
         if (! $readOnly) {
@@ -133,15 +142,31 @@ class DataTableToolNode implements NodeContract, ToolContract
 
         $readOnly = ($context->config['allowed_scope'] ?? 'read_write') === 'read_only';
         $action = strtolower(trim((string) ($arguments['action'] ?? 'get_rows')));
+        $defaultTable = trim((string) ($context->config['default_table'] ?? ''));
 
         if ($action === 'list_tables') {
-            return $this->manager->listTables($user);
+            $listed = $this->manager->listTables($user);
+
+            if ($defaultTable !== '') {
+                $filtered = array_values(array_filter(
+                    $listed['tables'] ?? [],
+                    fn (array $t) => ($t['name'] ?? '') === $defaultTable
+                ));
+
+                return [
+                    ...$listed,
+                    'count'  => count($filtered),
+                    'tables' => $filtered,
+                    'rows'   => $filtered,
+                ];
+            }
+
+            return $listed;
         }
 
-        $table = trim((string) ($arguments['table'] ?? ''));
-        if ($table === '') {
-            $table = trim((string) ($context->config['default_table'] ?? ''));
-        }
+        $table = $defaultTable !== ''
+            ? $defaultTable
+            : trim((string) ($arguments['table'] ?? ''));
 
         if ($table === '') {
             return ['error' => 'نام جدول (table) مشخص نشده است.'];
