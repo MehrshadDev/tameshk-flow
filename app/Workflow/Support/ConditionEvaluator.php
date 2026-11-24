@@ -51,21 +51,33 @@ final class ConditionEvaluator
         'is_false',
     ];
 
-    public static function evaluateRules(array $conditions, string $combinator, mixed $contextData): bool
-    {
+    public static function evaluateRules(
+        array $conditions,
+        string $combinator,
+        mixed $contextData,
+        array $rawConditions = [],
+    ): bool {
         $results = [];
 
-        foreach ($conditions as $rule) {
+        foreach ($conditions as $index => $rule) {
             if (! is_array($rule)) {
                 continue;
             }
 
-            $rawField = trim((string) ($rule['field'] ?? ''));
+            $resolvedField = $rule['field'] ?? null;
+            $rawField = is_scalar($resolvedField) ? trim((string) $resolvedField) : '';
+            $unrenderedField = is_string($rawConditions[$index]['field'] ?? null)
+                ? trim($rawConditions[$index]['field'])
+                : '';
+
             $operator = (string) ($rule['operator'] ?? 'eq');
             $expected = $rule['value'] ?? null;
             $dataType = isset($rule['data_type']) && is_string($rule['data_type']) ? $rule['data_type'] : null;
 
-            $actual = self::resolveValue($rawField, $contextData);
+            $actual = ($unrenderedField !== '' && str_contains($unrenderedField, '{{'))
+                ? (($resolvedField === null || $rawField === '') ? null : $resolvedField)
+                : self::resolveValue($rawField, $contextData);
+
             $results[] = self::compare($actual, $operator, $expected, $dataType);
         }
 
@@ -92,12 +104,18 @@ final class ConditionEvaluator
 
         if (preg_match('/^\{\{\s*(.+?)\s*\}\}$/', $rawField, $matches)) {
             $expr = trim($matches[1]);
-            $cleanPath = preg_replace('/^input\./', '', $expr);
+            $cleanPath = preg_replace('/^(?:input|\$json)\./', '', $expr);
 
             return data_get($contextData, $cleanPath);
         }
 
         if (str_starts_with($rawField, 'input.')) {
+            $sub = substr($rawField, 6);
+
+            return data_get($contextData, $sub);
+        }
+
+        if (str_starts_with($rawField, '$json.')) {
             $sub = substr($rawField, 6);
 
             return data_get($contextData, $sub);

@@ -227,20 +227,27 @@ class WorkflowRunner
     private function resolveInputForNode(Workflow $workflow, WorkflowGraph $graph, Node $node): mixed
     {
         try {
-            $incomingEdge = $graph->incomingEdges($node->id)->first();
+            $flowEdges = $graph->incomingEdges($node->id)->filter(
+                fn ($edge) => ! HandleType::isSpecial((string) ($edge->target_handle ?? HandleType::Main->value))
+            );
 
-            if (! $incomingEdge) {
+            if ($flowEdges->isEmpty()) {
                 return [];
             }
 
-            $sourceNode = $workflow->nodes->firstWhere('id', $incomingEdge->source_node_id);
+            $sourceNodeIds = $flowEdges
+                ->pluck('source_node_id')
+                ->filter(fn ($id) => $workflow->nodes->contains('id', $id))
+                ->unique()
+                ->values()
+                ->all();
 
-            if (! $sourceNode) {
+            if ($sourceNodeIds === []) {
                 return [];
             }
 
             $lastRunId = NodeRun::query()
-                ->where('node_id', $sourceNode->id)
+                ->whereIn('node_id', $sourceNodeIds)
                 ->where('status', 'success')
                 ->max('id');
 

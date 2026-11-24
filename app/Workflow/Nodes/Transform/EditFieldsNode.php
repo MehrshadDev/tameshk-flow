@@ -115,9 +115,21 @@ class EditFieldsNode implements NodeContract
             foreach ($fields as $item) {
                 $name = is_array($item) ? trim((string) ($item['name'] ?? '')) : '';
 
-                if ($name !== '') {
-                    $values[$name] = $this->castByType($item['value'] ?? '', (string) ($item['type'] ?? 'string'), $name);
+                if ($name === '') {
+                    continue;
                 }
+
+                $casted = $this->castByType($item['value'] ?? '', (string) ($item['type'] ?? 'string'), $name);
+
+                if (
+                    array_key_exists($name, $values)
+                    && $this->isEmptyValue($casted)
+                    && ! $this->isEmptyValue($values[$name])
+                ) {
+                    continue;
+                }
+
+                $values[$name] = $casted;
             }
 
             return $values;
@@ -132,6 +144,15 @@ class EditFieldsNode implements NodeContract
         }
 
         return $values;
+    }
+
+    private function isEmptyValue(mixed $value): bool
+    {
+        if ($value === null || $value === []) {
+            return true;
+        }
+
+        return is_string($value) && trim($value) === '';
     }
 
     private function castByType(mixed $value, string $type, string $field): mixed

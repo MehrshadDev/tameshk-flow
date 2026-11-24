@@ -89,6 +89,7 @@ class SwitchNode implements NodeContract
     public function execute(NodeContext $context): NodeResult
     {
         $rules = $this->resolveRules($context->config);
+        $rawRules = $this->resolveRules(is_array($context->node->config) ? $context->node->config : []);
         $fallbackMode = (string) ($context->config['fallback_output'] ?? 'extra');
 
         $matchedHandle = null;
@@ -103,16 +104,29 @@ class SwitchNode implements NodeContract
                 ? trim($rule['id'])
                 : 'case_' . ($index + 1);
 
-            $rawField = trim((string) ($rule['field'] ?? ''));
+            $resolvedField = $rule['field'] ?? null;
+            $rawField = is_scalar($resolvedField) ? trim((string) $resolvedField) : '';
+            $unrenderedField = is_string($rawRules[$index]['field'] ?? null)
+                ? trim($rawRules[$index]['field'])
+                : '';
+            $isTemplate = $unrenderedField !== '' && str_contains($unrenderedField, '{{');
+
             $operator = (string) ($rule['operator'] ?? 'eq');
             $expected = $rule['value'] ?? '';
             $dataType = isset($rule['data_type']) && is_string($rule['data_type']) ? $rule['data_type'] : null;
 
-            if ($rawField === '' && ! in_array($operator, ConditionEvaluator::UNARY_OPERATORS, true) && trim((string) $expected) === '') {
+            if (
+                ! $isTemplate
+                && $rawField === ''
+                && ! in_array($operator, ConditionEvaluator::UNARY_OPERATORS, true)
+                && trim((string) $expected) === ''
+            ) {
                 continue;
             }
 
-            $actual = ConditionEvaluator::resolveValue($rawField, $context->input);
+            $actual = $isTemplate
+                ? (($resolvedField === null || $rawField === '') ? null : $resolvedField)
+                : ConditionEvaluator::resolveValue($rawField, $context->input);
 
             if (ConditionEvaluator::compare($actual, $operator, $expected, $dataType)) {
                 $matchedHandle = $handle;

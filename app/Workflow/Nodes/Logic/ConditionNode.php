@@ -53,23 +53,10 @@ class ConditionNode implements NodeContract
     {
         try {
             $combinator = (string) ($context->config['combinator'] ?? 'and');
-            $conditions = $context->config['conditions'] ?? [];
+            $conditions = $this->extractConditions($context->config);
+            $rawConditions = $this->extractConditions(is_array($context->node->config) ? $context->node->config : []);
 
-            if (empty($conditions) && isset($context->config['field'])) {
-                $conditions = [
-                    [
-                        'field'    => $context->config['field'],
-                        'operator' => $context->config['operator'] ?? 'eq',
-                        'value'    => $context->config['value'] ?? '',
-                    ],
-                ];
-            }
-
-            if (! is_array($conditions)) {
-                $conditions = [];
-            }
-
-            $finalPassed = ConditionEvaluator::evaluateRules($conditions, $combinator, $context->input);
+            $finalPassed = ConditionEvaluator::evaluateRules($conditions, $combinator, $context->input, $rawConditions);
             $handle = $finalPassed ? HandleType::True->value : HandleType::False->value;
 
             $context->log("ارزیابی شروط ($combinator) → " . ($finalPassed ? 'TRUE' : 'FALSE'));
@@ -102,5 +89,22 @@ class ConditionNode implements NodeContract
                 ],
             );
         }
+    }
+
+    private function extractConditions(array $config): array
+    {
+        $conditions = $config['conditions'] ?? [];
+
+        if (empty($conditions) && isset($config['field'])) {
+            return [
+                [
+                    'field'    => $config['field'],
+                    'operator' => $config['operator'] ?? 'eq',
+                    'value'    => $config['value'] ?? '',
+                ],
+            ];
+        }
+
+        return is_array($conditions) ? array_values($conditions) : [];
     }
 }

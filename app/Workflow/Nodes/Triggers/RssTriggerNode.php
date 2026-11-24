@@ -112,14 +112,14 @@ class RssTriggerNode implements NodeContract, PollingTriggerContract
         $maxPerPoll = max(1, min(20, (int) ($config['max_items_per_poll'] ?? 5)));
 
         $urlHash = md5($feedUrl);
-        $lastCheckKey = "rss_trigger_last_check_{$workflow->id}_{$trigger->id}_{$urlHash}";
+        $lastCheckKey = "rss_trigger_last_check_{$workflow->id}_{$trigger->id}_$urlHash";
         $lastCheckedAt = (int) Cache::get($lastCheckKey, 0);
 
         if ($lastCheckedAt > 0 && (time() - $lastCheckedAt) < ($intervalMinutes * 60)) {
             return [];
         }
 
-        $httpCacheKey = "rss_trigger_http_{$workflow->id}_{$trigger->id}_{$urlHash}";
+        $httpCacheKey = "rss_trigger_http_{$workflow->id}_{$trigger->id}_$urlHash";
         $result = (new RssFeedClient())->fetch(
             url: $feedUrl,
             limit: 50,
