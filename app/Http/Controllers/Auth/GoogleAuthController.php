@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\User;
 use App\Support\AvatarStorage;
 use App\Support\GmailGuard;
+use App\Support\UserSessionManager;
 use App\Templates\PendingTemplate;
 use DomainException;
 use Illuminate\Http\JsonResponse;
@@ -19,6 +20,10 @@ use Throwable;
 
 class GoogleAuthController extends Controller
 {
+    public function __construct(
+        private readonly UserSessionManager $sessionManager,
+    ) {}
+
     public function redirect(Request $request): RedirectResponse
     {
         $clientId = config('services.google.client_id');
@@ -40,7 +45,7 @@ class GoogleAuthController extends Controller
             'prompt' => 'select_account',
         ]);
 
-        return redirect()->away($authBase . '/o/oauth2/v2/auth?' . $params);
+        return redirect()->away($authBase.'/o/oauth2/v2/auth?'.$params);
     }
 
     public function callback(Request $request, PendingTemplate $pendingTemplate): RedirectResponse
@@ -57,7 +62,7 @@ class GoogleAuthController extends Controller
         $apiBase = rtrim(config('services.google.api_base_url', 'https://www.googleapis.com'), '/');
 
         try {
-            $tokenRes = Http::asForm()->timeout(20)->post($oauthBase . '/token', [
+            $tokenRes = Http::asForm()->timeout(20)->post($oauthBase.'/token', [
                 'code' => $code,
                 'client_id' => config('services.google.client_id'),
                 'client_secret' => config('services.google.client_secret'),
@@ -75,7 +80,7 @@ class GoogleAuthController extends Controller
                 return redirect()->route('login')->with('auth_error', 'توکن دسترسی گوگل معتبر نیست.');
             }
 
-            $userRes = Http::withToken($accessToken)->timeout(15)->get($apiBase . '/oauth2/v3/userinfo');
+            $userRes = Http::withToken($accessToken)->timeout(15)->get($apiBase.'/oauth2/v3/userinfo');
 
             if ($userRes->failed()) {
                 return redirect()->route('login')->with('auth_error', 'دریافت مشخصات کاربری از گوگل با خطا مواجه شد.');
@@ -91,10 +96,11 @@ class GoogleAuthController extends Controller
 
             $user = $this->findOrCreateUser($googleUser);
 
-            Auth::login($user, remember: true);
+            Auth::login($user, remember: false);
 
             $request->session()->regenerate();
-            $request->session()->regenerateToken();
+
+            $this->sessionManager->enforceLimit($user, $request->session()->getId());
 
             if ($workflow = $pendingTemplate->consume($user)) {
                 return redirect()->route('app.workflows.show', $workflow);
@@ -120,7 +126,7 @@ class GoogleAuthController extends Controller
         $oauthBase = rtrim(config('services.google.oauth_base_url', 'https://oauth2.googleapis.com'), '/');
 
         try {
-            $response = Http::timeout(15)->get($oauthBase . '/tokeninfo', [
+            $response = Http::timeout(15)->get($oauthBase.'/tokeninfo', [
                 'id_token' => $credential,
             ]);
 
@@ -147,10 +153,11 @@ class GoogleAuthController extends Controller
                 'picture' => data_get($payload, 'picture'),
             ]);
 
-            Auth::login($user, remember: true);
+            Auth::login($user, remember: false);
 
             $request->session()->regenerate();
-            $request->session()->regenerateToken();
+
+            $this->sessionManager->enforceLimit($user, $request->session()->getId());
 
             $redirectUrl = ($workflow = $pendingTemplate->consume($user))
                 ? route('app.workflows.show', $workflow)

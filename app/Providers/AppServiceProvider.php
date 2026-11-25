@@ -18,6 +18,10 @@ use App\Tickets\TicketManager;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\ServiceProvider;
+use App\Models\User;
+use App\Support\UserSessionManager;
+use Illuminate\Auth\Events\Login;
+use Illuminate\Support\Facades\Event;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -39,6 +43,12 @@ class AppServiceProvider extends ServiceProvider
         Gate::policy(DiscountCode::class, DiscountCodePolicy::class);
 
         $this->registerGitBackupObservers();
+
+        Event::listen(Login::class, function (Login $event): void {
+            if ($event->user instanceof User) {
+                app(UserSessionManager::class)->enforceLimit($event->user, session()->getId());
+            }
+        });
     }
 
     private function registerSharedHostingPcntlPolyfill(): void
