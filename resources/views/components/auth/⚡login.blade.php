@@ -67,7 +67,7 @@ new class extends Component {
         if (! Auth::attempt([
             'email' => $normalizedEmail,
             'password' => $this->password,
-        ], remember: true)) {
+        ], remember: false)) {
             $this->hitRateLimiter('login');
 
             throw ValidationException::withMessages([
@@ -79,7 +79,6 @@ new class extends Component {
         RateLimiter::clear('login:email:' . $this->email);
         RateLimiter::clear('login:email:' . $normalizedEmail);
 
-        session()->regenerate();
         session()->regenerateToken();
 
         if ($workflow = $pendingTemplate->consume(auth()->user())) {

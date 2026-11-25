@@ -144,9 +144,8 @@ new class extends Component
         $this->finishVerification('verify-code', $record);
         $this->clearRateLimiter('register');
 
-        Auth::login($user, remember: true);
+        Auth::login($user, remember: false);
 
-        session()->regenerate();
         session()->regenerateToken();
 
         if ($workflow = $pendingTemplate->consume($user)) {
