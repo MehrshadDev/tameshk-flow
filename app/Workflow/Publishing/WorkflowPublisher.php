@@ -110,7 +110,7 @@ final class WorkflowPublisher
             return;
         }
 
-        if ($trigger->type === 'trigger.telegram') {
+        if (in_array($trigger->type, ['trigger.telegram', 'trigger.bale'], true)) {
             $this->assertCredentialFree($workflow, $trigger);
         }
 
@@ -222,8 +222,10 @@ final class WorkflowPublisher
             ->exists();
 
         if ($taken) {
+            $botLabel = $trigger->type === 'trigger.bale' ? 'بازوی بله' : 'ربات تلگرام';
+
             throw WorkflowPublishException::because(
-                'این ربات هم‌اکنون در ورکفلوی منتشرشده‌ی دیگری استفاده می‌شود. هر ربات تلگرام فقط یک وب‌هوک می‌تواند داشته باشد.'
+                "این $botLabel هم‌اکنون در ورکفلوی منتشرشده‌ی دیگری استفاده می‌شود. هر $botLabel فقط یک وب‌هوک می‌تواند داشته باشد."
             );
         }
     }

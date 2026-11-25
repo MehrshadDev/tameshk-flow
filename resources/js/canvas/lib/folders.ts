@@ -77,6 +77,13 @@ export const FOLDERS_CONFIG: Record<string, FolderItem> = {
         icon: 'brand:telegram',
         iconClass: 'bg-sky-500/10 text-sky-500',
     },
+    'action/bale': {
+        id: 'action/bale',
+        title: 'Bale',
+        description: 'عملیات و شروع‌کننده‌های بازوی بله',
+        icon: 'brand:bale',
+        iconClass: 'bg-emerald-500/10 text-emerald-500',
+    },
     'action/gmail': {
         id: 'action/gmail',
         title: 'Gmail',

@@ -8,6 +8,7 @@ use App\Workflow\DTOs\NodeDefinition;
 use App\Workflow\DTOs\NodeResult;
 use App\Workflow\Enums\NodeCategory;
 use App\Workflow\Exceptions\NodeExecutionException;
+use App\Workflow\Support\BotMessageHelper;
 use App\Workflow\Support\TelegramApi;
 use App\Workflow\Support\TelegramFormatter;
 use Illuminate\Support\Facades\Http;
@@ -356,82 +357,7 @@ class TelegramNode implements NodeContract
 
     private function buildReplyMarkup(NodeContext $context): ?array
     {
-        $raw = $this->value($context, 'inline_keyboard');
-
-        if ($raw === '') {
-            return null;
-        }
-
-        if (str_starts_with($raw, '[') || str_starts_with($raw, '{')) {
-            $decoded = json_decode($raw, true);
-
-            if (json_last_error() === JSON_ERROR_NONE && is_array($decoded)) {
-                if (isset($decoded['inline_keyboard']) && is_array($decoded['inline_keyboard'])) {
-                    return ['inline_keyboard' => $decoded['inline_keyboard']];
-                }
-
-                if (isset($decoded[0]['text'])) {
-                    return ['inline_keyboard' => [$decoded]];
-                }
-
-                return ['inline_keyboard' => $decoded];
-            }
-        }
-
-        $lines = preg_split('/\r\n|\r|\n/', $raw) ?: [];
-        $keyboard = [];
-
-        foreach ($lines as $line) {
-            $line = trim($line);
-
-            if ($line === '') {
-                continue;
-            }
-
-            $parts = preg_split('/[,،]+/u', $line) ?: [];
-            $row = [];
-
-            foreach ($parts as $part) {
-                $part = trim($part);
-
-                if ($part === '') {
-                    continue;
-                }
-
-                if (str_contains($part, '|')) {
-                    [$btnLabel, $btnData] = array_map('trim', explode('|', $part, 2));
-                } else {
-                    $btnLabel = $part;
-                    $btnData = $part;
-                }
-
-                if ($btnLabel === '') {
-                    continue;
-                }
-
-                if ($btnData === '') {
-                    $btnData = $btnLabel;
-                }
-
-                if (preg_match('#^https?://#i', $btnData)) {
-                    $row[] = [
-                        'text' => $btnLabel,
-                        'url'  => $btnData,
-                    ];
-                } else {
-                    $row[] = [
-                        'text'          => $btnLabel,
-                        'callback_data' => mb_strcut($btnData, 0, 64, 'UTF-8'),
-                    ];
-                }
-            }
-
-            if ($row !== []) {
-                $keyboard[] = $row;
-            }
-        }
-
-        return $keyboard !== [] ? ['inline_keyboard' => $keyboard] : null;
+        return BotMessageHelper::buildInlineKeyboard($this->value($context, 'inline_keyboard'));
     }
 
     private function resolveChatAndMessageId(NodeContext $context): array
@@ -560,7 +486,7 @@ class TelegramNode implements NodeContract
         }
 
         $binary = $response->body();
-        $mimeType = $this->detectMimeType($filePath, (string) $response->header('Content-Type'));
+        $mimeType = BotMessageHelper::detectMimeType($filePath, (string) $response->header('Content-Type'));
         $base64 = base64_encode($binary);
 
         return $this->done([
@@ -572,40 +498,6 @@ class TelegramNode implements NodeContract
             'data_url'       => "data:$mimeType;base64,$base64",
             'base64'         => $base64,
         ]);
-    }
-
-    private function detectMimeType(string $filePath, string $headerContentType): string
-    {
-        $ext = strtolower(pathinfo($filePath, PATHINFO_EXTENSION));
-
-        $byExt = match ($ext) {
-            'oga', 'ogg', 'opus' => 'audio/ogg',
-            'mp3'                => 'audio/mp3',
-            'm4a'                => 'audio/m4a',
-            'wav'                => 'audio/wav',
-            'aac'                => 'audio/aac',
-            'jpg', 'jpeg'        => 'image/jpeg',
-            'png'                => 'image/png',
-            'webp'               => 'image/webp',
-            'gif'                => 'image/gif',
-            'mp4'                => 'video/mp4',
-            'mov'                => 'video/quicktime',
-            'webm'               => 'video/webm',
-            'pdf'                => 'application/pdf',
-            default              => null,
-        };
-
-        if ($byExt !== null) {
-            return $byExt;
-        }
-
-        $cleanHeader = trim(explode(';', $headerContentType)[0] ?? '');
-
-        if ($cleanHeader !== '' && $cleanHeader !== 'application/octet-stream') {
-            return $cleanHeader;
-        }
-
-        return 'audio/ogg';
     }
 
     private function handleEditMessage(NodeContext $context, string $botToken): NodeResult

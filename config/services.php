@@ -40,4 +40,8 @@ return [
         'api_base_url' => env('GOOGLE_API_BASE_URL', 'https://www.googleapis.com'),
         'avatar_base_url' => env('GOOGLE_AVATAR_BASE_URL', 'https://lh3.googleusercontent.com'),
     ],
+
+    'bale' => [
+        'base_url' => env('BALE_BASE_URL', 'https://tapi.bale.ai'),
+    ],
 ];

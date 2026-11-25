@@ -31,10 +31,19 @@ final class TriggerEndpoints
         return $this->base() . route('webhooks.woocommerce', ['token' => $workflow->webhook_token], false);
     }
 
+    public function bale(Workflow $workflow): string
+    {
+        return $this->base() . route('webhooks.bale', [
+                'token'  => $workflow->webhook_token,
+                'secret' => WorkflowPublisher::secretFor($workflow),
+            ], false);
+    }
+
     public function forTriggerType(Workflow $workflow, string $triggerType): string
     {
         return match ($triggerType) {
             'trigger.woocommerce' => $this->woocommerce($workflow),
+            'trigger.bale'        => $this->bale($workflow),
             default               => $this->telegram($workflow),
         };
     }

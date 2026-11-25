@@ -10,6 +10,7 @@ import type { FlowNode } from '@canvas/lib/graph';
 import { isSpecialHandle } from '@canvas/lib/handles';
 import { nodeAppearance } from '@canvas/lib/nodeStyles';
 import {
+    isBaleTrigger,
     isGmailTrigger,
     isRssTrigger,
     isScheduleTrigger,
@@ -313,6 +314,7 @@ function NodeStudio({ nodeId }: { nodeId: string }) {
             isScheduleTrigger(node.data.nodeType) ||
             isWebhookTrigger(node.data.nodeType) ||
             isTelegramTrigger(node.data.nodeType) ||
+            isBaleTrigger(node.data.nodeType) ||
             isGmailTrigger(node.data.nodeType) ||
             isWooCommerceTrigger(node.data.nodeType) ||
             isRssTrigger(node.data.nodeType) ||
@@ -455,7 +457,7 @@ function NodeStudio({ nodeId }: { nodeId: string }) {
                                     <span className="hidden sm:inline">
                                         {isWebhookTrigger(node.data.nodeType)
                                             ? 'گوش دادن به رویداد تستی'
-                                            : isTelegramTrigger(node.data.nodeType)
+                                            : isTelegramTrigger(node.data.nodeType) || isBaleTrigger(node.data.nodeType)
                                                 ? 'دریافت پیام تستی'
                                                 : isGmailTrigger(node.data.nodeType)
                                                     ? 'بررسی و دریافت ایمیل تستی'

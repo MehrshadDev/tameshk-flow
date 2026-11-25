@@ -31,6 +31,8 @@ const getDefaultName = (def: CredentialDefinition): string => {
             return 'Google account';
         case 'telegram':
             return 'Telegram account';
+        case 'bale':
+            return 'Bale account';
         case 'gemini':
             return 'Gemini account';
         case 'mysql':

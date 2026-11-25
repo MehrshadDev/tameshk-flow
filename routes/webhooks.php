@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\BaleWebhookController;
 use App\Http\Controllers\ChatWebhookController;
 use App\Http\Controllers\FormWebhookController;
 use App\Http\Controllers\TelegramWebhookController;
@@ -26,6 +27,10 @@ Route::post('/webhook/{token}/form', [FormWebhookController::class, 'submit'])
 Route::post('/webhook/{token}/telegram', TelegramWebhookController::class)
     ->middleware('throttle:600,1')
     ->name('webhooks.telegram');
+
+Route::post('/webhook/{token}/bale/{secret}', BaleWebhookController::class)
+    ->middleware('throttle:600,1')
+    ->name('webhooks.bale');
 
 Route::post('/webhook/{token}/woocommerce', WooCommerceWebhookController::class)
     ->middleware('throttle:600,1')

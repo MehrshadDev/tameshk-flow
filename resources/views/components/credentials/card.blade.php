@@ -14,7 +14,7 @@
     $iconStyles = match ($credential->type) {
         'telegram' => 'bg-sky-500/10 text-sky-500 ring-1 ring-sky-500/20',
         'gmail' => 'bg-rose-500/10 text-rose-500 ring-1 ring-rose-500/20',
-        'google' => 'bg-emerald-500/10 text-emerald-500 ring-1 ring-emerald-500/20',
+        'bale', 'google' => 'bg-emerald-500/10 text-emerald-500 ring-1 ring-emerald-500/20',
         'gemini', 'deepseek' => 'bg-blue-500/10 text-blue-500 ring-1 ring-blue-500/20',
         'anthropic', 'groq' => 'bg-amber-500/10 text-amber-500 ring-1 ring-amber-500/20',
         'openai', 'openrouter' => 'bg-purple-500/10 text-purple-500 ring-1 ring-purple-500/20',

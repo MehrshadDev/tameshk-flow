@@ -74,6 +74,10 @@ use App\Workflow\Registry\NodeRegistry;
 use App\Workflow\Runner\WorkflowRunner;
 use App\Workflow\Support\DataTableManager;
 use Illuminate\Support\ServiceProvider;
+use App\Credentials\Types\BaleCredential;
+use App\Workflow\Nodes\Actions\BaleNode;
+use App\Workflow\Nodes\Ai\BaleToolNode;
+use App\Workflow\Nodes\Triggers\BaleTriggerNode;
 
 class WorkflowServiceProvider extends ServiceProvider
 {
@@ -89,6 +93,7 @@ class WorkflowServiceProvider extends ServiceProvider
                 FormTriggerNode::class,
                 ChatTriggerNode::class,
                 TelegramTriggerNode::class,
+                BaleTriggerNode::class,
                 GmailTriggerNode::class,
                 GoogleSheetsRowAddedTriggerNode::class,
                 GoogleSheetsRowUpdatedTriggerNode::class,
@@ -111,6 +116,7 @@ class WorkflowServiceProvider extends ServiceProvider
                 RssReadNode::class,
                 GeminiNode::class,
                 TelegramNode::class,
+                BaleNode::class,
                 GmailNode::class,
                 GoogleSheetsNode::class,
                 WooCommerceNode::class,
@@ -126,6 +132,7 @@ class WorkflowServiceProvider extends ServiceProvider
                 GoogleSheetsToolNode::class,
                 GmailToolNode::class,
                 TelegramToolNode::class,
+                BaleToolNode::class,
                 WooCommerceToolNode::class,
                 MySqlToolNode::class,
                 DataTableToolNode::class,
@@ -152,6 +159,7 @@ class WorkflowServiceProvider extends ServiceProvider
                 HttpBearerCredential::class,
                 BasicAuthCredential::class,
                 TelegramCredential::class,
+                BaleCredential::class,
                 GmailCredential::class,
                 GoogleCredential::class,
                 WooCommerceCredential::class,

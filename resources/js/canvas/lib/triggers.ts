@@ -18,6 +18,8 @@ export const isFormTrigger = (nodeType: string): boolean => nodeType === 'trigge
 
 export const isTelegramTrigger = (nodeType: string): boolean => nodeType === 'trigger.telegram';
 
+export const isBaleTrigger = (nodeType: string): boolean => nodeType === 'trigger.bale';
+
 export const isGmailTrigger = (nodeType: string): boolean => nodeType === 'trigger.gmail';
 
 export const isWooCommerceTrigger = (nodeType: string): boolean => nodeType === 'trigger.woocommerce';
@@ -32,6 +34,7 @@ export const isSheetsTrigger = (nodeType: string): boolean =>
 export const listeningTriggerLabel = (nodeType: string): string => {
     if (isWebhookTrigger(nodeType)) return 'در انتظار دریافت وب‌هوک...';
     if (isTelegramTrigger(nodeType)) return 'در انتظار پیام تلگرام...';
+    if (isBaleTrigger(nodeType)) return 'در انتظار پیام بله...';
     if (isGmailTrigger(nodeType)) return 'در انتظار ایمیل جدید...';
     if (isWooCommerceTrigger(nodeType)) return 'در انتظار رویداد ووکامرس...';
     if (isSheetsTrigger(nodeType)) return 'در انتظار تغییر در شیت...';
