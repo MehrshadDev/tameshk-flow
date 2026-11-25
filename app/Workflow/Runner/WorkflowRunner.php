@@ -9,6 +9,7 @@ use App\Models\NodeRun;
 use App\Models\Workflow;
 use App\Models\WorkflowRun;
 use App\Subscriptions\SubscriptionManager;
+use App\Support\SecretRedactor;
 use App\Workflow\DTOs\NodeContext;
 use App\Workflow\DTOs\NodeResult;
 use App\Workflow\Enums\HandleType;
@@ -90,7 +91,7 @@ class WorkflowRunner
                 'finished_at' => now(),
             ]);
 
-            Log::error('Workflow execution aborted: ' . $e->getMessage(), [
+            Log::error('Workflow execution aborted: ' . SecretRedactor::redact($e->getMessage()), [
                 'workflow_id' => $workflow->id,
                 'run_id' => $run->id,
                 'exception' => get_class($e),
@@ -204,7 +205,7 @@ class WorkflowRunner
                 ]);
             }
 
-            Log::error("Single node [{$node->id}] execution failed: " . $e->getMessage(), [
+            Log::error("Single node [{$node->id}] execution failed: " . SecretRedactor::redact($e->getMessage()), [
                 'exception' => get_class($e),
             ]);
         }
@@ -465,11 +466,11 @@ class WorkflowRunner
     private function resolveSafeErrorMessage(Throwable $e): string
     {
         if ($e instanceof NodeExecutionException) {
-            return strip_tags($e->getMessage());
+            return SecretRedactor::redact(strip_tags($e->getMessage()));
         }
 
         if (config('app.debug')) {
-            return 'System error: ' . strip_tags($e->getMessage());
+            return 'System error: ' . SecretRedactor::redact(strip_tags($e->getMessage()));
         }
 
         return 'خطای داخلی سیستم رخ داد. لطفاً دوباره تلاش کنید.';

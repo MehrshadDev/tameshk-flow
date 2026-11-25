@@ -26,10 +26,6 @@ class BaleWebhookController extends Controller
 
         abort_unless(hash_equals(WorkflowPublisher::secretFor($workflow), $secret), 403);
 
-        if (! $workflow->isPublished() || ! $workflow->is_active || ! $workflow->user) {
-            return response()->json(['ok' => true]);
-        }
-
         $trigger = $workflow->nodes->firstWhere('type', 'trigger.bale');
 
         if (! $trigger) {
@@ -43,6 +39,24 @@ class BaleWebhookController extends Controller
             return response()->json(['ok' => true]);
         }
 
+        $listening = Cache::get(BaleTriggerNode::listeningKey($workflow->id));
+
+        if (is_array($listening)) {
+            $testConfig = ['updates' => $listening['updates'] ?? []];
+
+            if ($triggerNode->supportsUpdate($update, $testConfig)) {
+                if (Cache::pull(BaleTriggerNode::listeningKey($workflow->id)) !== null) {
+                    Cache::put(BaleTriggerNode::cacheKey($workflow->id), $update, now()->addMinutes(2));
+                }
+            }
+
+            return response()->json(['ok' => true, 'mode' => 'test_captured']);
+        }
+
+        if (! $workflow->isPublished() || ! $workflow->is_active || ! $workflow->user) {
+            return response()->json(['ok' => true]);
+        }
+
         $config = is_array($trigger->config) ? $trigger->config : [];
 
         if (! $triggerNode->supportsUpdate($update, $config)) {
@@ -53,7 +67,7 @@ class BaleWebhookController extends Controller
             return response()->json(['ok' => true]);
         }
 
-        if (! Cache::add("bale_update_{$workflow->id}_$updateId", true, now()->addMinutes(10))) {
+        if (! Cache::add("bale_update_{$workflow->id}_{$updateId}", true, now()->addMinutes(10))) {
             return response()->json(['ok' => true]);
         }
 

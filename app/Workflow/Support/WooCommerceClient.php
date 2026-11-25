@@ -154,7 +154,10 @@ final class WooCommerceClient
         } catch (NodeExecutionException $e) {
             throw $e;
         } catch (Throwable $e) {
-            throw NodeExecutionException::because('خطا در برقراری ارتباط با فروشگاه ووکامرس: ' . $e->getMessage());
+            throw NodeExecutionException::because(
+                'خطا در برقراری ارتباط با فروشگاه ووکامرس: ' . $e->getMessage(),
+                secrets: [$this->consumerKey, $this->consumerSecret],
+            );
         }
 
         if ($response->failed()) {

@@ -7,6 +7,7 @@ use App\Models\Credential;
 use App\Models\Node;
 use App\Models\NodeRun;
 use App\Models\WorkflowRun;
+use App\Support\SecretRedactor;
 use Illuminate\Support\Facades\Log;
 
 final class NodeContext
@@ -28,15 +29,16 @@ final class NodeContext
 
     public function log(string $message, array $context = []): void
     {
-        $payload = [
+        $safeMessage = SecretRedactor::redact($message);
+        $payload = SecretRedactor::redactArray([
             ...$context,
             'run_id' => $this->run->id,
-        ];
+        ]);
 
         if (config()->has('logging.channels.workflow')) {
-            Log::channel('workflow')->info("[node:{$this->node->id}] {$message}", $payload);
+            Log::channel('workflow')->info("[node:{$this->node->id}] {$safeMessage}", $payload);
         } else {
-            Log::info("[node:{$this->node->id}] {$message}", $payload);
+            Log::info("[node:{$this->node->id}] {$safeMessage}", $payload);
         }
     }
 

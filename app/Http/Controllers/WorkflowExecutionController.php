@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Node;
 use App\Models\NodeRun;
 use App\Models\Workflow;
+use App\Support\SecretRedactor;
 use App\Workflow\Exceptions\NodeExecutionException;
 use App\Workflow\Exceptions\QuotaExceededException;
 use App\Workflow\Runner\WorkflowRunner;
@@ -100,7 +101,7 @@ class WorkflowExecutionController extends Controller
                 'error' => $this->safeErrorMessage($e),
             ], 429);
         } catch (Throwable $e) {
-            Log::error('Workflow single node execution failed: ' . $e->getMessage(), [
+            Log::error('Workflow single node execution failed: ' . SecretRedactor::redact($e->getMessage()), [
                 'node_id' => $node->id,
             ]);
 
@@ -155,11 +156,11 @@ class WorkflowExecutionController extends Controller
     private function safeErrorMessage(Throwable $e): string
     {
         if ($e instanceof NodeExecutionException) {
-            return strip_tags($e->getMessage());
+            return SecretRedactor::redact(strip_tags($e->getMessage()));
         }
 
         if (config('app.debug') && $e->getMessage()) {
-            return strip_tags($e->getMessage());
+            return SecretRedactor::redact(strip_tags($e->getMessage()));
         }
 
         return 'خطای داخلی سیستم رخ داد. لطفاً دوباره تلاش کنید.';

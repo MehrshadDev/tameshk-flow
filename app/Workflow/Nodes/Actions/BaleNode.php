@@ -174,7 +174,7 @@ class BaleNode implements NodeContract
                     'type'       => 'select',
                     'label'      => 'قالب‌بندی متن (Text Formatting)',
                     'options'    => [
-                        ['value' => 'auto', 'label' => 'تبدیل خودکار Markdown به قالب بله (پیشنهادی برای هوش مصنوعی)'],
+                        ['value' => 'auto', 'label' => 'تبدیل خودکار Markdown به قالب بله'],
                         ['value' => 'none', 'label' => 'ارسال بدون تغییر (متن خام بله)'],
                     ],
                     'default'    => 'auto',
@@ -488,9 +488,9 @@ class BaleNode implements NodeContract
         $downloadUrl = BaleApi::fileUrl($botToken, $filePath);
 
         try {
-            $response = Http::timeout(60)->get($downloadUrl);
+            $response = Http::connectTimeout(15)->timeout(60)->get($downloadUrl);
         } catch (Throwable $e) {
-            throw NodeExecutionException::because("خطا در دانلود فایل از بله: {$e->getMessage()}");
+            throw NodeExecutionException::because("خطا در دانلود فایل از بله: {$e->getMessage()}", secrets: [$botToken]);
         }
 
         if ($response->failed()) {
@@ -654,9 +654,9 @@ class BaleNode implements NodeContract
     private function request(string $botToken, string $method, array $payload, bool $business = false): mixed
     {
         try {
-            $response = Http::timeout(30)->post(BaleApi::url($botToken, $method, $business), $payload);
+            $response = Http::connectTimeout(15)->timeout(30)->post(BaleApi::url($botToken, $method, $business), $payload);
         } catch (Throwable $e) {
-            throw NodeExecutionException::because("خطا در ارتباط با سرور بله: {$e->getMessage()}");
+            throw NodeExecutionException::because("خطا در ارتباط با سرور بله: {$e->getMessage()}", secrets: [$botToken]);
         }
 
         if ($response->failed() || $response->json('ok') === false) {

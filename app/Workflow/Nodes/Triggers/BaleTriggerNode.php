@@ -3,6 +3,8 @@
 namespace App\Workflow\Nodes\Triggers;
 
 use App\Models\Credential;
+use App\Models\Node;
+use App\Models\Workflow;
 use App\Workflow\Contracts\NodeContract;
 use App\Workflow\Contracts\WebhookTriggerContract;
 use App\Workflow\DTOs\NodeContext;
@@ -10,6 +12,8 @@ use App\Workflow\DTOs\NodeDefinition;
 use App\Workflow\DTOs\NodeResult;
 use App\Workflow\Enums\NodeCategory;
 use App\Workflow\Exceptions\NodeExecutionException;
+use App\Workflow\Publishing\TriggerEndpoints;
+use App\Workflow\Publishing\WorkflowPublisher;
 use App\Workflow\Support\BaleApi;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Http;
@@ -18,7 +22,17 @@ use Throwable;
 class BaleTriggerNode implements NodeContract, WebhookTriggerContract
 {
     private const LISTEN_SECONDS = 60;
-    private const POLL_SECONDS = 2;
+    private const POLL_USLEEP = 300_000;
+
+    public static function cacheKey(int $workflowId): string
+    {
+        return "bale_webhook_test_payload_$workflowId";
+    }
+
+    public static function listeningKey(int $workflowId): string
+    {
+        return "bale_webhook_test_listening_$workflowId";
+    }
 
     public static function definition(): NodeDefinition
     {
@@ -112,15 +126,34 @@ class BaleTriggerNode implements NodeContract, WebhookTriggerContract
             throw NodeExecutionException::because('توکن بازوی بله در اعتبارنامه خالی است.');
         }
 
-        $endpoint = BaleApi::url($botToken, 'getUpdates');
+        $workflow = $context->run->workflow;
+
+        if ($workflow->isPublished() && $workflow->is_active) {
+            throw NodeExecutionException::because('این ورکفلو منتشر شده و webhook بله فعال است. برای تست دستی، ابتدا انتشار را لغو کنید.');
+        }
+
+        $workflowId = $workflow->id;
+
+        $this->assertCredentialFreeForTest($workflow, $credential->id);
+
         $allowed = $this->allowedUpdates($context->config);
-
-        $context->log('در حال انتظار برای دریافت رویداد تستی از بله (حداکثر ۶۰ ثانیه)...');
-
+        $payloadKey = self::cacheKey($workflowId);
+        $listenKey = self::listeningKey($workflowId);
         $cancelKey = "cancel_workflow_run_{$context->run->id}";
 
+        $webhookUrl = app(TriggerEndpoints::class)->bale($workflow);
+        $secret = WorkflowPublisher::secretFor($workflow);
+        $registeredTempWebhook = false;
+
+        Cache::forget($payloadKey);
+        Cache::put($listenKey, ['updates' => $allowed], now()->addSeconds(self::LISTEN_SECONDS + 10));
+
         try {
-            $offset = $this->nextOffset($endpoint);
+            $this->registerWebhook($credential, $webhookUrl, $secret, $context->config);
+            $registeredTempWebhook = true;
+
+            $context->log('در حال انتظار برای دریافت رویداد تستی از وب‌هوک بله (حداکثر ۶۰ ثانیه)...');
+
             $deadline = microtime(true) + self::LISTEN_SECONDS;
 
             while (microtime(true) < $deadline) {
@@ -128,50 +161,29 @@ class BaleTriggerNode implements NodeContract, WebhookTriggerContract
                     throw NodeExecutionException::because('انتظار برای دریافت رویداد متوقف شد.');
                 }
 
-                $startedAt = microtime(true);
+                $captured = Cache::pull($payloadKey);
 
-                $response = Http::timeout(self::POLL_SECONDS + 10)->get($endpoint, [
-                    'offset'  => $offset,
-                    'timeout' => self::POLL_SECONDS,
-                    'limit'   => 10,
-                ]);
-
-                $this->assertPollingResponse($response);
-
-                $updates = (array) $response->json('result', []);
-
-                foreach ($updates as $update) {
-                    if (! is_array($update)) {
-                        continue;
-                    }
-
-                    $updateId = (int) data_get($update, 'update_id', 0);
-
-                    if ($updateId > 0) {
-                        $offset = $updateId + 1;
-                    }
-
-                    $type = $this->resolveUpdateType($update);
-
-                    if (in_array($type, $allowed, true)) {
-                        if ($offset > 0) {
-                            Http::timeout(5)->get($endpoint, ['offset' => $offset, 'limit' => 1]);
-                        }
-
-                        return $this->formatResult($update);
-                    }
+                if (is_array($captured)) {
+                    return $this->formatResult($captured);
                 }
 
-                if ($updates === [] && (microtime(true) - $startedAt) < 0.5) {
-                    usleep(500_000);
-                }
+                usleep(self::POLL_USLEEP);
             }
 
             throw NodeExecutionException::because('در مدت ۶۰ ثانیه رویدادی دریافت نشد (Timeout). مجدداً روی دکمه تست کلیک کرده و بلافاصله رویداد موردنظر را در بازوی بله ایجاد کنید.');
-        } catch (NodeExecutionException $e) {
-            throw $e;
-        } catch (Throwable $e) {
-            throw NodeExecutionException::because("عدم امکان ارتباط با بله: {$e->getMessage()}");
+        } finally {
+            Cache::forget($listenKey);
+
+            if ($registeredTempWebhook) {
+                $fresh = $workflow->fresh();
+
+                if (! $fresh || ! $fresh->isPublished() || ! $fresh->is_active) {
+                    try {
+                        $this->unregisterWebhook($credential, $webhookUrl);
+                    } catch (Throwable) {
+                    }
+                }
+            }
         }
     }
 
@@ -184,17 +196,17 @@ class BaleTriggerNode implements NodeContract, WebhookTriggerContract
         }
 
         try {
-            $response = Http::timeout(15)->post(BaleApi::url($botToken, 'setWebhook'), [
+            $response = Http::connectTimeout(15)->timeout(30)->post(BaleApi::url($botToken, 'setWebhook'), [
                 'url' => $url,
             ]);
         } catch (Throwable) {
-            throw NodeExecutionException::because('عدم امکان ارتباط با سرور بله. اتصال اینترنت سرور را بررسی کنید.');
+            throw NodeExecutionException::because('عدم امکان ارتباط با سرور بله برای ثبت وب‌هوک. لطفاً چند لحظه بعد دوباره تلاش کنید.');
         }
 
         if ($response->failed() || ! $response->json('ok')) {
             $description = (string) data_get($response->json(), 'description', $response->body());
 
-            throw NodeExecutionException::because($this->describeWebhookError($description));
+            throw NodeExecutionException::because($this->describeWebhookError($description), secrets: [$botToken]);
         }
     }
 
@@ -206,19 +218,27 @@ class BaleTriggerNode implements NodeContract, WebhookTriggerContract
             return;
         }
 
-        Http::timeout(15)->post(BaleApi::url($botToken, 'deleteWebhook'));
+        Http::connectTimeout(10)->timeout(15)->post(BaleApi::url($botToken, 'deleteWebhook'));
     }
 
-    private function assertPollingResponse($response): void
+    private function assertCredentialFreeForTest(Workflow $workflow, int $credentialId): void
     {
-        $description = (string) data_get($response->json(), 'description', $response->body());
+        $taken = Node::query()
+            ->where('type', 'trigger.bale')
+            ->where(function ($query) use ($credentialId) {
+                $query->where('config->credential_id', $credentialId)
+                    ->orWhere('config->credential_id', (string) $credentialId);
+            })
+            ->whereHas('workflow', fn ($query) => $query
+                ->whereKeyNot($workflow->id)
+                ->whereNotNull('published_at')
+                ->where('is_active', true))
+            ->exists();
 
-        if ($response->status() === 409 || str_contains(strtolower($description), 'webhook')) {
-            throw NodeExecutionException::because('این ورکفلو منتشر شده و webhook بله فعال است. برای تست دستی، ابتدا انتشار را لغو کنید.');
-        }
-
-        if ($response->failed() || ! $response->json('ok')) {
-            throw NodeExecutionException::because("خطای بله: $description");
+        if ($taken) {
+            throw NodeExecutionException::because(
+                'این بازوی بله هم‌اکنون در ورکفلوی منتشرشده دیگری فعال است. برای تست دستی، ابتدا آن ورکفلو را متوقف کنید.'
+            );
         }
     }
 
@@ -232,19 +252,6 @@ class BaleTriggerNode implements NodeContract, WebhookTriggerContract
             str_contains($lower, 'unauthorized') || str_contains($lower, 'token') => 'توکن بازوی بله نامعتبر است. اعتبارنامه را بررسی کنید.',
             default => "ثبت webhook در بله ناموفق بود: $description",
         };
-    }
-
-    private function nextOffset(string $endpoint): int
-    {
-        $response = Http::timeout(10)->get($endpoint, ['offset' => -1]);
-
-        $this->assertPollingResponse($response);
-
-        $results = (array) $response->json('result', []);
-        $last = end($results);
-        $lastId = is_array($last) ? (int) ($last['update_id'] ?? 0) : 0;
-
-        return $lastId > 0 ? $lastId + 1 : 0;
     }
 
     private function resolveUpdateType(array $update): string

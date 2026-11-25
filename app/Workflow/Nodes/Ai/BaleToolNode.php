@@ -329,9 +329,9 @@ class BaleToolNode implements NodeContract, ToolContract
     private function send(string $botToken, string $method, array $payload, bool $business = false): array
     {
         try {
-            $response = Http::timeout(30)->post(BaleApi::url($botToken, $method, $business), $payload);
+            $response = Http::connectTimeout(15)->timeout(30)->post(BaleApi::url($botToken, $method, $business), $payload);
         } catch (Throwable $e) {
-            throw NodeExecutionException::because("خطا در ارتباط با بله: {$e->getMessage()}");
+            throw NodeExecutionException::because("خطا در ارتباط با بله: {$e->getMessage()}", secrets: [$botToken]);
         }
 
         if ($response->failed() || $response->json('ok') === false) {
