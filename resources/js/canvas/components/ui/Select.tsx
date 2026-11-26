@@ -13,6 +13,8 @@ type SelectProps = {
     searchable?: boolean;
 };
 
+const startsWithLtr = (text: string): boolean => /^[^\p{L}]*[A-Za-z]/u.test(text.trim());
+
 export function Select({
                            id,
                            options,
@@ -53,6 +55,7 @@ export function Select({
     }, [normalizedOptions, searchQuery]);
 
     const selectedOption = normalizedOptions.find((opt) => opt.value === stringValue);
+    const triggerDir = selectedOption && startsWithLtr(selectedOption.label) ? 'ltr' : 'rtl';
 
     const toggleOpen = () => {
         if (!isOpen && containerRef.current) {
@@ -93,21 +96,26 @@ export function Select({
             <button
                 type="button"
                 id={id}
+                dir={triggerDir}
                 onClick={toggleOpen}
                 aria-expanded={isOpen}
-                className={`flex w-full items-center justify-between rounded-xl border bg-field px-3.5 py-2.5 text-xs font-medium text-content-main transition-colors focus:outline-none ${
+                className={`flex w-full items-center justify-between gap-2 rounded-xl border bg-field px-3.5 py-2.5 text-xs font-medium text-content-main transition-colors focus:outline-none ${
                     isOpen
                         ? 'border-primary ring-2 ring-primary/15'
                         : 'border-field-border focus:border-primary focus:ring-2 focus:ring-primary/15'
                 }`}
             >
-                <span className={selectedOption ? 'font-semibold text-content-main' : 'text-content-muted'}>
+                <span
+                    className={`truncate text-start ${
+                        selectedOption ? 'font-semibold text-content-main' : 'text-content-muted'
+                    }`}
+                >
                     {selectedOption ? selectedOption.label : placeholder}
                 </span>
 
                 <Icon
                     name="chevron-down"
-                    className={`size-4 text-content-muted transition-transform duration-200 ${
+                    className={`size-4 shrink-0 text-content-muted transition-transform duration-200 ${
                         isOpen ? (openUpward ? 'rotate-0 text-primary' : 'rotate-180 text-primary') : ''
                     }`}
                 />
@@ -144,18 +152,21 @@ export function Select({
                         ) : (
                             filteredOptions.map((option) => {
                                 const isSelected = option.value === stringValue;
+                                const optionDir = startsWithLtr(option.label) ? 'ltr' : 'rtl';
+
                                 return (
                                     <button
                                         key={option.value}
                                         type="button"
+                                        dir={optionDir}
                                         onClick={() => {
                                             onChange({ target: { value: option.value } });
                                             setIsOpen(false);
                                         }}
-                                        className={`flex w-full items-center justify-between rounded-lg px-3 py-2 text-start text-xs font-medium transition-colors ${
+                                        className={`flex w-full items-center justify-between gap-2 rounded-lg px-3 py-2 text-start text-xs font-medium transition-colors ${
                                             isSelected
                                                 ? 'bg-primary/10 font-bold text-primary'
-                                                : 'text-content-main hover:bg-surface-base dark:hover:bg-white/[0.06]'
+                                                : 'text-content-main hover:bg-surface-base dark:hover:bg-white/6'
                                         }`}
                                     >
                                         <div className="min-w-0 flex-1">

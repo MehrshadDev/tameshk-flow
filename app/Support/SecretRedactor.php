@@ -10,7 +10,7 @@ final class SecretRedactor
         '#(\/(?:business\/)?(?:file\/)?bot)\d+:[^\s\/?"\'&<>]+#i' => '$1' . self::REPLACEMENT,
         '#\b\d{6,15}:[A-Za-z0-9_-]{20,}\b#' => self::REPLACEMENT,
         '#([?&](?:consumer_key|consumer_secret|api_key|apikey|key|token|access_token|refresh_token|secret|secret_token|password|passwd|auth|signature|client_secret)=)[^&\s"\'<>]+#i' => '$1' . self::REPLACEMENT,
-        '#(https?:\/\/)([^\/\s:@]+):([^\/\s@]+)@#i' => '$1***:' . self::REPLACEMENT . '@',
+        '#((?:https?|s?ftps?):\/\/)([^\/\s:@]+):([^\/\s@]+)@#i' => '$1***:' . self::REPLACEMENT . '@',
         '#(\b(?:Bearer|Basic)\s+)[A-Za-z0-9._~+\/=-]{8,}#i' => '$1' . self::REPLACEMENT,
         '#\bsk-(?:ant-|or-v1-|proj-)?[A-Za-z0-9_-]{16,}\b#' => self::REPLACEMENT,
         '#\bgsk_[A-Za-z0-9_-]{16,}\b#' => self::REPLACEMENT,

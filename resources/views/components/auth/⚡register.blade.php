@@ -177,7 +177,7 @@ new class extends Component
         <form wire:submit="register" class="space-y-4">
             <x-auth.honeypot/>
 
-            <x-ui.input name="email" type="email" wire:model="email" label="جیمیل (فقط @gmail.com)" placeholder="example@gmail.com" autocomplete="email" autofocus/>
+            <x-ui.input name="email" type="email" wire:model="email" label="ایمیل" placeholder="example@gmail.com" autocomplete="email" autofocus/>
 
             <x-ui.input name="password" type="password" wire:model="password" label="رمز عبور" placeholder="حداقل ۸ کاراکتر شامل حروف و اعداد" autocomplete="new-password"/>
 

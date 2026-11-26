@@ -248,43 +248,104 @@ function NodeStudio({ nodeId }: { nodeId: string }) {
             ? edges.filter((edge) => edge.source === nodeId).map((edge) => edge.target)
             : [nodeId];
 
-        const visited = new Set<string>(hostIds);
-        const queue: { id: string; depth: number }[] = hostIds.map((id) => ({ id, depth: 0 }));
-        const orderedNodes: { sourceNode: FlowNode; depth: number }[] = [];
+        const parentMap = new Map<string, string[]>();
+
+        edges.forEach((edge) => {
+            if (isSpecialHandle(edge.targetHandle ?? 'main')) return;
+            const list = parentMap.get(edge.target);
+            if (list) {
+                list.push(edge.source);
+            } else {
+                parentMap.set(edge.target, [edge.source]);
+            }
+        });
+
+        const minDepthMap = new Map<string, number>();
+        const queue: { id: string; depth: number }[] = [];
+
+        hostIds.forEach((id) => {
+            minDepthMap.set(id, 0);
+            queue.push({ id, depth: 0 });
+        });
 
         while (queue.length > 0) {
             const current = queue.shift()!;
-            const parentEdges = edges.filter(
-                (edge) => edge.target === current.id && !isSpecialHandle(edge.targetHandle ?? 'main'),
-            );
+            const parents = parentMap.get(current.id) ?? [];
 
-            for (const edge of parentEdges) {
-                if (!visited.has(edge.source)) {
-                    visited.add(edge.source);
-                    const foundNode = allNodes.find((n) => n.id === edge.source);
-                    if (foundNode) {
-                        orderedNodes.push({ sourceNode: foundNode, depth: current.depth + 1 });
-                        queue.push({ id: foundNode.id, depth: current.depth + 1 });
-                    }
+            for (const parentId of parents) {
+                if (!minDepthMap.has(parentId)) {
+                    minDepthMap.set(parentId, current.depth + 1);
+                    queue.push({ id: parentId, depth: current.depth + 1 });
                 }
             }
         }
 
-        const reversedRuns = [...(lastRun?.node_runs ?? [])].reverse();
+        const maxDepthMap = new Map<string, number>();
+        const computeMaxDepth = (currentId: string, depth: number, path: Set<string>) => {
+            const parents = parentMap.get(currentId) ?? [];
 
-        return orderedNodes.map(({ sourceNode, depth }) => {
-            const sourceDbId = ids[sourceNode.id] ?? Number(sourceNode.id);
-            const sourceRun = reversedRuns.find((r) => r.node_id === sourceDbId);
-            const sourceDef = definitions.find((d) => d.type === sourceNode.data.nodeType);
+            for (const parentId of parents) {
+                if (path.has(parentId) || depth > 50) continue;
+                const nextDepth = depth + 1;
+                if (nextDepth > (maxDepthMap.get(parentId) ?? 0)) {
+                    maxDepthMap.set(parentId, nextDepth);
+                    path.add(parentId);
+                    computeMaxDepth(parentId, nextDepth, path);
+                    path.delete(parentId);
+                }
+            }
+        };
 
-            return {
-                sourceNode,
-                sourceDef,
-                depth,
-                outputData: sourceRun?.output_data ?? null,
-                status: sourceRun?.status ?? null,
-            };
+        hostIds.forEach((id) => computeMaxDepth(id, 0, new Set([id])));
+
+        const runs = lastRun?.node_runs ?? [];
+        const latestRunByNodeDbId = new Map<number, { run: (typeof runs)[number]; order: number }>();
+
+        runs.forEach((r, index) => {
+            latestRunByNodeDbId.set(r.node_id, { run: r, order: index });
         });
+
+        const nodeById = new Map(allNodes.map((n) => [n.id, n]));
+        const defByType = new Map(definitions.map((d) => [d.type, d]));
+
+        const items = Array.from(minDepthMap.entries())
+            .filter(([, depth]) => depth > 0)
+            .map(([sourceId, minDepth]) => {
+                const sourceNode = nodeById.get(sourceId);
+                if (!sourceNode) return null;
+
+                const sourceDbId = ids[sourceNode.id] ?? Number(sourceNode.id);
+                const runEntry = latestRunByNodeDbId.get(sourceDbId);
+
+                return {
+                    sourceNode,
+                    sourceDef: defByType.get(sourceNode.data.nodeType),
+                    depth: minDepth,
+                    maxDepth: maxDepthMap.get(sourceId) ?? minDepth,
+                    runOrder: runEntry?.order ?? -1,
+                    outputData: runEntry?.run.output_data ?? null,
+                    status: runEntry?.run.status ?? null,
+                };
+            })
+            .filter((item): item is NonNullable<typeof item> => item !== null);
+
+        items.sort((a, b) => {
+            if (a.depth !== b.depth) return a.depth - b.depth;
+            if (a.maxDepth !== b.maxDepth) return a.maxDepth - b.maxDepth;
+            if (a.runOrder !== b.runOrder) return b.runOrder - a.runOrder;
+            if (a.sourceNode.position.y !== b.sourceNode.position.y) {
+                return a.sourceNode.position.y - b.sourceNode.position.y;
+            }
+            return b.sourceNode.position.x - a.sourceNode.position.x;
+        });
+
+        return items.map(({ sourceNode, sourceDef, depth, outputData, status }) => ({
+            sourceNode,
+            sourceDef,
+            depth,
+            outputData,
+            status,
+        }));
     }, [node, nodeId, isSupplyNode, edges, allNodes, lastRun, ids, definitions]);
 
     const combinedIncomingContext = useMemo(() => {

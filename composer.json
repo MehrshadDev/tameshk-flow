@@ -15,7 +15,8 @@
         "morilog/jalali": "^3.5",
         "ext-zlib": "*",
         "ext-libxml": "*",
-        "ext-simplexml": "*"
+        "ext-simplexml": "*",
+        "ext-curl": "*"
     },
     "require-dev": {
         "fakerphp/faker": "^1.23",

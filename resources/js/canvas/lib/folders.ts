@@ -59,7 +59,7 @@ export const FOLDERS_CONFIG: Record<string, FolderItem> = {
     'ai/tools': {
         id: 'ai/tools',
         title: 'ابزارهای ایجنت',
-        description: 'ابزارهای عملکردی ایجنت مثل خوراک RSS، جدول داده، دیتابیس MySQL، گوگل شیت، ووکامرس و جیمیل',
+        description: 'ابزارهای عملکردی ایجنت مثل سرور FTP، خوراک RSS، جدول داده، دیتابیس MySQL، گوگل شیت، ووکامرس و جیمیل',
         icon: 'tools',
         iconClass: 'bg-amber-500/10 text-amber-500',
     },
@@ -111,6 +111,13 @@ export const FOLDERS_CONFIG: Record<string, FolderItem> = {
         description: 'انتخاب، درج، ویرایش، حذف ردیف‌ها و اجرای کوئری SQL در پایگاه داده MySQL',
         icon: 'brand:mysql',
         iconClass: 'bg-sky-500/10 text-sky-500',
+    },
+    'action/ftp': {
+        id: 'action/ftp',
+        title: 'FTP',
+        description: 'لیست، دانلود، آپلود، حذف، تغییر نام و مدیریت فایل‌ها در سرور FTP و FTPS',
+        icon: 'server',
+        iconClass: 'bg-cyan-500/10 text-cyan-500',
     },
     'action/rss': {
         id: 'action/rss',

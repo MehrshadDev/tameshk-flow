@@ -1,49 +1,77 @@
-import { useMemo, useState } from 'react';
+import { memo, useCallback, useMemo, useState } from 'react';
 import { Icon } from '@canvas/components/ui/Icon';
-import { startFieldDrag, useFieldDragState, type FieldValueType } from '@canvas/lib/fieldDrag';
+import { startFieldDrag, useActiveDragPath, type FieldValueType } from '@canvas/lib/fieldDrag';
 import { useWorkflowStore } from '@canvas/store/useWorkflowStore';
+
+const PAGE_SIZE = 50;
 
 type DataTreeViewerProps = {
     data: unknown;
     basePath?: string;
 };
 
+export const hasRenderableData = (data: unknown): boolean => {
+    if (data === null || data === undefined) {
+        return false;
+    }
+
+    if (typeof data === 'object') {
+        return Object.keys(data as Record<string, unknown>).length > 0;
+    }
+
+    if (typeof data === 'string') {
+        return data.trim() !== '';
+    }
+
+    return true;
+};
+
 export function DataTreeViewer({ data, basePath = 'input' }: DataTreeViewerProps) {
     const [search, setSearch] = useState('');
     const [viewMode, setViewMode] = useState<'tree' | 'json'>('tree');
-    const addToast = useWorkflowStore((state) => state.addToast);
+    const [visibleLimit, setVisibleLimit] = useState(PAGE_SIZE);
+    const activeDragPath = useActiveDragPath();
 
-    const isDataEmpty = data === null || data === undefined;
-
-    const copyRawJson = () => {
-        if (isDataEmpty) return;
+    const copyRawJson = useCallback(() => {
+        if (!hasRenderableData(data)) return;
         navigator.clipboard.writeText(JSON.stringify(data, null, 2));
-        addToast('داده‌ها به صورت JSON کپی شدند.', 'success', 2000);
-    };
+        useWorkflowStore.getState().addToast('داده‌ها به صورت JSON کپی شدند.', 'success', 2000);
+    }, [data]);
 
-    if (isDataEmpty) {
-        return (
-            <div className="flex flex-col items-center justify-center rounded-2xl border border-dashed border-line-border/80 bg-surface-card/40 p-8 text-center text-xs text-content-muted">
-                <Icon name="brackets" className="mb-2 size-6 opacity-30" />
-                <span>داده‌ای برای نمایش وجود ندارد.</span>
-            </div>
-        );
+    const copyExpression = useCallback((expression: string) => {
+        navigator.clipboard.writeText(expression);
+        useWorkflowStore.getState().addToast(`عبارت ${expression} کپی شد.`, 'success', 2000);
+    }, []);
+
+    if (!hasRenderableData(data)) {
+        return null;
     }
 
     if (typeof data !== 'object') {
         return (
-            <div dir="ltr" className="flex items-center justify-between rounded-xl border border-line-border bg-surface-card p-3 font-mono text-xs text-content-main shadow-xs">
+            <div
+                dir="ltr"
+                className="flex items-center justify-between rounded-xl border border-line-border bg-surface-card p-3 font-mono text-xs text-content-main shadow-xs"
+            >
                 <span className="font-semibold text-emerald-500">value:</span>
                 <span className="truncate">{String(data)}</span>
             </div>
         );
     }
 
+    const entries = Object.entries(data as Record<string, unknown>);
+    const normalizedSearch = search.trim().toLowerCase();
+    const visibleEntries = normalizedSearch !== '' ? entries : entries.slice(0, visibleLimit);
+    const remainingCount = normalizedSearch !== '' ? 0 : Math.max(0, entries.length - visibleLimit);
+
     return (
         <div dir="ltr" className="w-full space-y-2.5 font-mono text-xs select-none text-left">
             <div className="flex items-center justify-between gap-2 border-b border-line-border/60 pb-2">
                 <div className="relative flex-1">
-                    <Icon name="search" className="pointer-events-none absolute left-2.5 top-1/2 size-3.5 -translate-y-1/2 text-content-muted" />
+                    <Icon
+                        name="search"
+                        className="pointer-events-none absolute left-2.5 top-1/2 size-3.5 -translate-y-1/2 text-content-muted"
+                    />
                     <input
                         type="text"
                         value={search}
@@ -67,7 +95,9 @@ export function DataTreeViewer({ data, basePath = 'input' }: DataTreeViewerProps
                         type="button"
                         onClick={() => setViewMode('tree')}
                         className={`rounded-md px-2 py-0.5 text-[10px] font-semibold transition ${
-                            viewMode === 'tree' ? 'bg-primary text-white shadow-xs' : 'text-content-muted hover:text-content-main'
+                            viewMode === 'tree'
+                                ? 'bg-primary text-white shadow-xs'
+                                : 'text-content-muted hover:text-content-main'
                         }`}
                     >
                         Tree
@@ -76,7 +106,9 @@ export function DataTreeViewer({ data, basePath = 'input' }: DataTreeViewerProps
                         type="button"
                         onClick={() => setViewMode('json')}
                         className={`rounded-md px-2 py-0.5 text-[10px] font-semibold transition ${
-                            viewMode === 'json' ? 'bg-primary text-white shadow-xs' : 'text-content-muted hover:text-content-main'
+                            viewMode === 'json'
+                                ? 'bg-primary text-white shadow-xs'
+                                : 'text-content-muted hover:text-content-main'
                         }`}
                     >
                         JSON
@@ -94,45 +126,67 @@ export function DataTreeViewer({ data, basePath = 'input' }: DataTreeViewerProps
             </div>
 
             {viewMode === 'json' ? (
-                <pre className="custom-scrollbar max-h-96 overflow-auto rounded-xl border border-line-border bg-surface-card p-3 font-mono text-[11px] leading-5 text-content-main select-text">
+                <pre className="custom-scrollbar overflow-x-auto rounded-xl border border-line-border bg-surface-card p-3 font-mono text-[11px] leading-5 text-content-main select-text">
                     {JSON.stringify(data, null, 2)}
                 </pre>
             ) : (
-                <div className="custom-scrollbar max-h-128 overflow-y-auto space-y-1 pr-1">
-                    {Object.entries(data as Record<string, unknown>).map(([key, value]) => (
+                <div className="space-y-1">
+                    {visibleEntries.map(([key, value]) => (
                         <TreeNode
                             key={key}
                             keyName={key}
                             value={value}
                             path={`${basePath}.${key}`}
                             depth={0}
-                            searchTerm={search.trim().toLowerCase()}
+                            searchTerm={normalizedSearch}
+                            activeDragPath={activeDragPath}
+                            onCopyExpression={copyExpression}
                         />
                     ))}
+
+                    {remainingCount > 0 && (
+                        <button
+                            type="button"
+                            dir="rtl"
+                            onClick={() => setVisibleLimit((prev) => prev + PAGE_SIZE)}
+                            className="mt-1.5 w-full rounded-lg border border-dashed border-line-border py-1.5 font-sans text-[11px] font-semibold text-content-muted transition hover:border-primary hover:text-primary"
+                        >
+                            نمایش موارد بیشتر ({remainingCount} مورد باقی‌مانده)
+                        </button>
+                    )}
                 </div>
             )}
         </div>
     );
 }
 
-function TreeNode({
-                      keyName,
-                      value,
-                      path,
-                      depth,
-                      searchTerm,
-                  }: {
+type TreeNodeProps = {
     keyName: string;
     value: unknown;
     path: string;
     depth: number;
     searchTerm: string;
-}) {
+    activeDragPath: string | null;
+    onCopyExpression: (expression: string) => void;
+};
+
+const TreeNode = memo(function TreeNode({
+                                            keyName,
+                                            value,
+                                            path,
+                                            depth,
+                                            searchTerm,
+                                            activeDragPath,
+                                            onCopyExpression,
+                                        }: TreeNodeProps) {
     const isObject = value !== null && typeof value === 'object';
     const isArray = Array.isArray(value);
-    const [isOpen, setIsOpen] = useState(depth < 2 || searchTerm !== '');
-    const addToast = useWorkflowStore((state) => state.addToast);
-    const { activeField } = useFieldDragState();
+    const childCount = isObject ? Object.keys(value as Record<string, unknown>).length : 0;
+
+    const [isOpen, setIsOpen] = useState(
+        () => searchTerm !== '' || (depth < 1 && childCount <= 12),
+    );
+    const [childLimit, setChildLimit] = useState(PAGE_SIZE);
 
     const matchesSearch = useMemo(() => {
         if (!searchTerm) return true;
@@ -182,7 +236,8 @@ function TreeNode({
                     ? 'boolean'
                     : 'string';
 
-    const isBeingDragged = activeField?.path === path;
+    const isBeingDragged = activeDragPath === path;
+    const expanded = isOpen || searchTerm !== '';
 
     const handlePointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
         startFieldDrag(e, {
@@ -193,11 +248,9 @@ function TreeNode({
         });
     };
 
-    const copyExpression = (e: React.MouseEvent) => {
-        e.stopPropagation();
-        navigator.clipboard.writeText(expression);
-        addToast(`عبارت ${expression} کپی شد.`, 'success', 2000);
-    };
+    const childEntries = isObject && expanded ? Object.entries(value as Record<string, unknown>) : [];
+    const visibleChildren = searchTerm !== '' ? childEntries : childEntries.slice(0, childLimit);
+    const remainingChildren = searchTerm !== '' ? 0 : Math.max(0, childEntries.length - childLimit);
 
     return (
         <div className="w-full text-left font-mono">
@@ -210,16 +263,16 @@ function TreeNode({
                 }`}
             >
                 <div className="flex min-w-0 flex-1 items-center gap-1.5 overflow-hidden">
-                    {isObject ? (
+                    {isObject && childCount > 0 ? (
                         <button
                             type="button"
                             onPointerDown={(e) => e.stopPropagation()}
-                            onClick={() => setIsOpen(!isOpen)}
+                            onClick={() => setIsOpen((prev) => !prev)}
                             className="flex size-4 shrink-0 items-center justify-center rounded text-content-muted transition hover:bg-line-border hover:text-content-main"
                         >
                             <Icon
                                 name="chevron-down"
-                                className={`size-3 transition-transform duration-150 ${isOpen ? '' : '-rotate-90'}`}
+                                className={`size-3 transition-transform duration-150 ${expanded ? '' : '-rotate-90'}`}
                             />
                         </button>
                     ) : (
@@ -232,9 +285,7 @@ function TreeNode({
                         {typeBadge}
                     </span>
 
-                    <span className="shrink-0 font-bold text-content-main">
-                        {keyName}:
-                    </span>
+                    <span className="shrink-0 font-bold text-content-main">{keyName}:</span>
 
                     {!isObject && (
                         <span
@@ -243,9 +294,9 @@ function TreeNode({
                                 typeof value === 'string'
                                     ? 'text-emerald-500 dark:text-emerald-400'
                                     : typeof value === 'number'
-                                        ? 'text-purple-500 dark:text-purple-400 font-bold'
+                                        ? 'font-bold text-purple-500 dark:text-purple-400'
                                         : typeof value === 'boolean'
-                                            ? 'text-sky-500 font-bold'
+                                            ? 'font-bold text-sky-500'
                                             : 'text-content-muted'
                             }`}
                         >
@@ -258,7 +309,10 @@ function TreeNode({
                     <button
                         type="button"
                         onPointerDown={(e) => e.stopPropagation()}
-                        onClick={copyExpression}
+                        onClick={(e) => {
+                            e.stopPropagation();
+                            onCopyExpression(expression);
+                        }}
                         title={`Copy ${expression}`}
                         className="flex size-6 items-center justify-center rounded text-content-muted transition hover:bg-primary/10 hover:text-primary"
                     >
@@ -267,9 +321,9 @@ function TreeNode({
                 </div>
             </div>
 
-            {isObject && isOpen && (
-                <div className="ml-3.5 space-y-0.5 border-l border-line-border/60 pl-2 mt-0.5">
-                    {Object.entries(value as Record<string, unknown>).map(([k, v]) => (
+            {isObject && expanded && visibleChildren.length > 0 && (
+                <div className="mt-0.5 ml-3.5 space-y-0.5 border-l border-line-border/60 pl-2">
+                    {visibleChildren.map(([k, v]) => (
                         <TreeNode
                             key={k}
                             keyName={k}
@@ -277,10 +331,23 @@ function TreeNode({
                             path={isArray ? `${path}[${k}]` : `${path}.${k}`}
                             depth={depth + 1}
                             searchTerm={searchTerm}
+                            activeDragPath={activeDragPath}
+                            onCopyExpression={onCopyExpression}
                         />
                     ))}
+
+                    {remainingChildren > 0 && (
+                        <button
+                            type="button"
+                            dir="rtl"
+                            onClick={() => setChildLimit((prev) => prev + PAGE_SIZE)}
+                            className="mt-1 w-full rounded-md border border-dashed border-line-border py-1 font-sans text-[10px] font-semibold text-content-muted transition hover:border-primary hover:text-primary"
+                        >
+                            نمایش بیشتر ({remainingChildren} مورد)
+                        </button>
+                    )}
                 </div>
             )}
         </div>
     );
-}
+});

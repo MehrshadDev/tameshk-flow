@@ -41,6 +41,8 @@ const getDefaultName = (def: CredentialDefinition): string => {
             return 'Bearer token';
         case 'basic_auth':
             return 'Basic auth';
+        case 'ftp':
+            return 'FTP account';
         default:
             return `${def.name} account`;
     }

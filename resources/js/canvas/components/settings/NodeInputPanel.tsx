@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, type RefObject } from 'react';
-import { DataTreeViewer } from '@canvas/components/settings/DataTreeViewer';
+import { DataTreeViewer, hasRenderableData } from '@canvas/components/settings/DataTreeViewer';
 import { Icon } from '@canvas/components/ui/Icon';
 import type { FlowNode } from '@canvas/lib/graph';
 import { nodeAppearance } from '@canvas/lib/nodeStyles';
@@ -75,7 +75,7 @@ export function NodeInputPanel({
 
             <div
                 ref={scrollRef}
-                className="custom-scrollbar flex-1 space-y-3 overflow-y-auto p-3.5 select-text sm:p-4"
+                className="custom-scrollbar flex-1 space-y-3 overflow-y-auto overscroll-contain will-change-scroll p-3.5 select-text sm:p-4"
             >
                 {upstreamDataList.length === 0 ? (
                     <div className="space-y-2 py-16 text-center text-xs text-content-muted">
@@ -84,46 +84,97 @@ export function NodeInputPanel({
                     </div>
                 ) : (
                     upstreamDataList.map((item, idx) => {
-                        const isOpen = isNodeCardOpen(item.sourceNode.id, idx);
+                        const hasKeys = hasRenderableData(item.outputData);
+                        const hasBody = hasKeys || item.status === null;
+                        const isOpen = hasBody && isNodeCardOpen(item.sourceNode.id, idx);
                         const { iconName: srcIcon, iconStyle: srcStyle } = nodeAppearance(item.sourceDef);
                         const basePath =
-                            idx === 0 ? 'input' : `$('${item.sourceNode.data.label}').item.json`;
+                            idx === 0 && item.depth === 1
+                                ? 'input'
+                                : `$('${item.sourceNode.data.label}').item.json`;
+                        const distanceLabel =
+                            item.depth === 1 ? 'نود قبلی مستقیم' : `${item.depth} مرحله قبل`;
 
                         return (
                             <div
                                 key={item.sourceNode.id}
-                                className="overflow-hidden rounded-2xl border border-line-border/80 bg-surface-card shadow-2xs transition-all"
+                                className="overflow-hidden rounded-2xl border border-line-border/80 bg-surface-card shadow-2xs contain-[layout_style]"
                             >
-                                <button
-                                    type="button"
-                                    dir="ltr"
-                                    onClick={() => toggleNodeCard(item.sourceNode.id, idx)}
-                                    className="flex w-full items-center justify-between gap-3 px-3.5 py-2.5 text-left transition hover:bg-surface-base/60 dark:hover:bg-surface-raised/70"
-                                >
-                                    <div className="flex min-w-0 flex-1 items-center gap-3">
-                                        <span
-                                            className={`flex size-8 shrink-0 items-center justify-center rounded-xl ${srcStyle}`}
-                                        >
-                                            <Icon name={srcIcon} className="size-4.5" />
-                                        </span>
-                                        <div className="min-w-0 flex-1 text-left">
-                                            <span className="block truncate text-xs font-bold text-content-main">
-                                                {item.sourceNode.data.label}
-                                            </span>
+                                {hasBody ? (
+                                    <button
+                                        type="button"
+                                        dir="ltr"
+                                        onClick={() => toggleNodeCard(item.sourceNode.id, idx)}
+                                        className="flex w-full items-center justify-between gap-3 px-3.5 py-2.5 text-left transition hover:bg-surface-base/60 dark:hover:bg-surface-raised/70"
+                                    >
+                                        <div className="flex min-w-0 flex-1 items-center gap-3">
                                             <span
-                                                dir="rtl"
-                                                className="mt-0.5 block truncate text-left text-[10px] text-content-muted"
+                                                className={`flex size-8 shrink-0 items-center justify-center rounded-xl ${srcStyle}`}
                                             >
-                                                {idx === 0 ? 'نود قبلی مستقیم' : `${idx + 1} مرحله قبل`}
+                                                <Icon name={srcIcon} className="size-4.5" />
                                             </span>
+                                            <div className="min-w-0 flex-1 text-left">
+                                                <span className="block truncate text-xs font-bold text-content-main">
+                                                    {item.sourceNode.data.label}
+                                                </span>
+                                                <span
+                                                    dir="rtl"
+                                                    className="mt-0.5 block truncate text-left text-[10px] text-content-muted"
+                                                >
+                                                    {distanceLabel}
+                                                </span>
+                                            </div>
                                         </div>
-                                    </div>
 
-                                    <div className="flex shrink-0 items-center gap-2">
+                                        <div className="flex shrink-0 items-center gap-2">
+                                            {item.status && (
+                                                <span
+                                                    dir="rtl"
+                                                    className={`whitespace-nowrap rounded-md px-2 py-0.5 text-[10px] font-bold ${
+                                                        item.status === 'success'
+                                                            ? 'bg-emerald-500/15 text-emerald-600 dark:bg-emerald-500/10 dark:text-emerald-500'
+                                                            : 'bg-primary/10 text-primary'
+                                                    }`}
+                                                >
+                                                    {item.status === 'success' ? 'موفق' : 'خطا'}
+                                                </span>
+                                            )}
+                                            <Icon
+                                                name="chevron-down"
+                                                className={`size-4 shrink-0 text-content-muted transition-transform duration-200 ${
+                                                    isOpen ? 'rotate-180 text-primary' : ''
+                                                }`}
+                                            />
+                                        </div>
+                                    </button>
+                                ) : (
+                                    <div
+                                        dir="ltr"
+                                        className="flex w-full items-center justify-between gap-3 px-3.5 py-2.5 text-left"
+                                    >
+                                        <div className="flex min-w-0 flex-1 items-center gap-3">
+                                            <span
+                                                className={`flex size-8 shrink-0 items-center justify-center rounded-xl ${srcStyle}`}
+                                            >
+                                                <Icon name={srcIcon} className="size-4.5" />
+                                            </span>
+                                            <div className="min-w-0 flex-1 text-left">
+                                                <span className="block truncate text-xs font-bold text-content-main">
+                                                    {item.sourceNode.data.label}
+                                                </span>
+                                                <span
+                                                    dir="rtl"
+                                                    className="mt-0.5 block truncate text-left text-[10px] text-content-muted"
+                                                >
+                                                    {distanceLabel}
+                                                </span>
+                                            </div>
+                                        </div>
+
                                         {item.status && (
                                             <span
                                                 dir="rtl"
-                                                className={`whitespace-nowrap rounded-md px-2 py-0.5 text-[10px] font-bold ${
+                                                className={`shrink-0 whitespace-nowrap rounded-md px-2 py-0.5 text-[10px] font-bold ${
                                                     item.status === 'success'
                                                         ? 'bg-emerald-500/15 text-emerald-600 dark:bg-emerald-500/10 dark:text-emerald-500'
                                                         : 'bg-primary/10 text-primary'
@@ -132,18 +183,12 @@ export function NodeInputPanel({
                                                 {item.status === 'success' ? 'موفق' : 'خطا'}
                                             </span>
                                         )}
-                                        <Icon
-                                            name="chevron-down"
-                                            className={`size-4 shrink-0 text-content-muted transition-transform duration-200 ${
-                                                isOpen ? 'rotate-180 text-primary' : ''
-                                            }`}
-                                        />
                                     </div>
-                                </button>
+                                )}
 
                                 {isOpen && (
                                     <div className="border-t border-line-border/60 bg-surface-base/40 p-3.5 dark:bg-surface-card/50">
-                                        {item.outputData ? (
+                                        {hasKeys ? (
                                             <DataTreeViewer data={item.outputData} basePath={basePath} />
                                         ) : (
                                             <p className="py-4 text-center text-[11px] text-content-muted">

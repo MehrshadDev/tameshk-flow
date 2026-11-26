@@ -78,6 +78,9 @@ use App\Credentials\Types\BaleCredential;
 use App\Workflow\Nodes\Actions\BaleNode;
 use App\Workflow\Nodes\Ai\BaleToolNode;
 use App\Workflow\Nodes\Triggers\BaleTriggerNode;
+use App\Credentials\Types\FtpCredential;
+use App\Workflow\Nodes\Actions\FtpNode;
+use App\Workflow\Nodes\Ai\FtpToolNode;
 
 class WorkflowServiceProvider extends ServiceProvider
 {
@@ -121,6 +124,7 @@ class WorkflowServiceProvider extends ServiceProvider
                 GoogleSheetsNode::class,
                 WooCommerceNode::class,
                 MySqlNode::class,
+                FtpNode::class,
                 AiAgentNode::class,
                 GeminiChatModelNode::class,
                 OpenAiChatModelNode::class,
@@ -135,6 +139,7 @@ class WorkflowServiceProvider extends ServiceProvider
                 BaleToolNode::class,
                 WooCommerceToolNode::class,
                 MySqlToolNode::class,
+                FtpToolNode::class,
                 DataTableToolNode::class,
                 DataStoreToolNode::class,
                 HttpToolNode::class,
@@ -164,6 +169,7 @@ class WorkflowServiceProvider extends ServiceProvider
                 GoogleCredential::class,
                 WooCommerceCredential::class,
                 MySqlCredential::class,
+                FtpCredential::class,
             ]);
         });
 
