@@ -74,7 +74,7 @@
         <h1 class="mt-6 max-w-4xl text-3xl font-extrabold leading-[1.55] tracking-tight text-content-main sm:text-5xl sm:leading-[1.35] md:text-6xl">
             ساخت ربات تلگرام با
             <span class="bg-linear-to-l from-primary via-rose-400 to-primary bg-clip-text text-transparent">
-                بدون کدنویسی،
+                هوش مصنوعی،
             </span>
             <span class="mt-1 block text-2xl sm:mt-2 sm:text-4xl md:text-5xl">
                 بدون کدنویسی و بدون نیاز به سرور

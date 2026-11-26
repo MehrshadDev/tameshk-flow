@@ -39,6 +39,8 @@
     $productLinks = array_values(array_filter([
         ['label' => 'قابلیت‌ها', 'href' => route('home') . '#features', 'external' => false],
         ['label' => 'ورکفلوهای آماده', 'href' => route('templates.index'), 'external' => false],
+        ['label' => 'ربات‌ساز تلگرام', 'href' => route('landing.bot-builder'), 'external' => false],
+        ['label' => 'جایگزین ایرانی n8n', 'href' => route('landing.buy-n8n'), 'external' => false],
         $saasEnabled ? ['label' => 'تعرفه‌ها', 'href' => route('home') . '#pricing', 'external' => false] : null,
         ['label' => 'مستندات', 'href' => route('docs.index'), 'external' => false],
     ]));

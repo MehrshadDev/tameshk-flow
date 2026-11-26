@@ -8,6 +8,9 @@
     $canonicalUrl = route('docs.show', $article['slug']);
     $fullTitle = $article['title'] . ' | مستندات ' . $siteName;
     $logoUrl = asset('images/logo/favicon.png');
+    $articleImage = is_file(public_path('images/landing/tameshk-canvas-dark.webp'))
+        ? asset('images/landing/tameshk-canvas-dark.webp')
+        : $logoUrl;
 
     $viewPath = resource_path('views/' . str_replace('.', '/', $article['view']) . '.blade.php');
     $lastModifiedIso = is_file($viewPath)
@@ -15,6 +18,81 @@
         : now()->toAtomString();
 
     $allArticles = DocumentationRepository::allArticles();
+
+    $schemaData = [
+        '@context' => 'https://schema.org',
+        '@graph' => [
+            [
+                '@type' => 'Organization',
+                '@id' => $homeUrl . '#organization',
+                'name' => $siteName,
+                'alternateName' => 'Tameshk Flow',
+                'url' => $homeUrl,
+                'logo' => [
+                    '@type' => 'ImageObject',
+                    'url' => $logoUrl,
+                ],
+            ],
+            [
+                '@type' => 'WebSite',
+                '@id' => $homeUrl . '#website',
+                'url' => $homeUrl,
+                'name' => $siteName,
+                'inLanguage' => 'fa-IR',
+                'publisher' => [
+                    '@id' => $homeUrl . '#organization',
+                ],
+            ],
+            [
+                '@type' => 'TechArticle',
+                '@id' => $canonicalUrl . '#article',
+                'mainEntityOfPage' => [
+                    '@type' => 'WebPage',
+                    '@id' => $canonicalUrl,
+                ],
+                'headline' => $article['title'],
+                'description' => $article['description'],
+                'articleSection' => $article['section_title'],
+                'inLanguage' => 'fa-IR',
+                'url' => $canonicalUrl,
+                'dateModified' => $lastModifiedIso,
+                'image' => $articleImage,
+                'author' => [
+                    '@id' => $homeUrl . '#organization',
+                ],
+                'publisher' => [
+                    '@id' => $homeUrl . '#organization',
+                ],
+                'isPartOf' => [
+                    '@id' => $homeUrl . '#website',
+                ],
+            ],
+            [
+                '@type' => 'BreadcrumbList',
+                '@id' => $canonicalUrl . '#breadcrumb',
+                'itemListElement' => [
+                    [
+                        '@type' => 'ListItem',
+                        'position' => 1,
+                        'name' => $siteName,
+                        'item' => $homeUrl,
+                    ],
+                    [
+                        '@type' => 'ListItem',
+                        'position' => 2,
+                        'name' => 'مستندات و آموزش',
+                        'item' => $docsIndexUrl,
+                    ],
+                    [
+                        '@type' => 'ListItem',
+                        'position' => 3,
+                        'name' => $article['title'],
+                        'item' => $canonicalUrl,
+                    ],
+                ],
+            ],
+        ],
+    ];
 @endphp
 
 <x-layouts.app
@@ -27,59 +105,7 @@
 
     <x-slot:schema>
         <script type="application/ld+json">
-            {
-                "@@context": "https://schema.org",
-                "@@graph": [
-                    {
-                        "@@type": "TechArticle",
-                        "@@id": "{{ $canonicalUrl }}#article",
-                        "mainEntityOfPage": {
-                            "@@type": "WebPage",
-                            "@@id": "{{ $canonicalUrl }}"
-                        },
-                        "headline": "{{ $article['title'] }}",
-                        "description": "{{ $article['description'] }}",
-                        "articleSection": "{{ $article['section_title'] }}",
-                        "inLanguage": "fa-IR",
-                        "url": "{{ $canonicalUrl }}",
-                        "dateModified": "{{ $lastModifiedIso }}",
-                        "image": "{{ $logoUrl }}",
-                        "author": {
-                            "@@id": "{{ $homeUrl }}#organization"
-                        },
-                        "publisher": {
-                            "@@id": "{{ $homeUrl }}#organization"
-                        },
-                        "isPartOf": {
-                            "@@id": "{{ $homeUrl }}#website"
-                        }
-                    },
-                    {
-                        "@@type": "BreadcrumbList",
-                        "@@id": "{{ $canonicalUrl }}#breadcrumb",
-                        "itemListElement": [
-                            {
-                                "@@type": "ListItem",
-                                "position": 1,
-                                "name": "{{ $siteName }}",
-                                "item": "{{ $homeUrl }}"
-                            },
-                            {
-                                "@@type": "ListItem",
-                                "position": 2,
-                                "name": "مستندات و آموزش",
-                                "item": "{{ $docsIndexUrl }}"
-                            },
-                            {
-                                "@@type": "ListItem",
-                                "position": 3,
-                                "name": "{{ $article['title'] }}",
-                                "item": "{{ $canonicalUrl }}"
-                            }
-                        ]
-                    }
-                ]
-            }
+            {!! json_encode($schemaData, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_HEX_TAG) !!}
         </script>
     </x-slot:schema>
 

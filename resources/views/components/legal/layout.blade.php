@@ -12,6 +12,44 @@
     $homeUrl = route('home');
     $canonicalUrl = $activePage === 'privacy' ? route('privacy') : route('terms');
     $fullTitle = $title . ' | ' . $siteName;
+
+    $schemaData = [
+        '@context' => 'https://schema.org',
+        '@graph' => [
+            [
+                '@type' => 'WebPage',
+                '@id' => $canonicalUrl . '#webpage',
+                'url' => $canonicalUrl,
+                'name' => $fullTitle,
+                'description' => $subtitle,
+                'inLanguage' => 'fa-IR',
+                'isPartOf' => [
+                    '@id' => $homeUrl . '#website',
+                ],
+                'breadcrumb' => [
+                    '@id' => $canonicalUrl . '#breadcrumb',
+                ],
+            ],
+            [
+                '@type' => 'BreadcrumbList',
+                '@id' => $canonicalUrl . '#breadcrumb',
+                'itemListElement' => [
+                    [
+                        '@type' => 'ListItem',
+                        'position' => 1,
+                        'name' => $siteName,
+                        'item' => $homeUrl,
+                    ],
+                    [
+                        '@type' => 'ListItem',
+                        'position' => 2,
+                        'name' => $title,
+                        'item' => $canonicalUrl,
+                    ],
+                ],
+            ],
+        ],
+    ];
 @endphp
 
 <x-layouts.app
@@ -23,43 +61,7 @@
 
     <x-slot:schema>
         <script type="application/ld+json">
-            {
-                "@@context": "https://schema.org",
-                "@@graph": [
-                    {
-                        "@@type": "WebPage",
-                        "@@id": "{{ $canonicalUrl }}#webpage",
-                        "url": "{{ $canonicalUrl }}",
-                        "name": "{{ $fullTitle }}",
-                        "description": "{{ $subtitle }}",
-                        "inLanguage": "fa-IR",
-                        "isPartOf": {
-                            "@@id": "{{ $homeUrl }}#website"
-                        },
-                        "breadcrumb": {
-                            "@@id": "{{ $canonicalUrl }}#breadcrumb"
-                        }
-                    },
-                    {
-                        "@@type": "BreadcrumbList",
-                        "@@id": "{{ $canonicalUrl }}#breadcrumb",
-                        "itemListElement": [
-                            {
-                                "@@type": "ListItem",
-                                "position": 1,
-                                "name": "{{ $siteName }}",
-                                "item": "{{ $homeUrl }}"
-                            },
-                            {
-                                "@@type": "ListItem",
-                                "position": 2,
-                                "name": "{{ $title }}",
-                                "item": "{{ $canonicalUrl }}"
-                            }
-                        ]
-                    }
-                ]
-            }
+            {!! json_encode($schemaData, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_HEX_TAG) !!}
         </script>
     </x-slot:schema>
 

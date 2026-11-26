@@ -7,7 +7,9 @@
     $logoUrl = asset('images/logo/favicon.png');
     $ogImage = is_file(public_path('images/landing/buy-n8n-og.jpg'))
         ? asset('images/landing/buy-n8n-og.jpg')
-        : $logoUrl;
+        : (is_file(public_path('images/landing/tameshk-canvas-dark.webp'))
+            ? asset('images/landing/tameshk-canvas-dark.webp')
+            : $logoUrl);
 
     $faqs = [
         [
@@ -140,7 +142,7 @@
 
     <x-slot:schema>
         <script type="application/ld+json">
-            {!! json_encode($schemaData, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) !!}
+            {!! json_encode($schemaData, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_HEX_TAG) !!}
         </script>
     </x-slot:schema>
 

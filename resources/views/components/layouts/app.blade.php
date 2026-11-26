@@ -12,7 +12,44 @@
 @php
     $siteName = config('app.site_name') ?: config('app.name', 'تمشک فلو');
     $canonicalUrl = $canonical ?: request()->url();
-    $socialImage = $ogImage ?: asset('images/logo/favicon.png');
+
+    $defaultImageRelPath = null;
+    foreach ([
+        'images/landing/og-cover.jpg',
+        'images/landing/og-cover.png',
+        'images/landing/tameshk-canvas-dark.webp',
+        'images/logo/favicon.png',
+    ] as $candidate) {
+        if (is_file(public_path($candidate))) {
+            $defaultImageRelPath = $candidate;
+            break;
+        }
+    }
+
+    $socialImage = $ogImage ?: asset($defaultImageRelPath ?? 'images/logo/favicon.png');
+
+    $socialImageMeta = null;
+    $resolvedLocalPath = null;
+
+    if (! $ogImage && $defaultImageRelPath) {
+        $resolvedLocalPath = public_path($defaultImageRelPath);
+    } elseif ($ogImage) {
+        $parsedPath = ltrim((string) parse_url($ogImage, PHP_URL_PATH), '/');
+        if ($parsedPath !== '' && is_file(public_path($parsedPath))) {
+            $resolvedLocalPath = public_path($parsedPath);
+        }
+    }
+
+    if ($resolvedLocalPath && is_file($resolvedLocalPath)) {
+        $sizeInfo = @getimagesize($resolvedLocalPath);
+        if (is_array($sizeInfo) && ! empty($sizeInfo[0]) && ! empty($sizeInfo[1])) {
+            $socialImageMeta = [
+                'width' => (int) $sizeInfo[0],
+                'height' => (int) $sizeInfo[1],
+                'mime' => $sizeInfo['mime'] ?? null,
+            ];
+        }
+    }
 @endphp
     <!DOCTYPE html>
 <html lang="fa" dir="rtl">
@@ -35,6 +72,14 @@
         @endif
         <meta property="og:url" content="{{ $canonicalUrl }}">
         <meta property="og:image" content="{{ $socialImage }}">
+        <meta property="og:image:alt" content="{{ $title }}">
+        @if ($socialImageMeta)
+            @if (! empty($socialImageMeta['mime']))
+                <meta property="og:image:type" content="{{ $socialImageMeta['mime'] }}">
+            @endif
+            <meta property="og:image:width" content="{{ $socialImageMeta['width'] }}">
+            <meta property="og:image:height" content="{{ $socialImageMeta['height'] }}">
+        @endif
 
         <meta name="twitter:card" content="summary_large_image">
         <meta name="twitter:title" content="{{ $title }}">
@@ -42,6 +87,7 @@
             <meta name="twitter:description" content="{{ $description }}">
         @endif
         <meta name="twitter:image" content="{{ $socialImage }}">
+        <meta name="twitter:image:alt" content="{{ $title }}">
 
         @isset($schema)
             {{ $schema }}
