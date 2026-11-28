@@ -1,6 +1,8 @@
 <?php
 
 use App\Admin\AdminAnalyticsService;
+use App\Admin\GoogleSearchConsoleClient;
+use App\Admin\GscReportExporter;
 use App\Models\Payment;
 use App\Models\User;
 use Carbon\Carbon;
@@ -9,6 +11,7 @@ use Livewire\Attributes\Computed;
 use Livewire\Attributes\Url;
 use Livewire\Component;
 use Livewire\WithPagination;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 
 new class extends Component {
     use WithPagination;
@@ -80,6 +83,37 @@ new class extends Component {
         );
 
         $this->dispatch('notify', message: 'آمار و گزارش‌ها بروزرسانی شد.', type: 'success');
+    }
+
+    public function exportGscReport(int $days = 28): ?StreamedResponse
+    {
+        abort_unless(auth()->check() && auth()->user()->isAdmin(), 403);
+
+        $safeDays = in_array($days, [7, 28, 90], true) ? $days : 28;
+
+        try {
+            $report = app(GscReportExporter::class)->generateMarkdown($safeDays);
+        } catch (\Throwable $e) {
+            report($e);
+            $this->dispatch('notify', message: $e->getMessage(), type: 'error');
+
+            return null;
+        }
+
+        $content = $report['content'];
+        $filename = $report['filename'];
+
+        return response()->streamDownload(function () use ($content) {
+            echo $content;
+        }, $filename, [
+            'Content-Type' => 'text/markdown; charset=UTF-8',
+        ]);
+    }
+
+    #[Computed]
+    public function isGscConfigured(): bool
+    {
+        return app(GoogleSearchConsoleClient::class)->isConfigured();
     }
 
     #[Computed]
@@ -181,7 +215,7 @@ new class extends Component {
         $overview = $this->overview;
     @endphp
 
-    <div class="flex items-center justify-between gap-3 rounded-2xl border border-line-border bg-surface-card px-4 py-3 shadow-2xs">
+    <div class="relative has-aria-expanded:z-40 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-line-border bg-surface-card px-4 py-3 shadow-2xs">
         <div class="flex min-w-0 items-center gap-2.5">
             <span class="flex size-9 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
                 <x-ui.icon name="chart-area-line" class="size-5"/>
@@ -194,14 +228,52 @@ new class extends Component {
             </div>
         </div>
 
-        <button type="button"
-                wire:click="refreshStats"
-                wire:loading.attr="disabled"
-                wire:target="refreshStats"
-                class="inline-flex shrink-0 items-center gap-1.5 rounded-xl border border-line-border bg-surface-base px-3 py-2 text-xs font-bold text-content-main transition hover:border-primary/40 hover:text-primary cursor-pointer disabled:opacity-50">
-            <x-ui.icon name="refresh" wire:loading.class="animate-spin text-primary" wire:target="refreshStats" class="size-4"/>
-            <span class="hidden sm:inline">بروزرسانی آمار</span>
-        </button>
+        <div class="flex shrink-0 items-center gap-2">
+            <x-ui.dropdown align="left" width="w-60">
+                <x-slot:trigger>
+                    <button type="button"
+                            wire:loading.attr="disabled"
+                            wire:target="exportGscReport"
+                        @class([
+                            'inline-flex shrink-0 items-center gap-1.5 rounded-xl border px-3 py-2 text-xs font-bold transition cursor-pointer disabled:opacity-50',
+                            'border-emerald-500/35 bg-emerald-500/10 text-emerald-600 hover:bg-emerald-500/15 dark:text-emerald-400' => $this->isGscConfigured,
+                            'border-line-border bg-surface-base text-content-muted hover:border-primary/40 hover:text-content-main' => ! $this->isGscConfigured,
+                        ])>
+                        <x-ui.icon name="brand:google" wire:loading.remove wire:target="exportGscReport" class="size-4"/>
+                        <x-ui.icon name="loader" wire:loading wire:target="exportGscReport" class="size-4 animate-spin"/>
+                        <span wire:loading.remove wire:target="exportGscReport">خروجی سئو (GSC)</span>
+                        <span wire:loading wire:target="exportGscReport">در حال دریافت...</span>
+                        <x-ui.icon name="chevron-down" wire:loading.remove wire:target="exportGscReport" class="size-3.5 opacity-75"/>
+                    </button>
+                </x-slot:trigger>
+
+                <div class="mb-1 border-b border-line-border/60 px-2.5 py-2 text-start">
+                    <p class="text-[11px] font-extrabold text-content-main">گزارش زنده Search Console</p>
+                    <p class="mt-0.5 text-[10px] text-content-muted">فایل Markdown آماده ارسال به هوش مصنوعی</p>
+                </div>
+
+                <x-ui.dropdown-item icon="file-text" wire:click="exportGscReport(7)">
+                    گزارش ۷ روز اخیر (.md)
+                </x-ui.dropdown-item>
+
+                <x-ui.dropdown-item icon="sparkles" wire:click="exportGscReport(28)">
+                    گزارش ۲۸ روز اخیر (.md)
+                </x-ui.dropdown-item>
+
+                <x-ui.dropdown-item icon="chart-area-line" wire:click="exportGscReport(90)">
+                    گزارش ۹۰ روز اخیر (.md)
+                </x-ui.dropdown-item>
+            </x-ui.dropdown>
+
+            <button type="button"
+                    wire:click="refreshStats"
+                    wire:loading.attr="disabled"
+                    wire:target="refreshStats"
+                    class="inline-flex shrink-0 items-center gap-1.5 rounded-xl border border-line-border bg-surface-base px-3 py-2 text-xs font-bold text-content-main transition hover:border-primary/40 hover:text-primary cursor-pointer disabled:opacity-50">
+                <x-ui.icon name="refresh" wire:loading.class="animate-spin text-primary" wire:target="refreshStats" class="size-4"/>
+                <span class="hidden sm:inline">بروزرسانی آمار</span>
+            </button>
+        </div>
     </div>
 
     <x-admin.kpi-cards :metrics="$overview" />

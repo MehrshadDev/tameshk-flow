@@ -28,7 +28,7 @@ return [
     ],
 
     'telegram' => [
-        'base_url' => env('TELEGRAM_BASE_URL', 'https://api.telegram.org')
+        'base_url' => env('TELEGRAM_BASE_URL', 'https://api.telegram.org'),
     ],
 
     'google' => [
@@ -39,6 +39,13 @@ return [
         'oauth_base_url' => env('GOOGLE_OAUTH_BASE_URL', 'https://oauth2.googleapis.com'),
         'api_base_url' => env('GOOGLE_API_BASE_URL', 'https://www.googleapis.com'),
         'avatar_base_url' => env('GOOGLE_AVATAR_BASE_URL', 'https://lh3.googleusercontent.com'),
+    ],
+
+    'gsc' => [
+        'site_url' => env('GSC_SITE_URL', ''),
+        'client_email' => env('GSC_CLIENT_EMAIL', ''),
+        'private_key' => env('GSC_PRIVATE_KEY', ''),
+        'api_base_url' => env('GSC_API_BASE_URL', 'https://searchconsole.googleapis.com'),
     ],
 
     'bale' => [
