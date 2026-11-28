@@ -1,6 +1,7 @@
 <?php
 
 use App\Support\GmailGuard;
+use App\Support\UserSessionManager;
 use App\Templates\PendingTemplate;
 use App\Traits\HasFormSecurity;
 use Illuminate\Support\Facades\Auth;
@@ -49,7 +50,7 @@ new class extends Component {
         ];
     }
 
-    public function login(PendingTemplate $pendingTemplate): void
+    public function login(PendingTemplate $pendingTemplate, UserSessionManager $sessionManager): void
     {
         $this->validate();
 
@@ -79,7 +80,9 @@ new class extends Component {
         RateLimiter::clear('login:email:' . $this->email);
         RateLimiter::clear('login:email:' . $normalizedEmail);
 
-        session()->regenerateToken();
+        session()->regenerate();
+
+        $sessionManager->enforceLimit(auth()->user(), session()->getId());
 
         if ($workflow = $pendingTemplate->consume(auth()->user())) {
             $this->redirect(route('app.workflows.show', $workflow));

@@ -50,6 +50,28 @@ final class UserSessionManager
         }
     }
 
+    public function revokeOtherSessions(User $user, ?string $currentSessionId = null): void
+    {
+        $this->clearRememberMe($user);
+
+        if (config('session.driver') !== 'database') {
+            return;
+        }
+
+        $connection = config('session.connection');
+        $table = (string) config('session.table', 'sessions');
+
+        $query = DB::connection($connection)
+            ->table($table)
+            ->where('user_id', $user->id);
+
+        if ($currentSessionId !== null && $currentSessionId !== '') {
+            $query->where('id', '!=', $currentSessionId);
+        }
+
+        $query->delete();
+    }
+
     private function clearRememberMe(User $user): void
     {
         if ($user->getRememberToken() !== null) {

@@ -2,12 +2,12 @@
 
 use App\Models\User;
 use App\Support\GmailGuard;
+use App\Support\UserSessionManager;
 use App\Traits\HasEmailCodeVerification;
 use App\Traits\HasFormSecurity;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Password;
-use Illuminate\Support\Str;
 use Illuminate\Validation\Rules\Password as PasswordRule;
 use Livewire\Component;
 
@@ -136,7 +136,7 @@ new class extends Component
         $this->form_load_time = time();
     }
 
-    public function resetPassword(): void
+    public function resetPassword(UserSessionManager $sessionManager): void
     {
         if ($this->step !== 3) {
             return;
@@ -165,7 +165,7 @@ new class extends Component
                 'token' => $token,
             ],
             function ($user, $password) {
-                $user->forceFill(['password' => Hash::make($password)])->setRememberToken(Str::random(60));
+                $user->forceFill(['password' => Hash::make($password)])->setRememberToken(null);
                 $user->save();
             }
         );
@@ -178,12 +178,17 @@ new class extends Component
         session()->forget('reset_token_' . $this->email);
         $this->clearRateLimiter('forgot-password');
 
-        Auth::login(User::query()->where('email', $this->email)->first(), remember: true);
+        $user = User::query()->where('email', $this->email)->first();
 
-        session()->regenerate();
-        session()->regenerateToken();
+        if ($user) {
+            Auth::login($user, remember: false);
 
-        $this->redirect(route('app.workflows.index'), navigate: true);
+            session()->regenerate();
+
+            $sessionManager->revokeOtherSessions($user, session()->getId());
+        }
+
+        $this->redirect(route('app.workflows.index'));
     }
 };
 ?>

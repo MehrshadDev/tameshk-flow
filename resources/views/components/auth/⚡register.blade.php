@@ -2,6 +2,7 @@
 
 use App\Models\User;
 use App\Support\GmailGuard;
+use App\Support\UserSessionManager;
 use App\Templates\PendingTemplate;
 use App\Traits\HasEmailCodeVerification;
 use App\Traits\HasFormSecurity;
@@ -103,7 +104,7 @@ new class extends Component
         $this->startVerification($email);
     }
 
-    public function verifyCode(PendingTemplate $pendingTemplate): void
+    public function verifyCode(PendingTemplate $pendingTemplate, UserSessionManager $sessionManager): void
     {
         if ($this->step !== 2) {
             return;
@@ -146,14 +147,16 @@ new class extends Component
 
         Auth::login($user, remember: false);
 
-        session()->regenerateToken();
+        session()->regenerate();
+
+        $sessionManager->enforceLimit($user, session()->getId());
 
         if ($workflow = $pendingTemplate->consume($user)) {
             $this->redirect(route('app.workflows.show', $workflow));
             return;
         }
 
-        $this->redirect(route('app.workflows.index'), navigate: true);
+        $this->redirect(route('app.workflows.index'));
     }
 
     protected function extractNameFromEmail(string $email): string

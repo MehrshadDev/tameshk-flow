@@ -6,7 +6,7 @@ return [
 
     'driver' => env('SESSION_DRIVER', 'database'),
 
-    'lifetime' => (int) env('SESSION_LIFETIME', 259200),
+    'lifetime' => max(1, (int) (env('SESSION_LIFETIME') ?: 259200)),
 
     'expire_on_close' => (bool) env('SESSION_EXPIRE_ON_CLOSE', false),
 
