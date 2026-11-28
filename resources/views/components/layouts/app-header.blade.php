@@ -1,9 +1,11 @@
 @php
+    $onLanding = request()->routeIs('home', 'landing.buy-n8n', 'landing.bot-builder');
+
     $links = array_values(array_filter([
-        ['label' => 'قابلیت‌ها', 'href' => '#features', 'icon' => 'sparkles'],
+        ['label' => 'قابلیت‌ها', 'href' => $onLanding ? '#features' : route('home') . '#features', 'icon' => 'sparkles'],
         ['label' => 'ورکفلوهای آماده', 'href' => route('templates.index'), 'icon' => 'rocket'],
-        config('saas.enabled') ? ['label' => 'تعرفه‌ها', 'href' => '#pricing', 'icon' => 'credit-card'] : null,
-        ['label' => 'مستندات', 'href' => route('docs.index'), 'icon' => 'file-text'],
+        config('saas.enabled') ? ['label' => 'تعرفه‌ها', 'href' => $onLanding ? '#pricing' : route('home') . '#pricing', 'icon' => 'credit-card'] : null,
+        ['label' => 'مستندات', 'href' => route('docs.show', 'introduction'), 'icon' => 'file-text'],
     ]));
 @endphp
 
@@ -72,7 +74,7 @@
                     @foreach ($links as $link)
                         <a
                             href="{{ $link['href'] }}"
-                            class="rounded-xl px-3.5 py-2 text-sm font-medium text-content-muted transition-colors hover:bg-surface-base hover:text-content-main"
+                            class="rounded-xl px-3.5 py-2 text-sm font-medium whitespace-nowrap text-content-muted transition-colors hover:bg-surface-base hover:text-content-main"
                         >
                             {{ $link['label'] }}
                         </a>
@@ -80,8 +82,8 @@
                 </nav>
 
                 <div class="hidden items-center gap-2 md:flex">
-                    <x-ui.button href="/login" variant="ghost" class="rounded-xl px-4 py-2 text-sm">ورود</x-ui.button>
-                    <x-ui.button href="/register" class="rounded-xl px-5 py-2 text-sm shadow-sm shadow-primary/25">ثبت‌نام</x-ui.button>
+                    <x-ui.button href="{{ route('login') }}" variant="ghost" class="rounded-xl px-4 py-2 text-sm">ورود</x-ui.button>
+                    <x-ui.button href="{{ route('register') }}" class="rounded-xl px-5 py-2 text-sm shadow-sm shadow-primary/25">ثبت‌نام</x-ui.button>
                 </div>
 
                 <button
@@ -108,29 +110,29 @@
                 x-transition:leave-end="opacity-0 -translate-y-2 scale-95"
                 class="absolute inset-x-0 top-full mt-2.5 overflow-hidden rounded-2xl border border-line-border bg-surface-raised/95 p-3 shadow-2xl backdrop-blur-xl dark:bg-surface-card/95 md:hidden"
             >
-                <nav class="flex flex-col gap-1">
+                <nav class="grid grid-cols-2 gap-2">
                     @foreach ($links as $link)
                         <a
                             href="{{ $link['href'] }}"
                             @click="open = false"
-                            class="group flex items-center justify-between rounded-xl px-3 py-2.5 text-sm font-semibold text-content-main transition-colors hover:bg-surface-base hover:text-primary"
+                            @class([
+                                'group flex items-center gap-2.5 rounded-xl border border-line-border/70 bg-surface-base/75 px-3 py-2.5 text-xs font-bold text-content-main transition hover:border-primary/40 hover:bg-surface-base hover:text-primary',
+                                'col-span-2' => count($links) % 2 === 1 && $loop->last,
+                            ])
                         >
-                            <span class="flex items-center gap-3">
-                                <span class="flex size-8 items-center justify-center rounded-lg border border-line-border/80 bg-surface-base text-primary transition-transform group-hover:scale-105">
-                                    <x-ui.icon :name="$link['icon']" class="size-4"/>
-                                </span>
-                                <span>{{ $link['label'] }}</span>
+                            <span class="flex size-8 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary transition-transform group-hover:scale-105">
+                                <x-ui.icon :name="$link['icon']" class="size-4"/>
                             </span>
-                            <x-ui.icon name="chevron-left" class="size-4 text-content-muted transition-transform group-hover:-translate-x-0.5 group-hover:text-primary"/>
+                            <span class="truncate">{{ $link['label'] }}</span>
                         </a>
                     @endforeach
                 </nav>
 
-                <div class="my-2.5 h-px bg-linear-to-r from-transparent via-line-border to-transparent"></div>
+                <div class="my-3 h-px bg-linear-to-r from-transparent via-line-border to-transparent"></div>
 
-                <div class="grid grid-cols-2 gap-2.5">
-                    <x-ui.button href="/login" variant="secondary" class="rounded-xl py-2.5">ورود</x-ui.button>
-                    <x-ui.button href="/register" class="rounded-xl py-2.5 shadow-md shadow-primary/25">ثبت‌نام</x-ui.button>
+                <div class="grid grid-cols-2 gap-2">
+                    <x-ui.button href="{{ route('login') }}" variant="secondary" class="rounded-xl py-2.5 text-xs">ورود</x-ui.button>
+                    <x-ui.button href="{{ route('register') }}" class="rounded-xl py-2.5 text-xs shadow-md shadow-primary/25">ثبت‌نام</x-ui.button>
                 </div>
             </div>
         </div>

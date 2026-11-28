@@ -24,3 +24,6 @@ $run('queue:work --stop-when-empty --tries=3 --max-time=35 --memory=256 --timeou
 
 $run('git-backup:run --periodic', 'tameshk-git-periodic-backup', 10)
     ->everyThirtyMinutes();
+
+$run('sitemap:generate', 'tameshk-sitemap-generator', 10)
+    ->dailyAt('03:30');

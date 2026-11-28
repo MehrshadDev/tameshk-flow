@@ -39,11 +39,14 @@
     $productLinks = array_values(array_filter([
         ['label' => 'قابلیت‌ها', 'href' => route('home') . '#features', 'external' => false],
         ['label' => 'ورکفلوهای آماده', 'href' => route('templates.index'), 'external' => false],
-        ['label' => 'ربات‌ساز تلگرام', 'href' => route('landing.bot-builder'), 'external' => false],
-        ['label' => 'جایگزین ایرانی n8n', 'href' => route('landing.buy-n8n'), 'external' => false],
         $saasEnabled ? ['label' => 'تعرفه‌ها', 'href' => route('home') . '#pricing', 'external' => false] : null,
-        ['label' => 'مستندات', 'href' => route('docs.index'), 'external' => false],
     ]));
+
+    $solutionLinks = [
+        ['label' => 'ربات‌ساز تلگرام', 'href' => route('landing.bot-builder'), 'external' => false],
+        ['label' => 'مقایسه با n8n', 'href' => route('landing.buy-n8n'), 'external' => false],
+        ['label' => 'مستندات و آموزش', 'href' => route('docs.show', 'introduction'), 'external' => false],
+    ];
 
     $legalLinks = [
         ['label' => 'قوانین و مقررات', 'href' => route('terms'), 'external' => false],
@@ -53,16 +56,16 @@
 
     $sealImgClass = 'size-full cursor-pointer object-contain opacity-90 transition duration-300 group-hover:scale-105 group-hover:opacity-100 dark:opacity-75 dark:brightness-0 dark:invert dark:group-hover:opacity-100';
     $sealBoxClass = 'group relative flex h-20 w-16 sm:h-24 sm:w-18 shrink-0 items-center justify-center rounded-2xl border border-line-border/90 bg-surface-base/80 p-1.5 shadow-xs transition-all duration-300 hover:-translate-y-0.5 hover:border-primary/40 hover:shadow-md';
-    $linkClass = 'group inline-flex items-center gap-1 text-xs font-medium text-content-muted transition-colors hover:text-primary sm:text-sm';
+    $linkClass = 'group inline-flex items-center gap-1 text-xs font-medium whitespace-nowrap text-content-muted transition-colors hover:text-primary sm:text-sm';
     $currentYear = CalendarUtils::convertNumbers(
         Jalalian::now()->format('Y')
     );
 @endphp
 
-<footer class="w-full bg-surface-base px-2 pb-3 pt-2 font-vazirmatn-rd sm:px-3 sm:pb-4">
+<footer class="w-full bg-surface-base px-2 pb-4 pt-4 font-vazirmatn-rd sm:px-3 sm:pb-6">
     <div class="mx-auto max-w-7xl">
         <div
-            class="relative overflow-hidden rounded-3xl border border-line-border bg-surface-raised/90 p-5 shadow-lg shadow-black/5 backdrop-blur-xl sm:p-8 lg:px-10 lg:py-9 dark:bg-surface-card/85 dark:shadow-black/40">
+            class="relative flex flex-col justify-center overflow-hidden rounded-3xl border border-line-border bg-surface-raised/90 p-6 shadow-lg shadow-black/5 backdrop-blur-xl sm:p-9 lg:min-h-56 lg:px-10 lg:py-11 dark:bg-surface-card/85 dark:shadow-black/40">
             <div
                 class="pointer-events-none absolute inset-x-12 top-0 h-px bg-linear-to-r from-transparent via-primary/55 to-transparent"></div>
             <div
@@ -71,28 +74,24 @@
                 class="pointer-events-none absolute -bottom-24 -left-24 size-64 rounded-full bg-rose-500/6 blur-3xl"></div>
 
             @if ($saasEnabled)
-                <div class="relative grid grid-cols-1 gap-6 md:grid-cols-12 md:items-center lg:gap-8">
-                    <div class="flex flex-col items-start text-start md:col-span-12 lg:col-span-5">
-                        <x-layouts.logo logoClasses="h-8 sm:h-9 w-auto"/>
+                <div class="relative grid grid-cols-1 gap-7 md:grid-cols-12 md:items-center lg:gap-8">
+                    <div class="flex flex-col items-start text-start md:col-span-12 lg:col-span-4">
+                        <x-layouts.logo logoClasses="h-10 sm:h-11 w-auto"/>
 
-                        <p class="mt-3 max-w-xs text-xs leading-6 text-content-muted sm:text-sm">
-                            پلتفرم بصری اتوماسیون گردش‌کار و ساخت ایجنت‌های هوش مصنوعی، بدون نیاز به کدنویسی.
+                        <p class="mt-3.5 max-w-xs text-xs leading-6 text-content-muted sm:text-sm">
+                            پلتفرم بصری اتوماسیون گردش‌کار و ساخت ایجنت‌های هوش مصنوعی.
                         </p>
                     </div>
 
                     <div class="h-px w-full bg-linear-to-r from-transparent via-line-border to-transparent md:col-span-12 lg:hidden"></div>
 
-                    <div class="grid grid-cols-2 gap-6 sm:gap-8 md:col-span-7 lg:col-span-4">
-                        <nav aria-label="دسترسی سریع" class="flex flex-col items-start">
-                            <h3 class="text-xs font-bold text-content-main sm:text-sm">
-                                دسترسی سریع
-                            </h3>
-                            <ul class="mt-3 flex flex-col gap-2.5">
+                    <div class="grid grid-cols-2 gap-6 sm:grid-cols-3 md:col-span-8 lg:col-span-5">
+                        <nav aria-label="محصول" class="flex flex-col items-start">
+                            <h3 class="text-xs font-bold text-content-main sm:text-sm">محصول</h3>
+                            <ul class="mt-3.5 flex flex-col gap-3">
                                 @foreach ($productLinks as $link)
                                     <li>
-                                        <a href="{{ $link['href'] }}"
-                                           @if ($link['external']) target="_blank" rel="noopener noreferrer" @endif
-                                           class="{{ $linkClass }}">
+                                        <a href="{{ $link['href'] }}" class="{{ $linkClass }}">
                                             {{ $link['label'] }}
                                         </a>
                                     </li>
@@ -100,11 +99,22 @@
                             </ul>
                         </nav>
 
-                        <nav aria-label="قوانین و منابع" class="flex flex-col items-start">
-                            <h3 class="text-xs font-bold text-content-main sm:text-sm">
-                                قوانین و منابع
-                            </h3>
-                            <ul class="mt-3 flex flex-col gap-2.5">
+                        <nav aria-label="راه‌حل‌ها" class="flex flex-col items-start">
+                            <h3 class="text-xs font-bold text-content-main sm:text-sm">راه‌حل‌ها</h3>
+                            <ul class="mt-3.5 flex flex-col gap-3">
+                                @foreach ($solutionLinks as $link)
+                                    <li>
+                                        <a href="{{ $link['href'] }}" class="{{ $linkClass }}">
+                                            {{ $link['label'] }}
+                                        </a>
+                                    </li>
+                                @endforeach
+                            </ul>
+                        </nav>
+
+                        <nav aria-label="قوانین و منابع" class="col-span-2 flex flex-col items-start sm:col-span-1">
+                            <h3 class="text-xs font-bold text-content-main sm:text-sm">قوانین و منابع</h3>
+                            <ul class="mt-3.5 flex flex-wrap gap-x-5 gap-y-3 sm:flex-col sm:gap-3">
                                 @foreach ($legalLinks as $link)
                                     <li>
                                         <a href="{{ $link['href'] }}"
@@ -133,9 +143,9 @@
 
                     <div class="h-px w-full bg-linear-to-r from-transparent via-line-border to-transparent md:hidden"></div>
 
-                    <div class="flex shrink-0 items-center justify-center gap-3.5 md:col-span-5 md:justify-end lg:col-span-3 lg:gap-4">
+                    <div class="flex shrink-0 items-center justify-center gap-3.5 md:col-span-4 md:justify-end lg:col-span-3 lg:gap-4">
                         <div
-                            class="hidden h-20 w-px bg-linear-to-b from-transparent via-line-border to-transparent lg:ml-2 lg:block"></div>
+                            class="hidden h-22 w-px bg-linear-to-b from-transparent via-line-border to-transparent lg:ml-2 lg:block"></div>
 
                         <a href="{{ $zibalTrustHref }}"
                            target="_blank"
@@ -272,9 +282,9 @@
                     </div>
                 </div>
             @else
-                <div class="relative grid grid-cols-1 gap-6 md:grid-cols-12 md:items-center md:gap-8">
-                    <div class="flex flex-col items-start gap-2.5 text-start md:col-span-6 lg:col-span-7">
-                        <x-layouts.logo logoClasses="h-8 sm:h-9 w-auto"/>
+                <div class="relative grid grid-cols-1 gap-7 md:grid-cols-12 md:items-center lg:gap-8">
+                    <div class="flex flex-col items-start gap-2.5 text-start md:col-span-5">
+                        <x-layouts.logo logoClasses="h-10 sm:h-11 w-auto"/>
 
                         <p class="max-w-sm text-xs leading-6 text-content-muted sm:text-sm">
                             پلتفرم بصری اتوماسیون گردش‌کار و ساخت ایجنت‌های هوش مصنوعی
@@ -283,17 +293,13 @@
 
                     <div class="h-px w-full bg-linear-to-r from-transparent via-line-border to-transparent md:hidden"></div>
 
-                    <div class="grid grid-cols-2 gap-6 sm:gap-8 md:col-span-6 lg:col-span-5">
-                        <nav aria-label="دسترسی سریع" class="flex flex-col items-start">
-                            <h3 class="text-xs font-bold text-content-main sm:text-sm">
-                                دسترسی سریع
-                            </h3>
-                            <ul class="mt-3 flex flex-col gap-2.5">
+                    <div class="grid grid-cols-2 gap-6 sm:grid-cols-3 md:col-span-7">
+                        <nav aria-label="محصول" class="flex flex-col items-start">
+                            <h3 class="text-xs font-bold text-content-main sm:text-sm">محصول</h3>
+                            <ul class="mt-3.5 flex flex-col gap-3">
                                 @foreach ($productLinks as $link)
                                     <li>
-                                        <a href="{{ $link['href'] }}"
-                                           @if ($link['external']) target="_blank" rel="noopener noreferrer" @endif
-                                           class="{{ $linkClass }}">
+                                        <a href="{{ $link['href'] }}" class="{{ $linkClass }}">
                                             {{ $link['label'] }}
                                         </a>
                                     </li>
@@ -301,11 +307,22 @@
                             </ul>
                         </nav>
 
-                        <nav aria-label="قوانین و منابع" class="flex flex-col items-start">
-                            <h3 class="text-xs font-bold text-content-main sm:text-sm">
-                                قوانین و منابع
-                            </h3>
-                            <ul class="mt-3 flex flex-col gap-2.5">
+                        <nav aria-label="راه‌حل‌ها" class="flex flex-col items-start">
+                            <h3 class="text-xs font-bold text-content-main sm:text-sm">راه‌حل‌ها</h3>
+                            <ul class="mt-3.5 flex flex-col gap-3">
+                                @foreach ($solutionLinks as $link)
+                                    <li>
+                                        <a href="{{ $link['href'] }}" class="{{ $linkClass }}">
+                                            {{ $link['label'] }}
+                                        </a>
+                                    </li>
+                                @endforeach
+                            </ul>
+                        </nav>
+
+                        <nav aria-label="قوانین و منابع" class="col-span-2 flex flex-col items-start sm:col-span-1">
+                            <h3 class="text-xs font-bold text-content-main sm:text-sm">قوانین و منابع</h3>
+                            <ul class="mt-3.5 flex flex-wrap gap-x-5 gap-y-3 sm:flex-col sm:gap-3">
                                 @foreach ($legalLinks as $link)
                                     <li>
                                         <a href="{{ $link['href'] }}"

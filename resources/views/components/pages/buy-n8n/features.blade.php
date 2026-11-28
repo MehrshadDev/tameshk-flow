@@ -21,7 +21,7 @@
         [
             'icon' => 'calendar',
             'color' => 'bg-amber-500/10 text-amber-500',
-            'title' => 'بومی‌سازی‌شده برای کسب‌وکار ایرانی',
+            'title' => 'آماده برای کسب‌وکارهای ایرانی',
             'desc' => 'مجهز به نود تقویم شمسی (جلالی)، تبدیل ارقام فارسی، تولید کد تایید (OTP)، محیط راست‌به‌چپ و پرداخت ریالی.',
         ],
     ];
@@ -29,11 +29,11 @@
 
 <section id="features" class="w-full border-t border-line-border bg-surface-base py-20 font-vazirmatn-rd sm:py-24">
     <div class="mx-auto max-w-6xl px-4 sm:px-6">
-        <div class="mx-auto max-w-2xl text-center">
-            <h2 class="text-2xl font-extrabold tracking-tight text-content-main sm:text-4xl">
+        <div class="mx-auto max-w-3xl text-center">
+            <h2 class="text-balance text-2xl font-extrabold leading-[1.55] tracking-tight text-content-main sm:text-4xl sm:leading-[1.45]">
                 چرا کاربران ایرانی به جای سرور n8n، تمشک فلو را انتخاب می‌کنند؟
             </h2>
-            <p class="mt-3 text-sm leading-7 text-content-muted sm:text-base">
+            <p class="mt-4 text-sm leading-7 text-content-muted sm:text-base">
                 تمرکز شما باید روی ساختن منطق کسب‌وکارتان باشد، نه درگیری با خطاهای سرور و تحریم‌ها.
             </p>
         </div>

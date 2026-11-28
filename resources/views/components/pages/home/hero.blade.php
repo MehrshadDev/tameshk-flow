@@ -24,28 +24,28 @@
              style="background: radial-gradient(circle, color-mix(in oklab, var(--color-primary) 14%, transparent), transparent 60%);"></div>
     </div>
 
-    <div class="mx-auto flex max-w-5xl flex-col items-center px-4 pb-20 pt-28 text-center sm:px-6 sm:pb-28 sm:pt-36">
-        <h1 class="hero-title max-w-4xl text-3xl font-extrabold leading-[1.6] tracking-tight text-content-main xs:text-4xl sm:text-5xl md:text-6xl">
+    <div class="mx-auto flex max-w-5xl flex-col items-center px-4 pb-14 pt-24 text-center sm:px-6 sm:pb-28 sm:pt-36">
+        <h1 class="hero-title max-w-4xl text-[28px] font-extrabold leading-[1.55] tracking-tight text-content-main xs:text-4xl sm:text-5xl md:text-6xl">
             اتوماسیون کارها،
             <span class="hero-gradient-shift relative inline-block bg-linear-to-l from-primary via-rose-400 to-primary bg-clip-text text-transparent bg-size-[200%_auto]">
                 ساده‌تر از همیشه
             </span>
         </h1>
 
-        <p class="mt-5 max-w-2xl px-2 text-sm leading-7 text-content-muted sm:mt-6 sm:px-0 sm:text-lg sm:leading-8">
-            گردش‌کارهای خود را به‌سادگی ایجاد و مدیریت کنید. کارهای تکراری را خودکار کنید و زمان بیشتری برای کارهای مهم داشته باشید.
+        <p class="mt-4 max-w-xl px-1 text-xs leading-7 text-content-muted sm:mt-6 sm:max-w-2xl sm:px-0 sm:text-lg sm:leading-8">
+            ورکفلوها و ایجنت‌های هوش مصنوعی خود را در فضای ابری و بدون کدنویسی بسازید؛ پیام‌رسان‌ها، سرویس‌ها و داده‌هایتان را در چند دقیقه به هم متصل کنید.
         </p>
 
-        <div class="mt-8 flex flex-row flex-wrap items-center justify-center gap-3 sm:mt-10">
-            <x-ui.button href="/register" size="lg" class="shadow-lg shadow-primary/25 transition-transform hover:scale-[1.03]">
+        <div class="mt-6 flex flex-row flex-wrap items-center justify-center gap-2.5 sm:mt-10 sm:gap-3">
+            <x-ui.button href="{{ route('register') }}" class="px-5 py-2.5 text-sm shadow-lg shadow-primary/25 transition-transform hover:scale-[1.03] sm:px-7 sm:py-3 sm:text-base">
                 شروع رایگان
             </x-ui.button>
-            <x-ui.button :href="route('docs.index')" variant="secondary" size="lg" class="backdrop-blur transition hover:bg-surface-card">
-                مشاهده مستندات
+            <x-ui.button :href="route('templates.index')" variant="secondary" class="px-5 py-2.5 text-sm backdrop-blur transition hover:bg-surface-card sm:px-7 sm:py-3 sm:text-base">
+                ورکفلوهای آماده
             </x-ui.button>
         </div>
 
-        <div class="mt-14 w-full max-w-3xl px-2 sm:mt-16 sm:px-0">
+        <div class="mt-10 w-full max-w-3xl px-3 sm:mt-16 sm:px-0">
             <div dir="ltr" class="relative mx-auto aspect-video w-full sm:aspect-16/7">
                 <svg viewBox="0 0 800 350" class="absolute inset-0 size-full" fill="none" aria-hidden="true">
                     <defs>

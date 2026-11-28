@@ -153,6 +153,11 @@
     <x-pages.bot-builder.hero />
     <x-pages.bot-builder.features />
     <x-pages.bot-builder.comparison />
+    <x-templates.featured-strip
+        heading="ربات‌های آماده برای شروع"
+        subheading="این قالب‌ها را با یک کلیک به حساب خود اضافه کرده و فقط توکن ربات را وصل کنید."
+        :slugs="['telegram-24-7-ai-support-bot', 'woocommerce-order-telegram-table', 'contact-form-auto-reply-table']"
+    />
     <x-pages.home.pricing />
     <x-pages.bot-builder.faq :faqs="$faqs" />
 
